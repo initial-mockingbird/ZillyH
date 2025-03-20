@@ -1,0 +1,352 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NegativeLiterals #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Move brackets to avoid $" #-}
+
+
+module Examples where
+
+import ADT
+import Action
+import Interpreter
+import Lensy
+import TypedMap
+import Data.String (IsString(..))
+import ShowM
+
+
+ex1 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value Z)
+ex1 = If
+  (Val 5 `Less` Val 4)
+  (Val 1 `Minus` Var @(Value Z) "x")
+  (Val 2 `Minus` Val 9)
+
+ex2 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value (Value Z :-> Value Z))
+ex2 = Lambda
+  "x" 
+  (Var @(Value Z) "x" `Minus` Val 1)
+
+ex3 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value Z)
+ex3 = ex2 `App` (Val 1 `Minus` Var @(Value Z) "x")
+
+ex4 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value Z)
+ex4 = ex2 `App` Val 1
+
+
+ex5 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env  m   (Value (Value Z :-> Value (Value Z :-> Value Z)))
+ex5
+  = Lambda "x" 
+  $ Lambda "y"
+  $ Var @(Value Z) "x" `Minus` Var @(Value Z)  "y"
+
+ex6 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value Z)
+ex6 = App (App ex5 (Val 5)) (Val 3)
+
+ex7 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value Z)
+ex7 = App (App ex5 (Val 5 `Minus` Val 10)) (Val 3)
+
+ex8 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value Z)
+ex8 = App (App ex5 (Val 5)) (Val 3 `Minus` Val 10)
+
+ex9 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value Z)
+ex9 = App (App ex5 (Val 5 `Minus` Val 10)) (Val 3 `Minus` Val 10)
+
+ax1 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+ax1 =
+  [ "x"  := Val 5
+  , "y" := Val 5
+  -- , x := Val 9
+  , Print (Val 5)
+  ]
+
+ax2 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+ax2 =
+  [ "x"  := Val 5
+  , "y"  := Defer (Var @(Value Z) "x" )
+  , "z0" := Var @(Value Z) "y"
+  , "x"  :=. Val 9
+  , "z1" := Var @(Value Z) "y"
+  , Print (Var @(Value Z)  "z0") -- should be 5
+  , Print (Var @(Value Z)  "z1") -- shoulb be 9
+  ]
+
+negate' ::
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value (Value Z :-> Value Z))
+negate' = Lambda "x" $ Val 0 `Minus` Var @(Value Z) "x"
+
+
+add :: forall m.
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => E Env m (Value
+  (Value Z :-> Value (Value Z :-> Value Z)))
+add = Lambda "x" $ Lambda "y" $ Minus
+  (Var @(Value Z) "x")
+  negatedY
+  where
+    negatedY :: E Env m (Value Z)
+    negatedY = App (negate' @m) (Var @(Value Z) "y")
+
+
+
+ax3 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+ax3 =
+  [ "x"      := Val 5
+  , "y"      := Val 15
+  , "negate" := negate'
+  , "add"    := add
+  , "z0"     := add `App` Val 5 `App` Val 15
+  , "z1"     := add `App` Var @(Value Z) "x" `App` Val 15
+  , "z2"     := add `App` Val 5 `App` Var @(Value Z) "y"
+  , "z3"     := add `App` Var @(Value Z) "x" `App` Var @(Value Z) "y"
+  , "z4"     := 
+    Var @(Value (Value Z :-> Value (Value Z :-> Value Z))) "add" 
+    `App` Var @(Value Z) "x" 
+    `App` Var @(Value Z) "y"
+  , "z5"     := 
+    Var @(Value Z ~> (Value Z ~> Value Z)) "add" 
+    `App` Var @(Value Z) "x" 
+    `App` Var @(Value Z) "y"
+  , "x+"     := 
+    Var @(Value Z ~> (Value Z ~> Value Z)) "add" 
+    `App` Var @(Value Z) "x"
+  , "+y"     := Lambda @(Value Z) "z" 
+    (Var @(Value Z ~> (Value Z ~> Value Z)) "add" 
+    `App` Var @(Value Z) "z" 
+    `App` Var @(Value Z) "y") 
+  , Print (Var @(Value Z)  "z0") -- should be 20
+  , Print (Var @(Value Z)  "z1") -- should be 20
+  , Print (Var @(Value Z)  "z2") -- should be 20
+  , Print (Var @(Value Z)  "z3") -- should be 20
+  , Print (Var @(Value Z)  "z4") -- should be 20
+  , Print (Var @(Value Z)  "z5") -- should be 20
+  , Print (Var @(Value Z ~> Value Z) "x+") -- should be  \y -> add x y
+  , Print (Var @(Value Z ~> Value Z) "+y") -- should be  \x -> add x y
+  ]
+
+ax4 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+ax4 =
+  [ "add" := add
+  , "sum" := Lambda @(Value Z) "x" 
+      ( If (Var @(Value Z) "x" `Less` Val 0)
+        (Val 0)
+        ( Var @(Value Z ~> Value Z ~> Value Z) "add"
+          `App` Var @(Value Z) "x" 
+          `App` 
+          (Var @(Value Z ~> Value Z) "sum" `App`  (Var @(Value Z) "x" `Minus` Val 1)) 
+        )
+
+      )
+  , Print (Var @(Value Z ~> Value Z) "sum")
+  , "z0" := Var @(Value Z ~> Value Z) "sum" `App` Val -1
+  , Print (Var @(Value Z) "z0") -- should be 0
+  , "z1" := Var @(Value Z ~> Value Z) "sum" `App` Val 0
+  , Print (Var @(Value Z) "z1") -- should be 0
+  , "z2" := Var @(Value Z ~> Value Z) "sum" `App` Val 1
+  , Print (Var @(Value Z) "z2") -- should be 1
+  , "z3" := Var @(Value Z ~> Value Z) "sum" `App` Val 2
+  , Print (Var @(Value Z) "z3") -- should be 3
+  , "z4" := Var @(Value Z ~> Value Z) "sum" `App` Val 3
+  , Print (Var @(Value Z) "z4") -- should be 6
+  
+
+  ]
+
+ax5 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+ax5 =
+  [  "f" := 
+      ( Lambda @(Lazy (Value Z)) "y" 
+      $ Defer (Val 20 `Minus` Var @(Lazy (Value Z)) "y")
+      )
+  , "z0" := Var @(Lazy (Value Z) ~> Value Z) "f" `App` (Defer $ Defer $ Val 9)
+  , Print (Var @(Value Z) "z0") -- should be 11
+  , "y" :=  Val 99999
+  , "z1" := Var @(Lazy (Value Z) ~> Value Z) "f" `App` (Defer $ Defer $ Val 9)
+  , Print (Var @(Value Z) "z1") -- should be 11
+  ]
+
+ax6 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+ax6 =
+  [ "x" := Val 5
+  , "f" := 
+      ( Lambda @(Lazy (Value Z)) "y" 
+      $ Defer (Var @(Value Z) "x" `Minus` Var @(Lazy (Value Z)) "y")
+      )
+  , "z0" := Var @(Lazy (Value Z) ~> Value Z) "f" `App` (Defer $ Defer $ Val 9)
+  , Print (Var @(Value Z) "z0") -- should be -4
+  , "x" :=. Val 100
+  , "y" :=  Val 99999
+  , "z1" := Var @(Lazy (Value Z) ~> Value Z) "f" `App` (Defer $ Defer $ Val 9)
+  
+  , Print (Var @(Value Z) "z1") -- should be 91
+  ]
+
+ax7 :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+ax7 =
+  [ "x" := Val 5
+  , "f" := 
+      ( Lambda @(Lazy (Value Z)) "y" 
+      $ Defer (Var @(Value Z) "x" `Minus` Var @(Lazy (Value Z)) "y")
+      )
+  , "z0" := Var @(Lazy (Value Z) ~> Value Z) "f" `App` (Defer $ Defer $ Var @(Value Z) "x")
+  , Print (Var @(Value Z) "z0") -- should be 0
+  , "x" :=. Val 100
+  , "y" :=  Val -10000
+  , "z1" := Var @(Lazy (Value Z) ~> Value Z) "f" `App` (Defer $ Defer $ Var @(Value Z) "x")
+  , Print (Var @(Value Z) "z1") -- should be 0
+  , "z2" := Var @(Lazy (Value Z) ~> Value Z) "f" `App` (Defer $ Defer $ Var @(Value Z) "y")
+  , Print (Var @(Value Z) "z2") -- should be 10100
+  ]
+
+
+stdLib :: 
+  ( ADTContext   m Env
+  , ShowMContext m Env
+  ) 
+  => [A Env m ()]
+stdLib = 
+  [ "negate" := (Lambda @(Value Z) "x" $ Val 0 `Minus` Var @(Value Z) "x")
+  , "add"    := 
+    ( Lambda @(Value Z) "x" 
+    $ Lambda @(Value Z) "y" 
+    $ Var @(Value Z) "x" 
+    `Minus` (Var @(Value Z ~> Value Z) "negate" `App` Var @(Value Z) "y")
+    )
+  , "eq"  := 
+    ( Lambda @(Value Z) "x" 
+    $ Lambda @(Value Z) "y" 
+    $ If (Var @(Value Z) "x" `Less` Var @(Value Z) "y")
+      cFalse
+    $ If (Var @(Value Z) "y" `Less` Var @(Value Z) "x")
+      cFalse
+      cTrue
+    )
+  , "gt" :=
+    ( Lambda @(Value Z) "x" 
+    $ Lambda @(Value Z) "y" 
+    $ If (Var @(Value Z) "x" `Less` Var @(Value Z) "y")
+      cFalse
+    $ If (Var @(Value Z ~> Value Z ~> Value Z) "eq" `App` Var @(Value Z) "y" `App` Var @(Value Z) "x")
+      cFalse
+      cTrue
+    )
+  , "lt" :=
+    ( Lambda @(Value Z) "x" 
+    $ Lambda @(Value Z) "y" 
+    $ Less (Var @(Value Z) "x") (Var @(Value Z) "y")
+    )
+  , "lte" := 
+    ( Lambda @(Value Z) "x" 
+    $ Lambda @(Value Z) "y" 
+    $ If (Var @(Value Z) "x" `Less` Var @(Value Z) "y")
+      cTrue
+    $ If (Var @(Value Z ~> Value Z ~> Value Z) "eq" `App` Var @(Value Z) "x" `App` Var @(Value Z) "y")
+      cTrue
+      cFalse
+    )
+  , "gte" := 
+    ( Lambda @(Value Z) "x" 
+    $ Lambda @(Value Z) "y" 
+    $ If (Var @(Value Z ~> Value Z ~> Value Z) "eq" `App` Var @(Value Z) "x" `App` Var @(Value Z) "y")
+      cTrue
+    $ If (Var @(Value Z ~> Value Z ~> Value Z) "gt" `App` Var @(Value Z) "x" `App` Var @(Value Z) "y")
+      cTrue
+      cFalse
+    )
+  , "not" :=
+    ( Lambda @(Value Z) "x" 
+    $ If (Var @(Value Z ~> Value Z ~> Value Z) "eq" `App` Var @(Value Z) "x" `App` Val 0)
+      cTrue
+      (If (Var @(Value Z) "x" `Less` Val 0)
+        cTrue
+        cFalse
+      )
+      )
+  , "sum"    := Lambda @(Value Z) "x" 
+      ( If (Var @(Value Z) "x" `Less` Val 0)
+        (Val 0)
+        (  Var @(Value Z) "x" 
+          `Minus` 
+          ( Minus (Val 0)
+            $ Var @(Value Z ~> Value Z) "sum" `App`  (Var @(Value Z) "x" `Minus` Val 1)
+          ) 
+        )
+
+      )
+  ]

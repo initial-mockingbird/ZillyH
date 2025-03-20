@@ -1,0 +1,25 @@
+Z x0 := 5
+Z x1 := 6
+Z x2 := 5
+lazy Z z0 := 7
+lazy Z z1 := 8
+lazy Z z2 := 7
+lazy (lazy Z) a0 := 7
+lazy (lazy Z) a1 := 8
+lazy (lazy Z) a2 := 7
+formula(eq)
+x0 = x0
+x0 = x2
+x2 = x0
+x0 = x1
+x1 = x0
+z0 = z0
+z0 = z2
+z2 = z0
+z0 = z1
+z1 = z0
+a0 = a0
+a0 = a2
+a2 = a0
+a0 = a1
+a1 = a0

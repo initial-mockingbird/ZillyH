@@ -1,0 +1,7 @@
+Lazy<Int> x := 5;
+Lazy<Int> y := '5';
+Int zz       := 10;
+Lazy<Int> z0 := zz;
+Lazy<Int> z1 := 'zz';
+Lazy<Int> z2 := y;
+Int -> Int f2 := /. x : Lazy<Lazy<Int>> => 10;

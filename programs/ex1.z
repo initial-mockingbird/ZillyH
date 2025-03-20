@@ -1,0 +1,5 @@
+Z => Z => Z minus := fn (Z x) -> fun (Z y) => int -> x - 5;
+Z z := 43;
+minus(z)(1);
+z := minus(z)(1);
+z;

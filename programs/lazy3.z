@@ -1,0 +1,8 @@
+Z x := 5;
+lazy Z lx0 := 'x';
+lazy Z lx1 := formula(lx0);
+lx0
+lx1
+x := 6;
+lx0 
+lx1

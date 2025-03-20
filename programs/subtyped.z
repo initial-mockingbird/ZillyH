@@ -1,0 +1,2 @@
+Z => lazy Z f := fn(lazy Z x) -> x;
+f(5);

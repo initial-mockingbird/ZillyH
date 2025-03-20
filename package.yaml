@@ -1,0 +1,122 @@
+name:                Haskell 
+version:             0.1.0.0
+github:              "githubuser/ICFP2024"
+license:             BSD-3-Clause
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2024 Author name here"
+
+extra-source-files:
+- README.md
+- CHANGELOG.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/ICFP2024#readme>
+
+dependencies:
+  - base >= 4.7 && < 5
+  - containers
+  - mtl
+  - transformers
+  - parsec
+  - pretty
+  - text >= 1.2
+  - jsaddle
+  - jsaddle-wasm
+  - singletons
+  - singletons-base
+  - singletons-th == 3.4
+  - ghc-experimental
+  - template-haskell
+  # - random
+
+flags:
+  WASM:
+    description: "target WASM architecture"
+    manual: true
+    default: false
+
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+library:
+  source-dirs: 
+    - src
+
+  when:
+    condition: flag(WASM)
+    cpp-options: -DWASM
+
+
+executables:
+  Haskell-exe:
+    main:                Main.hs
+    source-dirs:         app
+    when:
+        condition: flag(WASM)
+        then:
+          ghc-options:
+            - -no-hs-main
+            - -optl-mexec-model=reactor
+            - -optl-Wl,--export=cmain
+            - -O2
+            
+          cpp-options: -DWASM
+        else:
+          ghc-options:
+            - -threaded
+            - -rtsopts
+            - -with-rtsopts=-N
+ 
+    dependencies:
+    - Haskell
+     
+  WASM:
+    main:                WASM.hs
+    source-dirs:         wasm
+    when:
+        condition: flag(WASM)
+        then:
+          ghc-options:
+            - -no-hs-main
+            - -optl-mexec-model=reactor
+            - -optl-Wl,--export=cmain
+            - -O2
+            
+          cpp-options: -DWASM
+        else:
+          ghc-options:
+            - -threaded
+            - -rtsopts
+            - -with-rtsopts=-N
+      
+
+    dependencies:
+    - Haskell
+
+tests:
+  Haskell-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - Haskell 
+    - HTF

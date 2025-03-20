@@ -1,0 +1,36 @@
+(1,2)
+Z x := 9;
+Z y := 0;
+(Z,Z) zs := (2,3);
+(Z,lazy<Z>) zlx := (2+1,'x');
+(lazy<Z>,Z) lzx := ('y',3*9);
+(lazy<Z>,lazy<Z>) llx := ('y+100','x');
+Z llx1 := fst(llx);
+Z llx2 := snd(llx);
+zs
+zlx
+lzx 
+llx 
+llx1
+llx2
+x := x + 1;
+y := y + 500;
+llx1 := fst(llx);
+llx2 := snd(llx);
+zs
+zlx
+lzx
+llx
+llx1
+llx2
+fst(llx)
+formula(llx)
+zs := (snd(zs),fst(zs));
+(Z,Z) => (Z,Z) swapZ := fn((Z,Z) t) -> (snd(t),fst(t));
+swapZ(zs)
+swapZ(swapZ(zs))
+zs := (42,snd(zs));
+(lazy<Z>,lazy<Z>) p := ('6*7','fst(p)');
+(lazy<Z>,Z) p0 := ('6*7',fst(p));
+p
+p0

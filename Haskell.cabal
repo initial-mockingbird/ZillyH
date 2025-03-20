@@ -1,0 +1,206 @@
+cabal-version: 2.2
+
+-- This file has been generated from package.yaml by hpack version 0.36.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           Haskell
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/ICFP2024#readme>
+homepage:       https://github.com/githubuser/ICFP2024#readme
+bug-reports:    https://github.com/githubuser/ICFP2024/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2024 Author name here
+license:        BSD-3-Clause
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    CHANGELOG.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/ICFP2024
+
+flag WASM
+  description: target WASM architecture
+  manual: True
+  default: False
+
+library
+  exposed-modules:
+      Control.Monad.Random
+      Control.Monad.Reader
+      Data.Nat
+      Data.Ord.Singletons
+      Data.Proof
+      Fun
+      Inequality
+      InequalityFamily
+      Parser.Classic.ZillyParser
+      Parser.ClassicPlus.ZillyPlusParser
+      Parser.Numbers
+      Parser.ParserZ
+      Parser.Utilities
+      Utilities.Codes
+      Utilities.LensM
+      Utilities.ShowM
+      Utilities.TypedMap
+      Utilities.TypedMapPlus
+      Zilly.ADT.Action
+      Zilly.ADT.ActionPlus
+      Zilly.ADT.Arithmetic
+      Zilly.ADT.Array
+      Zilly.ADT.Comparison
+      Zilly.ADT.Error
+      Zilly.ADT.Expression
+      Zilly.ADT.ExpressionPlus
+      Zilly.Classic.Action
+      Zilly.Classic.Expression
+      Zilly.Classic.Interpreter
+      Zilly.Classic.Runner
+      Zilly.Classic.TypeCheck
+      Zilly.Classic.TypeCheck2
+      Zilly.Classic1.ADT.Action
+      Zilly.Classic1.ADT.Expression
+      Zilly.Classic1.ADT.TypeCheck
+      Zilly.Classic1.Environment.TypedMap
+      Zilly.Classic1.Newtypes
+      Zilly.Classic1.Parser
+      Zilly.Classic1.Parsing.Utilities
+      Zilly.Classic1.Runner
+      Zilly.Classic1.Types
+      Zilly.RValue
+      Zilly.RValuePlus
+      Zilly.Types
+      Zilly.Upcast
+      Zilly.UpcastPlus
+      Zilly.ZillyPlus.Arithmetic
+      Zilly.ZillyPlus.Array
+      Zilly.ZillyPlus.Comparison
+      Zilly.ZillyPlus.Error
+      Zilly.ZillyPlus.Expression
+      Zilly.ZillyPlus.Interpreter
+      Zilly.ZillyPlus.Tower
+      Zilly.ZillyPlus.TypeCheck
+  other-modules:
+      Paths_Haskell
+  autogen-modules:
+      Paths_Haskell
+  hs-source-dirs:
+      src
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , ghc-experimental
+    , jsaddle
+    , jsaddle-wasm
+    , mtl
+    , parsec
+    , pretty
+    , singletons
+    , singletons-base
+    , singletons-th ==3.4
+    , template-haskell
+    , text >=1.2
+    , transformers
+  default-language: Haskell2010
+  if flag(WASM)
+    cpp-options: -DWASM
+
+executable Haskell-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_Haskell
+  autogen-modules:
+      Paths_Haskell
+  hs-source-dirs:
+      app
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      Haskell
+    , base >=4.7 && <5
+    , containers
+    , ghc-experimental
+    , jsaddle
+    , jsaddle-wasm
+    , mtl
+    , parsec
+    , pretty
+    , singletons
+    , singletons-base
+    , singletons-th ==3.4
+    , template-haskell
+    , text >=1.2
+    , transformers
+  default-language: Haskell2010
+  if flag(WASM)
+    ghc-options: -no-hs-main -optl-mexec-model=reactor -optl-Wl,--export=cmain -O2
+    cpp-options: -DWASM
+  else
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+
+executable WASM
+  main-is: WASM.hs
+  other-modules:
+      Paths_Haskell
+  autogen-modules:
+      Paths_Haskell
+  hs-source-dirs:
+      wasm
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  build-depends:
+      Haskell
+    , base >=4.7 && <5
+    , containers
+    , ghc-experimental
+    , jsaddle
+    , jsaddle-wasm
+    , mtl
+    , parsec
+    , pretty
+    , singletons
+    , singletons-base
+    , singletons-th ==3.4
+    , template-haskell
+    , text >=1.2
+    , transformers
+  default-language: Haskell2010
+  if flag(WASM)
+    ghc-options: -no-hs-main -optl-mexec-model=reactor -optl-Wl,--export=cmain -O2
+    cpp-options: -DWASM
+  else
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+
+test-suite Haskell-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Classic.Parser.QuickCheck
+      Classic.TypeChecker.QuickCheck
+      Paths_Haskell
+  autogen-modules:
+      Paths_Haskell
+  hs-source-dirs:
+      test
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HTF
+    , Haskell
+    , base >=4.7 && <5
+    , containers
+    , ghc-experimental
+    , jsaddle
+    , jsaddle-wasm
+    , mtl
+    , parsec
+    , pretty
+    , singletons
+    , singletons-base
+    , singletons-th ==3.4
+    , template-haskell
+    , text >=1.2
+    , transformers
+  default-language: Haskell2010

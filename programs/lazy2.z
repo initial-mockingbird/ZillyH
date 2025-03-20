@@ -1,0 +1,21 @@
+Z x0 := 5;
+Z x1 := 6;
+lazy (lazy Z) l0 := x0;
+lazy (lazy Z) l1 := 'x0';
+lazy (lazy Z) l2 := ''x0 + x1'';
+lazy (lazy Z) l3 := formula(x0);
+lazy (lazy Z) l4 := formula(l0);
+lazy (lazy Z) l5 := formula(l1);
+lazy (lazy Z) l6 := formula(l2);
+lazy (lazy Z) l7 := formula(l6);
+lazy (lazy Z) l8 := 'formula(l1) - 1';
+formula(x0)
+formula(x1)
+formula(l0)
+formula(l1)
+formula(l2)
+formula(l3)
+formula(l4)
+formula(l5)
+formula(l6)
+formula(l7)

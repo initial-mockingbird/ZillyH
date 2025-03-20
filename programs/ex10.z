@@ -1,0 +1,8 @@
+Int -> Int -> Int f := /. x : Int => /. y : Int => x-y ;
+Int -> Int f1 := f(5);
+Int z := 5;
+Int -> Int f2 := f(z);
+Int l0 := f1(z);
+Int l1 := f2(5);
+print(l0);
+print(l1);
