@@ -6,7 +6,6 @@ default: build
 [private]
 _build_wasm o='./dist' package='WASM':
   ./build_scripts/build_wasm {{o}} {{package}}
-  cp ./dist/bin.wasm ../src/assets/zvm/wasm/bin.wasm
 
 [group('build')]
 [private]

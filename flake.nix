@@ -1,6 +1,7 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    # nixpkgs.url = "github:nixos/nixpkgs/b75693fb46bfaf09e662d09ec076c5a162efa9f6";
     flake-parts.url = "github:hercules-ci/flake-parts";
     # haskell-flake.url = "github:srid/haskell-flake";
     ghc-wasm.url = "gitlab:haskell-wasm/ghc-wasm-meta?host=gitlab.haskell.org";

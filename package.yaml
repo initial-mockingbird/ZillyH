@@ -1,4 +1,4 @@
-name:                Haskell 
+name:                ZillyH 
 version:             0.1.0.0
 github:              "githubuser/ICFP2024"
 license:             BSD-3-Clause
@@ -26,9 +26,9 @@ dependencies:
   - transformers
   - parsec
   - pretty
-  - text >= 1.2
-  - jsaddle
-  - jsaddle-wasm
+  - text >= 1.2 
+  - jsaddle 
+  - jsaddle-wasm 
   - singletons
   - singletons-base
   - singletons-th == 3.4
@@ -84,7 +84,7 @@ executables:
             - -with-rtsopts=-N
  
     dependencies:
-    - Haskell
+    - ZillyH
      
   WASM:
     main:                WASM.hs
@@ -107,7 +107,7 @@ executables:
       
 
     dependencies:
-    - Haskell
+    - ZillyH
 
 tests:
   Haskell-test:
@@ -118,5 +118,5 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - Haskell 
+    - ZillyH 
     - HTF

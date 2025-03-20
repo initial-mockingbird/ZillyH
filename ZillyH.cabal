@@ -4,7 +4,7 @@ cabal-version: 2.2
 --
 -- see: https://github.com/sol/hpack
 
-name:           Haskell
+name:           ZillyH
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/ICFP2024#readme>
 homepage:       https://github.com/githubuser/ICFP2024#readme
@@ -85,9 +85,9 @@ library
       Zilly.ZillyPlus.Tower
       Zilly.ZillyPlus.TypeCheck
   other-modules:
-      Paths_Haskell
+      Paths_ZillyH
   autogen-modules:
-      Paths_Haskell
+      Paths_ZillyH
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
@@ -113,14 +113,14 @@ library
 executable Haskell-exe
   main-is: Main.hs
   other-modules:
-      Paths_Haskell
+      Paths_ZillyH
   autogen-modules:
-      Paths_Haskell
+      Paths_ZillyH
   hs-source-dirs:
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      Haskell
+      ZillyH
     , base >=4.7 && <5
     , containers
     , ghc-experimental
@@ -145,14 +145,14 @@ executable Haskell-exe
 executable WASM
   main-is: WASM.hs
   other-modules:
-      Paths_Haskell
+      Paths_ZillyH
   autogen-modules:
-      Paths_Haskell
+      Paths_ZillyH
   hs-source-dirs:
       wasm
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      Haskell
+      ZillyH
     , base >=4.7 && <5
     , containers
     , ghc-experimental
@@ -180,15 +180,15 @@ test-suite Haskell-test
   other-modules:
       Classic.Parser.QuickCheck
       Classic.TypeChecker.QuickCheck
-      Paths_Haskell
+      Paths_ZillyH
   autogen-modules:
-      Paths_Haskell
+      Paths_ZillyH
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HTF
-    , Haskell
+    , ZillyH
     , base >=4.7 && <5
     , containers
     , ghc-experimental
