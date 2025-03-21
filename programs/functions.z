@@ -1,8 +1,8 @@
 Z => Z f0           := fn(Z x) -> x;
-Z => lazy Z f1      := fn(Z x) -> x; 
-Z => lazy Z f2      := fn(Z x) -> 'x'; 
-Z => lazy Z f3      := fn(Z x) -> formula(x);
-lazy Z => Z f4      := fn(lazy Z x) -> x;
-lazy Z => lazy Z f5 := fn(lazy Z x) -> x; 
-lazy Z => lazy Z f6 := fn(lazy Z x) -> 'x'; 
-lazy Z => lazy Z f7 := fn(lazy Z x) -> formula(x); 
+Z => lazy<Z> f1      := fn(Z x) -> x; 
+Z => lazy<Z> f2      := fn(Z x) -> 'x'; 
+Z => lazy<Z> f3      := fn(Z x) -> formula(x);
+lazy<Z> => Z f4      := fn(lazy<Z> x) -> x;
+lazy<Z> => lazy<Z> f5 := fn(lazy<Z> x) -> x; 
+lazy<Z> => lazy<Z> f6 := fn(lazy<Z> x) -> 'x'; 
+lazy<Z> => lazy<Z> f7 := fn(lazy<Z> x) -> formula(x); 

@@ -375,7 +375,7 @@ typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg]) = do
   MkSomeExpression arg' <- withExpectedType Nothing $ fst <$> typeCheckExpr arg 
   case arg' of 
     Var @ltype l -> case expectedType env of 
-      Nothing -> trace ("AAAAAAAAA: " <> show (demote @ltype)) pure (MkSomeExpression $ Formula l, demote @ltype)
+      Nothing ->  pure (MkSomeExpression $ Formula l, demote @ltype)
 
       Just et -> case toSing et of 
         SomeSing @_ @st st 

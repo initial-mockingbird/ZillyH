@@ -1,2 +1,2 @@
-Z => lazy Z f := fn(lazy Z x) -> x;
-f(5);
+Z => lazy<Z> f := fn(lazy<Z> x) => Z -> x;
+f(5)

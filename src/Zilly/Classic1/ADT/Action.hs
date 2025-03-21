@@ -38,7 +38,6 @@ evalA :: Effects m => A m -> m (Either GammaErrors (TypeRepMap (E m), A m))
 evalA (Print a) = evalE a >>= \case  
   MkSomeExpression a' -> ask >>= \env -> (pure . pure) (env, Print a')
 evalA a@(Assign @ltype x y) = withSingIFtype @ltype $ do 
-  liftIO . putStrLn $ "aqui"
   env0 <- ask 
   env1 <- declare @(Ftype ltype) (varNameM x) env0 
   case env1 of 

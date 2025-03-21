@@ -31,6 +31,4 @@ swapZ(zs)
 swapZ(swapZ(zs))
 zs := (42,snd(zs));
 (lazy<Z>,lazy<Z>) p := ('6*7','fst(p)');
-(lazy<Z>,Z) p0 := ('6*7',fst(p));
 p
-p0
