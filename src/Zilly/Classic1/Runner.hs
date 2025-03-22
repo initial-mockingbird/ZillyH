@@ -46,6 +46,7 @@ import Control.Applicative (Alternative)
 import Debug.Trace (trace)
 import Control.Monad.Random 
 import Control.Monad.State
+import Data.Default
 
 data GammaEnv m = GammaEnv
   { typingEnv :: TypeCheckEnv m 
@@ -139,6 +140,8 @@ iMap = do
 
     mkStoreFun x y = (x,MkAny y)
 
+instance (Effects m) => Default (m (TypeRepMap (E m))) where 
+  def = valueStore <$> liftIO iMap
     
 newtype ErrorLog' a = ErrorLog [a] 
   deriving newtype (Semigroup, Monoid,Functor,Applicative)
@@ -335,6 +338,12 @@ ex9 ::  IO ()
 ex9 = do 
   i  <- buildInterpreter 
   fc <- lines <$> readFile "./programs/tuples.z"
+  traverse_ (putStrLn <=< i) fc
+
+ex10 ::  IO ()
+ex10 = do 
+  i  <- buildInterpreter 
+  fc <- lines <$> readFile "./programs/reset.z"
   traverse_ (putStrLn <=< i) fc
 
 

@@ -625,6 +625,7 @@ typeCheckP0 ::
   ) 
   => EPrec ParsingStage 0 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
 typeCheckP0 (OfHigher0 e) = typeCheckExpr e
+
 -----------------------------
 -- TypeCheck Actions 
 -----------------------------
@@ -672,12 +673,17 @@ typeCheckA0 (ZP.Assign (yieldVarName -> Just x) e bk) = withExpectedType Nothing
           _ -> do 
             (tell . pure) (bk, TypeMismatch' (ExpectedType $ show tt) (ActualType . show $ demote @e'))
             pure ABottom 
+typeCheckA0 (ZP.SysCommand "reset" _) = runAndReturnEnv . pure $ SysCommand "reset"
+typeCheckA0 (ZP.SysCommand s bk) = runAndReturnEnv $ do 
+  (tell . pure) (bk, NonImplementedFeature  $ "sys command: " <> show s <> ".")
+  pure ABottom
 typeCheckA0 (ZP.Decl _ _ _ bk) =  runAndReturnEnv $ do 
   (tell . pure) (bk, NonImplementedFeature  "Non string LValues.")
   pure ABottom
 typeCheckA0 (ZP.Assign _ _ bk) = runAndReturnEnv $ do 
   (tell . pure) (bk, NonImplementedFeature  "Non string LValues.")
   pure ABottom
+
 
 typeCheckA1 :: 
   ( Effects m
@@ -700,9 +706,13 @@ typeCheckA1 (ZP.Seq _ a as) = fst <$> typeCheckA0 a >>= \case
   a'@(Print {}) -> case as of 
     [] -> runAndReturnEnv $ pure [a']
     (a'':as') -> (\(xs,env) -> (a' :xs,env)) <$> typeCheckA1 (ZP.MkSeq a'' as')
+  a'@(SysCommand {}) -> case as of 
+    [] -> runAndReturnEnv $ pure [a']
+    (a'':as') -> (\(xs,env) -> (a' :xs,env)) <$> typeCheckA1 (ZP.MkSeq a'' as')
   a'@(ABottom) -> case as of 
     [] -> runAndReturnEnv $ pure [a']
     (a'':as') -> (\(xs,env) -> (a' :xs,env)) <$> typeCheckA1 (ZP.MkSeq a'' as')
+
 
 -----------------------------
 -- Aux Functions 

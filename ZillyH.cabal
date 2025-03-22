@@ -32,6 +32,7 @@ library
   exposed-modules:
       Control.Monad.Random
       Control.Monad.Reader
+      Data.Default
       Data.Nat
       Data.Ord.Singletons
       Data.Proof

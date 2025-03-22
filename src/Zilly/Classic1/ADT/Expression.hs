@@ -122,7 +122,7 @@ unsafeCoerceExpression (MkSomeExpression @a' e) = case decideEquality (sing @a) 
 evalE :: forall a m. (SingI a, Effects m) => E m a -> m (SomeExpression m)
 evalE e@(Val {})  = pure $ MkSomeExpression e
 evalE  (Var l )   = ask >>= getL l >>= \case 
-  Left e -> trace "aca" $ pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
+  Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
   Right a -> evalE a
 evalE (Minus l r) = do 
   MkSomeExpression ml' <-  evalE l
@@ -325,7 +325,7 @@ instance Show (E m a) where
     Defer  v -> showString "'" . showsPrec 11 v . showString "'"
     LazyC _ e -> showsPrec p e -- showChar '<' . showsPrec 10 e . showString  ", " . showsPrec 10 env . showChar '>'
     Formula  e -> showString "formula(" . (shows . UT . varNameM) e . showChar ')'
-    Subtyped  e ->  showString "@@" . showsPrec p e
+    Subtyped  e ->  showsPrec p e --showString "@@" . showsPrec p e
     Minus  a b -> showParen (p > 6) $ showsPrec 6 a . showString " - " . showsPrec 7 b
     Less  a b -> showParen (p > 10) $ showsPrec 4 a . showString " < " . showsPrec 5 b
     Random a  -> showString "random(" . shows a . showChar ')'

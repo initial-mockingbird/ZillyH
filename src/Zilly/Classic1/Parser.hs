@@ -942,15 +942,17 @@ data A0 ctx
   = Decl T.Types (Expr ctx) (Expr ctx) (ADeclX ctx)
   | Assign (Expr ctx) (Expr ctx)     (AAssignX ctx)
   | Print (Expr ctx)           (APrintX ctx)
+  | SysCommand String (SysCommandX ctx)
 
-type family ADeclX (ctx :: Type) :: Type
-type family AAssignX (ctx :: Type) :: Type 
-type family APrintX (ctx :: Type) :: Type 
+type family ADeclX      (ctx :: Type) :: Type
+type family AAssignX    (ctx :: Type) :: Type 
+type family APrintX     (ctx :: Type) :: Type
+type family SysCommandX (ctx :: Type) :: Type 
 
-type instance ADeclX ParsingStage   = BookeepInfo
-type instance AAssignX ParsingStage = BookeepInfo
-type instance APrintX ParsingStage  = BookeepInfo
-
+type instance ADeclX     ParsingStage   = BookeepInfo
+type instance AAssignX    ParsingStage  = BookeepInfo
+type instance APrintX     ParsingStage  = BookeepInfo
+type instance SysCommandX ParsingStage  = BookeepInfo 
 
 instance A0 ctx PU.< A1 ctx where
   upcast = OfA0
@@ -967,9 +969,18 @@ mkDecl pType' ident' expr'
 mkAssign :: Parser (Expr ParsingStage) -> Parser (Expr ParsingStage) -> Parser (A0 ParsingStage)
 mkAssign ident' expr' = mkBookeepInfo <**> (Assign <$> ident' <* token (string ":=") <*> expr')
 
+mkSysCommand :: Parser (A0 ParsingStage) 
+mkSysCommand = special <|> normal 
+  where 
+    special :: Parser (A0 ParsingStage)
+    special = mkBookeepInfo <**> ("." $> SysCommand "reset")
+    normal :: Parser (A0 ParsingStage)
+    normal  = mkBookeepInfo <**> (string "sys." $> SysCommand <*> ident <* optional "()" <* optional ";")
+
 a0 :: Parser (A0 ParsingStage)
 a0
-  =   flip Print <$> mkBookeepInfo <*> try (fully expr)
+  =   mkSysCommand 
+  <|> flip Print <$> mkBookeepInfo <*> try (fully expr)
   <|> try (mkDecl (t2NT <$> pTypes) expr expr)
   <|> mkAssign expr expr
 
@@ -1113,6 +1124,8 @@ instance SingI n => Show (TPrec ctx n) where
     (_, Just Refl) -> \case 
       OfHigherTPrec0 a -> shows a
       TArrow _ a b -> showParen (p > 0) $ shows a . showString " => " . shows b
+    _ -> const $ showString "Precedence not defined"
+
 
 instance SingI n => Show (EPrec ctx n) where 
 
@@ -1181,6 +1194,7 @@ instance SingI n => Show (EPrec ctx n) where
         PDouble _ n -> shows n
         PBool _ n -> shows n
         PVar _ n -> showString n
+        PArray _ [] -> showString "[]"
         PArray _ (x:xs) -> showString "[" 
           . (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs) 
           . showString "]"
@@ -1190,12 +1204,14 @@ instance SingI n => Show (EPrec ctx n) where
         PIf _ (a, b, c)
           -> showString "if(" . shows a . showString ", " . shows b
           . showString ", " . shows c . showString ")"
+      _ -> const $ showString "Precedence not defined"
 
           
 instance Show (A0 ctx) where 
   show (Decl t e e' _) = show t <> " " <> show e <> " := " <> show e' <> ";"
   show (Assign e e' _) = show e <> " := " <> show e' <> ";"
   show (Print e _)     = show e
+  show (SysCommand e _) = "sys." <> e <> "();"
 
 instance Show (A1 ctx) where 
   show (OfA0 x) = show x
