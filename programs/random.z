@@ -1,0 +1,4 @@
+Z x := 5;
+random(5)
+random(x)
+random(5)

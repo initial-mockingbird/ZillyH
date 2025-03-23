@@ -26,9 +26,7 @@ llx2
 fst(llx)
 formula(llx)
 zs := (snd(zs),fst(zs));
-(Z,Z) => (Z,Z) swapZ := fn((Z,Z) t) -> (snd(t),fst(t));
-swapZ(zs)
-swapZ(swapZ(zs))
+(Z,Z) => (Z,Z) fZ := fn((Z,Z) t) -> (snd(t),fst(t));
+fZ(zs)
+fZ(fZ(zs))
 zs := (42,snd(zs));
-(lazy<Z>,lazy<Z>) p := ('6*7','fst(p)');
-p

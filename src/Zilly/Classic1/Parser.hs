@@ -975,7 +975,7 @@ mkSysCommand = special <|> normal
     special :: Parser (A0 ParsingStage)
     special = mkBookeepInfo <**> ("." $> SysCommand "reset")
     normal :: Parser (A0 ParsingStage)
-    normal  = mkBookeepInfo <**> (string "sys." $> SysCommand <*> ident <* optional "()" <* optional ";")
+    normal  = mkBookeepInfo <**> (token $ string "sys." $> SysCommand <*> ident <* optional "()" <* optional ";")
 
 a0 :: Parser (A0 ParsingStage)
 a0

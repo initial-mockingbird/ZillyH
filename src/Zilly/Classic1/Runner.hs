@@ -346,6 +346,12 @@ ex10 = do
   fc <- lines <$> readFile "./programs/reset.z"
   traverse_ (putStrLn <=< i) fc
 
+ex11 ::  IO ()
+ex11 = do 
+  i  <- buildInterpreter 
+  fc <- lines <$> readFile "./programs/random.z"
+  traverse_ (putStrLn <=< i) fc
+
 
 nm :: IO ()
 nm = do 

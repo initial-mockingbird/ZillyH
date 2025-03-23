@@ -3,7 +3,7 @@ Z y := 6;
 x
 y
 and(x,y)
-sys.reset
+sys.reset()
 x
 y
 and(1,2)

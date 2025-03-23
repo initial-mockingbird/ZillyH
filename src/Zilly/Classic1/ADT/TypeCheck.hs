@@ -638,7 +638,7 @@ typeCheckA0 ::
   ) 
   => ZP.A0 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (A m, TypeCheckEnv m)
 typeCheckA0 (ZP.Print e _) = withExpectedType Nothing $ fst <$> typeCheckExpr e >>= \case 
-  MkSomeExpression e' -> ask >>= \env -> pure (Print e',env) 
+  MkSomeExpression e' -> ask >>= \env -> pure (Print e',env)
 typeCheckA0 (ZP.Decl tt (yieldVarName  -> Just x) e bk) 
   =  withExpectedType Nothing $ case toSing tt of 
     SomeSing @_ @t' t' 

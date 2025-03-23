@@ -66,6 +66,7 @@ library
       Zilly.Classic1.ADT.Action
       Zilly.Classic1.ADT.Expression
       Zilly.Classic1.ADT.TypeCheck
+      Zilly.Classic1.Environment.CC
       Zilly.Classic1.Environment.TypedMap
       Zilly.Classic1.Newtypes
       Zilly.Classic1.Parser
