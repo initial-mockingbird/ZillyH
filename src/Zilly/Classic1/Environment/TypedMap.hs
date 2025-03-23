@@ -95,6 +95,11 @@ empty = TypeRepMap M.empty
 scope :: TypeRepMap f -> [String]
 scope (TypeRepMap m) = M.keys m 
 
+isInScope :: String -> TypeRepMap ctx -> Bool 
+isInScope s (TypeRepMap m) = s `M.member` m 
+
+
+
 insert :: forall a f m.  
   ( SingI a
   , MonadIO m

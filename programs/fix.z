@@ -1,0 +1,4 @@
+( Z => Z ) => Z => Z F := fn(Z => Z f) -> fn(Z n) -> if(n<2,n,n*f(n-1));
+((Z => Z) => (Z => Z)) => Z => Z fix := fn( (Z => Z) => (Z => Z) f) -> fn(Z x) -> f(fix(f))(x);
+(Z => Z) => (Z => Z) factabs := fn(Z => Z fact) -> fn(Z x) -> if(x < 2,1,x * fact(x-1) );
+fix(factabs)(5)

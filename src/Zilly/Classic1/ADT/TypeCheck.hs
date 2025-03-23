@@ -582,7 +582,7 @@ typeCheckP1 (PLambda bk [(yieldVarName -> Just arg, gltype)] mgbody body) = ask 
       $ withSingI gltype' 
       $ do 
         MkSomeExpression @body' body'
-          <- withDeclaredVar arg gltype 
+          <- withDeclaredFreshVar arg gltype 
           $ withExpectedType ( mgbody  <|> Just ebody0)
           $ fst <$> typeCheckExpr body 
         case (downcastable @eltype @gltype', upcastable @ebody @body' ) of 
@@ -603,7 +603,7 @@ typeCheckP1 (PLambda bk [(yieldVarName -> Just arg, gltype)] mgbody body) = ask 
 
   Nothing ->  do
     MkSomeExpression @body' body'
-      <- withDeclaredVar arg gltype 
+      <- withDeclaredFreshVar arg gltype 
       $ withExpectedType ( mgbody )
       $ fst <$> typeCheckExpr body 
     case toSing gltype of 
@@ -639,12 +639,12 @@ typeCheckA0 ::
   => ZP.A0 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (A m, TypeCheckEnv m)
 typeCheckA0 (ZP.Print e _) = withExpectedType Nothing $ fst <$> typeCheckExpr e >>= \case 
   MkSomeExpression e' -> ask >>= \env -> pure (Print e',env)
-typeCheckA0 (ZP.Decl tt (yieldVarName  -> Just x) e bk) 
-  =  withExpectedType Nothing $ case toSing tt of 
+typeCheckA0 (ZP.Decl tt (yieldVarName  -> Just x) e bk) = ask >>= \env ->
+  withExpectedType Nothing $ case toSing tt of 
     SomeSing @_ @t' t' 
       -> withSingI t' 
       $ withExpectedType (Just tt) 
-      $ withDeclaredVar x tt
+      $ withDeclaredVar (ABottom,env) bk x tt
       $ runAndReturnEnv  
       $ fst <$> typeCheckExpr e >>= \case 
         MkSomeExpression @e' e' -> case upcastable @t' @e' of 
@@ -722,13 +722,35 @@ runAndReturnEnv :: Monad m => ReaderT env m a -> ReaderT env m (a,env)
 runAndReturnEnv ma = ask >>= \env -> (,env) <$> ma 
 
 
-withDeclaredVar :: Monad m => String -> Types -> ReaderT (TypeCheckEnv f) m a -> ReaderT (TypeCheckEnv f) m a
-withDeclaredVar x t = local (\env -> env{getGamma = M.insert x t $ getGamma env}) 
+withDeclaredFreshVar :: Monad m 
+  => String -> Types -> ReaderT (TypeCheckEnv f) m a -> ReaderT (TypeCheckEnv f) m a
+withDeclaredFreshVar x t = local (\env -> env{getGamma = M.insert x t $ getGamma env}) 
+
+withDeclaredVar :: 
+  ( Monad m 
+  , Monoid (w (BookeepInfo,TypeCheckError))
+  , Applicative w
+  )
+  => a 
+  -> BookeepInfo 
+  -> String 
+  -> Types 
+  -> ReaderT (TypeCheckEnv f) (WriterT (w (BookeepInfo,TypeCheckError)) m) a 
+  -> ReaderT (TypeCheckEnv f) (WriterT (w (BookeepInfo,TypeCheckError)) m) a
+withDeclaredVar def bk x t ma = do
+  env <- getGamma <$> ask 
+  a <- local (\env -> env{getGamma = M.insert x t $ getGamma env}) ma
+  case not $ M.member  x  env  of 
+    True -> pure a 
+    False -> do 
+      (tell . pure) (bk, CustomError' $ "Variable re-declaration: " <> x) 
+      pure def
+
 
 
 withVar :: Monad m => String -> Types -> SomeExpression f -> ReaderT (TypeCheckEnv f) m a -> ReaderT (TypeCheckEnv f) m a
 withVar x t e fa
-  = withDeclaredVar x t 
+  = withDeclaredFreshVar x t 
   $ local (\env -> env{getCValues = M.insert x e $ getCValues env}) 
   $ fa
 

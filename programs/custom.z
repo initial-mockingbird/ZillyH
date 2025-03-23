@@ -1,15 +1,16 @@
-lazy<Z> => Z f := fn(lazy<Z> x) -> x;
-Z x := 5;
-lazy<Z> lx := 'x + 10';
-f(lx)
-f(formula(lx))
-lazy<Z> => lazy<Z> f0 := fn(lazy<Z> x) -> formula(x);
-f0(lx)
-f0(formula(lx))
-lazy<Z> lx0 := f0(lx);
-lazy<Z> lx1 := f0(formula(lx));
-formula(lx0)
-formula(lx1)
-x := 10;
-lx0
-lx1
+lazy<Z> => lazy<Z> f := fn(lazy<Z> x) -> formula(x);
+lazy<Z> => lazy<Z> g := fn(lazy<Z> x) -> 'x';
+lazy<Z> => lazy<Z> h := fn(lazy<Z> x) -> x;
+Z y := 5;
+lazy<Z> ly := 'y*2';
+f(ly)
+g(ly)
+h(ly)
+f(formula(ly))
+g(formula(ly))
+h(formula(ly))
+f('ly')
+g('ly')
+h('ly')
+lazy<Z> => lazy<Z> h := fn(lazy<Z> x) -> x;
+Z h := 6;
