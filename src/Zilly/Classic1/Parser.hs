@@ -45,7 +45,6 @@ module Zilly.Classic1.Parser where
 import Zilly.Classic1.Parsing.Utilities hiding (type(<))
 import Zilly.Classic1.Parsing.Utilities qualified as PU
 import Parser.Numbers
-import Parser.ParserZ (deserializePacket,Packet',Payload'(..))
 
 import Text.Parsec hiding (token, (<|>))
 
@@ -55,22 +54,16 @@ import Control.Monad
 
 import Data.Functor.Identity
 import Control.Applicative hiding (optional)
-import Data.Coerce
 import GHC.TypeLits.Singletons
 import Prelude.Singletons
-import Data.Kind (Type,Constraint)
+import Data.Kind (Type)
 import Data.Functor
-import Control.Applicative (Alternative(empty))
 import Zilly.Classic1.Newtypes qualified as T
-import Data.Type.Equality (testEquality)
-import Data.Maybe (fromJust)
 import Data.Singletons.TH
 import Data.Singletons.Decide (decideEquality)
 import Unsafe.Coerce (unsafeCoerce)
 import Debug.Trace (trace)
 import GHC.TypeLits (sameNat)
-import Data.Ord.Singletons
-import Data.Eq.Singletons
 import Data.Text qualified as Text
 
 traceSingI :: forall {k} (n :: k) a. (SingKind k, Show (Demote k), SingI n) => a -> a

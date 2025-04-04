@@ -37,7 +37,6 @@ import Zilly.Classic1.Environment.TypedMap
 import Data.Maybe
 import Data.Singletons (SomeSing(..),SingI(..),sing,demote, withSingI, toSing)
 import Control.Applicative (Alternative(..))
-import Zilly.Types qualified as T
 import Data.Singletons.TH ((:~:)(..))
 import Debug.Trace (trace) 
 import Data.List.Singletons hiding (Map)

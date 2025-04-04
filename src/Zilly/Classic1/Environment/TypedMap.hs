@@ -24,25 +24,15 @@ module Zilly.Classic1.Environment.TypedMap where
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import Unsafe.Coerce
 import Type.Reflection 
---import Control.Lens.Lens
-import Utilities.ShowM
-import Zilly.ADT.ExpressionPlus
 import Zilly.Classic1.Newtypes
-import Data.Proof
 
 import Debug.Trace
-import Data.List.NonEmpty ( NonEmpty((:|)) )
-import Data.Foldable1 (foldl1')
 import Control.Concurrent hiding (yield)
 import Control.Monad.IO.Class
-import Control.Monad
-import Control.Applicative hiding (yield)
 import Data.Singletons
 import Data.String (IsString(..))
 import Data.Singletons.Decide 
-import Control.Monad.Reader
 import Data.Kind (Type)
 
 

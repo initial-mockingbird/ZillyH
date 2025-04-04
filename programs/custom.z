@@ -1,16 +1,5 @@
-lazy<Z> => lazy<Z> f := fn(lazy<Z> x) -> formula(x);
-lazy<Z> => lazy<Z> g := fn(lazy<Z> x) -> 'x';
-lazy<Z> => lazy<Z> h := fn(lazy<Z> x) -> x;
 Z y := 5;
-lazy<Z> ly := 'y*2';
-f(ly)
-g(ly)
-h(ly)
-f(formula(ly))
-g(formula(ly))
-h(formula(ly))
-f('ly')
-g('ly')
-h('ly')
-lazy<Z> => lazy<Z> h := fn(lazy<Z> x) -> x;
-Z h := 6;
+(lazy<Z>,lazy<Z>) ly := ('y * 9','y * 9 - 5');
+ly
+y := y + 10;
+ly

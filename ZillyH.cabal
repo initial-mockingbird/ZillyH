@@ -31,38 +31,14 @@ flag WASM
 library
   exposed-modules:
       Control.Monad.Random
-      Control.Monad.Reader
       Data.Default
-      Data.Nat
       Data.Ord.Singletons
       Data.Proof
-      Fun
-      Inequality
-      InequalityFamily
-      Parser.Classic.ZillyParser
-      Parser.ClassicPlus.ZillyPlusParser
       Parser.Numbers
-      Parser.ParserZ
       Parser.Utilities
       Utilities.Codes
       Utilities.LensM
       Utilities.ShowM
-      Utilities.TypedMap
-      Utilities.TypedMapPlus
-      Zilly.ADT.Action
-      Zilly.ADT.ActionPlus
-      Zilly.ADT.Arithmetic
-      Zilly.ADT.Array
-      Zilly.ADT.Comparison
-      Zilly.ADT.Error
-      Zilly.ADT.Expression
-      Zilly.ADT.ExpressionPlus
-      Zilly.Classic.Action
-      Zilly.Classic.Expression
-      Zilly.Classic.Interpreter
-      Zilly.Classic.Runner
-      Zilly.Classic.TypeCheck
-      Zilly.Classic.TypeCheck2
       Zilly.Classic1.ADT.Action
       Zilly.Classic1.ADT.Expression
       Zilly.Classic1.ADT.TypeCheck
@@ -73,19 +49,6 @@ library
       Zilly.Classic1.Parsing.Utilities
       Zilly.Classic1.Runner
       Zilly.Classic1.Types
-      Zilly.RValue
-      Zilly.RValuePlus
-      Zilly.Types
-      Zilly.Upcast
-      Zilly.UpcastPlus
-      Zilly.ZillyPlus.Arithmetic
-      Zilly.ZillyPlus.Array
-      Zilly.ZillyPlus.Comparison
-      Zilly.ZillyPlus.Error
-      Zilly.ZillyPlus.Expression
-      Zilly.ZillyPlus.Interpreter
-      Zilly.ZillyPlus.Tower
-      Zilly.ZillyPlus.TypeCheck
   other-modules:
       Paths_ZillyH
   autogen-modules:
