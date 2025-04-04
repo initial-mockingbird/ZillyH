@@ -40,10 +40,10 @@ Maintainer  : daniel.andres.pinto@gmail.com
 Stability   : experimental
 Portability : POSIX
 -}
-module Zilly.Classic1.Parser where
+module Zilly.Unsugared.Parser where
 
-import Zilly.Classic1.Parsing.Utilities hiding (type(<))
-import Zilly.Classic1.Parsing.Utilities qualified as PU
+import Zilly.Unsugared.Parsing.Utilities hiding (type(<))
+import Zilly.Unsugared.Parsing.Utilities qualified as PU
 import Parser.Numbers
 
 import Text.Parsec hiding (token, (<|>))
@@ -58,7 +58,7 @@ import GHC.TypeLits.Singletons
 import Prelude.Singletons
 import Data.Kind (Type)
 import Data.Functor
-import Zilly.Classic1.Newtypes qualified as T
+import Zilly.Unsugared.Newtypes qualified as T
 import Data.Singletons.TH
 import Data.Singletons.Decide (decideEquality)
 import Unsafe.Coerce (unsafeCoerce)

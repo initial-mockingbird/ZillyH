@@ -26,7 +26,7 @@
 -- Template haskell warnings
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
-module Zilly.Classic1.Newtypes where 
+module Zilly.Classic.Newtypes where 
 
 import Data.Singletons.TH (singletons,genSingletons, promote)
 import Prelude.Singletons hiding (Const)

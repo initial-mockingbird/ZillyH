@@ -38,7 +38,7 @@ Portability : POSIX
 Defines the types of the Zilly language, provides some type level properties
 and a way to inject them via continnuations.
 -}
-module Zilly.Classic1.Types (module Zilly.Classic1.Types) where
+module Zilly.Unsugared.Types (module Zilly.Unsugared.Types) where
 
 
 import Prelude.Singletons

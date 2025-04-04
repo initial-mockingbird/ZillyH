@@ -20,20 +20,20 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TupleSections #-}
 
-module Zilly.Classic1.ADT.TypeCheck where
+module Zilly.Unsugared.ADT.TypeCheck where
 
-import Zilly.Classic1.Newtypes
-import Zilly.Classic1.ADT.Action 
-import Zilly.Classic1.ADT.Expression
-import Zilly.Classic1.Parser hiding (Types(..), mkVar,A1(..),A0(..)) 
-import Zilly.Classic1.Parser qualified as ZP
+import Zilly.Unsugared.Newtypes
+import Zilly.Unsugared.ADT.Action 
+import Zilly.Unsugared.ADT.Expression
+import Zilly.Unsugared.Parser hiding (Types(..), mkVar,A1(..),A0(..)) 
+import Zilly.Unsugared.Parser qualified as ZP
 import Data.Map qualified as M
 import Data.Map (Map)
 import GHC.TypeLits.Singletons
 import Control.Monad.Reader 
 import Control.Monad.Except
 import Control.Monad.Writer.Strict 
-import Zilly.Classic1.Environment.TypedMap 
+import Zilly.Unsugared.Environment.TypedMap 
 import Data.Maybe
 import Data.Singletons (SomeSing(..),SingI(..),sing,demote, withSingI, toSing)
 import Control.Applicative (Alternative(..))

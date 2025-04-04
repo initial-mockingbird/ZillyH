@@ -18,14 +18,14 @@
 {-# LANGUAGE TypeAbstractions #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE LambdaCase #-}
-module Zilly.Classic1.Environment.TypedMap where
+module Zilly.Classic.Environment.TypedMap where
 
 
 import Data.Map (Map)
 import qualified Data.Map as M
 
 import Type.Reflection 
-import Zilly.Classic1.Newtypes
+import Zilly.Classic.Newtypes
 
 import Debug.Trace
 import Control.Concurrent hiding (yield)

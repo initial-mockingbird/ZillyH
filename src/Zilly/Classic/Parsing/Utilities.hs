@@ -27,7 +27,7 @@ Design Patterns for ParsecT String u m Combinators (Functional Pearl)
 ACM ISBN 978-1-4503-8615-9/21/08.
 https://doi.org/10.1145/3471874.3472984
 -}
-module Zilly.Classic1.Parsing.Utilities where
+module Zilly.Classic.Parsing.Utilities where
 
 
 import Text.Parsec hiding (token)

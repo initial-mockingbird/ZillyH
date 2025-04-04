@@ -38,10 +38,10 @@ Check
 https://www.microsoft.com/en-us/research/wp-content/uploads/2016/11/trees-that-grow.pdf
 
 -}
-module Zilly.Classic1.ADT.Expression where
+module Zilly.Classic.ADT.Expression where
 
-import Zilly.Classic1.Newtypes
-import Zilly.Classic1.Environment.TypedMap
+import Zilly.Classic.Newtypes
+import Zilly.Classic.Environment.TypedMap
 import Data.Kind (Type, Constraint)
 import Data.Coerce 
 import Control.Applicative 

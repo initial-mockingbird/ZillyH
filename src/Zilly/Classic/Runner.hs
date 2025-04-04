@@ -21,14 +21,14 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Zilly.Classic1.Runner where
+module Zilly.Classic.Runner where
 
-import Zilly.Classic1.ADT.TypeCheck 
-import Zilly.Classic1.ADT.Action 
-import Zilly.Classic1.ADT.Expression
-import Zilly.Classic1.Newtypes 
-import Zilly.Classic1.Environment.TypedMap 
-import Zilly.Classic1.Parser qualified as P
+import Zilly.Classic.ADT.TypeCheck 
+import Zilly.Classic.ADT.Action 
+import Zilly.Classic.ADT.Expression
+import Zilly.Classic.Newtypes 
+import Zilly.Classic.Environment.TypedMap 
+import Zilly.Classic.Parser qualified as P
 
 import Data.Map.Strict (Map)
 import Data.Map qualified as M

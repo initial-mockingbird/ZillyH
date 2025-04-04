@@ -17,11 +17,11 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TupleSections #-}
 
-module Zilly.Classic1.ADT.Action where
+module Zilly.Classic.ADT.Action where
 
-import Zilly.Classic1.ADT.Expression
-import Zilly.Classic1.Newtypes
-import Zilly.Classic1.Environment.TypedMap
+import Zilly.Classic.ADT.Expression
+import Zilly.Classic.Newtypes
+import Zilly.Classic.Environment.TypedMap
 import Data.Kind (Type)
 import Prelude.Singletons (SingI(..),demote)
 import Control.Monad.Reader
