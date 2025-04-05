@@ -58,7 +58,7 @@ import GHC.TypeLits.Singletons
 import Prelude.Singletons
 import Data.Kind (Type)
 import Data.Functor
-import Zilly.Classic.Newtypes qualified as T
+import Zilly.Unsugared.Newtypes qualified as T
 import Data.Singletons.TH
 import Data.Singletons.Decide (decideEquality)
 import Unsafe.Coerce (unsafeCoerce)

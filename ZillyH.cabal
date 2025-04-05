@@ -39,16 +39,10 @@ library
       Utilities.Codes
       Utilities.LensM
       Utilities.ShowM
-      Zilly.Classic.ADT.Action
-      Zilly.Classic.ADT.Expression
       Zilly.Classic.ADT.TypeCheck
-      Zilly.Classic.Environment.CC
-      Zilly.Classic.Environment.TypedMap
-      Zilly.Classic.Newtypes
       Zilly.Classic.Parser
       Zilly.Classic.Parsing.Utilities
       Zilly.Classic.Runner
-      Zilly.Classic.Types
       Zilly.Unsugared.ADT.Action
       Zilly.Unsugared.ADT.Expression
       Zilly.Unsugared.ADT.TypeCheck
@@ -58,7 +52,6 @@ library
       Zilly.Unsugared.Parser
       Zilly.Unsugared.Parsing.Utilities
       Zilly.Unsugared.Runner
-      Zilly.Unsugared.Types
   other-modules:
       Paths_ZillyH
   autogen-modules:

@@ -24,10 +24,10 @@
 module Zilly.Classic.Runner where
 
 import Zilly.Classic.ADT.TypeCheck 
-import Zilly.Classic.ADT.Action 
-import Zilly.Classic.ADT.Expression
-import Zilly.Classic.Newtypes 
-import Zilly.Classic.Environment.TypedMap 
+import Zilly.Unsugared.ADT.Action 
+import Zilly.Unsugared.ADT.Expression
+import Zilly.Unsugared.Newtypes 
+import Zilly.Unsugared.Environment.TypedMap 
 import Zilly.Classic.Parser qualified as P
 
 import Data.Map.Strict (Map)

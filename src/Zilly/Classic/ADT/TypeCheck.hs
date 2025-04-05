@@ -22,9 +22,9 @@
 
 module Zilly.Classic.ADT.TypeCheck where
 
-import Zilly.Classic.Newtypes
-import Zilly.Classic.ADT.Action 
-import Zilly.Classic.ADT.Expression
+import Zilly.Unsugared.Newtypes
+import Zilly.Unsugared.ADT.Action 
+import Zilly.Unsugared.ADT.Expression
 import Zilly.Classic.Parser hiding (Types(..), mkVar,A1(..),A0(..)) 
 import Zilly.Classic.Parser qualified as ZP
 import Data.Map qualified as M
@@ -33,7 +33,7 @@ import GHC.TypeLits.Singletons
 import Control.Monad.Reader 
 import Control.Monad.Except
 import Control.Monad.Writer.Strict 
-import Zilly.Classic.Environment.TypedMap 
+import Zilly.Unsugared.Environment.TypedMap 
 import Data.Maybe
 import Data.Singletons (SomeSing(..),SingI(..),sing,demote, withSingI, toSing)
 import Control.Applicative (Alternative(..))
