@@ -1,0 +1,17 @@
+Int -> Int -> Lazy<Int> f := /. x : Int => /. y : Int => 'x-y' ;
+Int -> Lazy<Int> f1 := f(5);
+Int z := 5;
+Int -> Lazy<Int> f2 := f(z);
+Lazy<Int> ll0 := f1(z);
+Lazy<Int> ll1 := f2(5);
+Int l0  := ll0;
+Int l1  := ll1;
+Lazy<Int> ll0_ := f(z)(5);
+Lazy<Int> ll1_ := f(5)(z);
+Int l0_  := ll0_;
+Int l1_  := ll1_;
+print(l0);
+print(l1);
+print(l0_);
+print(l1_);
+print(formula(ll0));

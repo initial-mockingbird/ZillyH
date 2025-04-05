@@ -8,7 +8,7 @@ module Main where
 -- import Zilly.Classic.Runner
 import GHC.Wasm.Prim
 import Language.Javascript.JSaddle.Wasm qualified as JSaddle.Wasm
-import Zilly.Classic.Runner (buildInterpreter')
+import Zilly.Runner (buildUniversalInterpreter)
 import GHC.IO
 
 main :: IO ()
@@ -23,7 +23,7 @@ foreign export  javascript cmain :: IO JSVal
 
 cmain :: IO JSVal
 cmain = do
-  f <- buildInterpreter' 
+  f <- buildUniversalInterpreter
   wrapper $ \js -> toJSString <$> f (fromJSString js)
 
 

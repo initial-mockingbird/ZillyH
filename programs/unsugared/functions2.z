@@ -1,0 +1,43 @@
+::zilly
+Z => Z f0           := fn(Z x) -> x;
+Z => Z f1           := fn(Z x) -> formula(x);
+Z => lazy<Z> f2      := fn(Z x) -> x; 
+Z => lazy<Z> f3      := fn(Z x) -> 'x'; 
+Z => lazy<Z> f4      := fn(Z x) -> formula(x);
+lazy<Z> => Z f5      := fn(lazy<Z> x) -> x;
+lazy<Z> => lazy<Z> f6 := fn(lazy<Z> x) -> x; 
+lazy<Z> => lazy<Z> f7 := fn(lazy<Z> x) -> 'x'; 
+lazy<Z> => lazy<Z> f8 := fn(lazy<Z> x) -> formula(x); 
+lazy<lazy<Z>> => lazy<lazy<Z>> f9 := fn(lazy<lazy<Z>> x) -> formula(x); 
+Z y := 5
+lazy<Z> ly := 'minus(y)(1)';
+lazy<lazy<Z>> lly := ''minus(y)(1)'';
+eq(f0(y))(5)
+f1(y)
+f2(y)
+f3(y)
+f4(y)
+f5(y)
+f6(y)
+f7(y)
+f8(y)
+f5(ly)
+f7(ly)
+f8(ly)
+f8(lly)
+lazy<Z> f7y := f7(ly);
+f7y
+y := 0;
+eq(f0(y))(5)
+f3(y)
+f4(y)
+f5(y)
+f7(y)
+f8(y)
+f5(ly)
+f7(ly)
+f8(ly)
+f8(lly)
+f7y := f7(ly);
+f7y
+f9(lly)

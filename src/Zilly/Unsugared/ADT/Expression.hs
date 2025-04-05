@@ -308,26 +308,29 @@ instance Show (E m a) where
     Var  x -> showsPrec p . UT . varNameM $ x
     If  c t f -> showParen (p > 10) $ showString "if( " . shows c . showString ", " . shows t . showString ", " . shows f . showString ")"
     Lambda @ltype x t ->  showParen (p > 9) 
-      $ showString "fn(" 
+      $ showString "λ(" 
       . shows (demote @ltype)
       . showString " "
       . shows (UT $ varNameM  x) 
-      . showString " -> " .  showsPrec 0 t
       . showString ")"
+      . showString " -> " .  showsPrec 0 t
+
     LambdaC @ltype _ x t -> showParen (p > 9)
-      $  showString "fn( " 
+      $  showString "λ( " 
       . shows (demote @ltype)
       . showString " "
       . shows (UT $ varNameM  x) 
-      . showString " -> " .  showsPrec 0 t
       . showString ")"
+      . showString " -> " .  showsPrec 0 t
     App  f a -> showParen (p > 10) $ showsPrec 10 f . showChar '(' . shows a . showChar ')' 
     Defer  v -> showString "'" . showsPrec 11 v . showString "'"
     LazyC _ e -> showsPrec p e -- showChar '<' . showsPrec 10 e . showString  ", " . showsPrec 10 env . showChar '>'
     Formula  e -> showString "formula(" . (shows . UT . varNameM) e . showChar ')'
     Subtyped  e ->  showsPrec p e --showString "@@" . showsPrec p e
-    Minus  a b -> showParen (p > 6) $ showsPrec 6 a . showString " - " . showsPrec 7 b
-    Less  a b -> showParen (p > 10) $ showsPrec 4 a . showString " < " . showsPrec 5 b
+    Minus a b  -> showString "satMinus(" . shows a . showString ")(" . shows b . showString ")"
+    Less  a b  -> showString "satLt(" . shows a . showString ")(" . shows b . showString ")"
+    -- Minus  a b -> showParen (p > 6) $ showsPrec 6 a . showString " - " . showsPrec 7 b
+    -- Less  a b -> showParen (p > 10) $ showsPrec 4 a . showString " < " . showsPrec 5 b
     Random a  -> showString "random(" . shows a . showChar ')'
     Bottom _ _-> showString "BOTTOM"
     MkTuple a b -> showString "(" . shows a . showString ", " . shows b . showString ")"

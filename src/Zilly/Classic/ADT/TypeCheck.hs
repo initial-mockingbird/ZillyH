@@ -40,6 +40,7 @@ import Control.Applicative (Alternative(..))
 import Data.Singletons.TH ((:~:)(..))
 import Debug.Trace (trace) 
 import Data.List.Singletons hiding (Map)
+import Data.Default 
 
 data TypeCheckEnv m = TCE 
   { getGamma     :: Map String Types -- ^ Maps variables to their ltypes 
@@ -634,6 +635,8 @@ typeCheckA0 ::
   ( Effects m
   , Monoid (w (BookeepInfo,TypeCheckError))
   , Applicative w
+  , Default (m (TypeCheckEnv m))
+
   ) 
   => ZP.A0 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (A m, TypeCheckEnv m)
 typeCheckA0 (ZP.Print e _) = withExpectedType Nothing $ fst <$> typeCheckExpr e >>= \case 
@@ -672,7 +675,7 @@ typeCheckA0 (ZP.Assign (yieldVarName -> Just x) e bk) = withExpectedType Nothing
           _ -> do 
             (tell . pure) (bk, TypeMismatch' (ExpectedType $ show tt) (ActualType . show $ demote @e'))
             pure ABottom 
-typeCheckA0 (ZP.SysCommand "reset" _) = runAndReturnEnv . pure $ SysCommand "reset"
+typeCheckA0 (ZP.SysCommand "reset" _) = runAndReturnIEnv . pure $ SysCommand "reset"
 typeCheckA0 (ZP.SysCommand s bk) = runAndReturnEnv $ do 
   (tell . pure) (bk, NonImplementedFeature  $ "sys command: " <> show s <> ".")
   pure ABottom
@@ -688,6 +691,8 @@ typeCheckA1 ::
   ( Effects m
   , Monoid (w (BookeepInfo,TypeCheckError))
   , Applicative w
+  , Default (m (TypeCheckEnv m))
+
   ) 
   => ZP.A1 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) ([A m], TypeCheckEnv m)
 typeCheckA1 (ZP.OfA0 a) = (\(a',env) -> ([a'],env)) <$> typeCheckA0 a
@@ -719,6 +724,20 @@ typeCheckA1 (ZP.Seq _ a as) = fst <$> typeCheckA0 a >>= \case
 
 runAndReturnEnv :: Monad m => ReaderT env m a -> ReaderT env m (a,env)
 runAndReturnEnv ma = ask >>= \env -> (,env) <$> ma 
+
+runAndReturnIEnv :: forall env m w a. 
+  ( Effects m
+  , Default (m env)
+  , Monoid (w (BookeepInfo,TypeCheckError))
+  , Applicative w
+  ) 
+  => ReaderT env ((WriterT (w (BookeepInfo,TypeCheckError))  m)) a 
+  -> ReaderT env  ((WriterT (w (BookeepInfo,TypeCheckError))  m))(a,env)
+runAndReturnIEnv ma = do 
+  env' <- lift . lift $ def 
+  a <- ma 
+  pure (a,env')
+
 
 
 withDeclaredFreshVar :: Monad m 

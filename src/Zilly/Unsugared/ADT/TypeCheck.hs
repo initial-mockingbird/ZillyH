@@ -40,6 +40,7 @@ import Control.Applicative (Alternative(..))
 import Data.Singletons.TH ((:~:)(..))
 import Debug.Trace (trace) 
 import Data.List.Singletons hiding (Map)
+import Data.Default 
 
 data TypeCheckEnv m = TCE 
   { getGamma     :: Map String Types -- ^ Maps variables to their ltypes 
@@ -62,24 +63,14 @@ typeCheckExpr :: forall n m w.
   => EPrec ParsingStage n -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
 typeCheckExpr e = case 
   ( decideEquality' @n @Atom
-  , decideEquality' @n @PrefixPrec
   , decideEquality' @n @PostfixPrec
-  , decideEquality' @n @8 
-  , decideEquality' @n @7
-  , decideEquality' @n @6
-  , decideEquality' @n @4
   , decideEquality' @n @1
   , decideEquality' @n @0
   ) of 
-    (Just Refl,_,_,_,_,_,_,_,_) -> typeCheckAtom e
-    (_,Just Refl,_,_,_,_,_,_,_) -> typeCheckPrefixPrec e
-    (_,_,Just Refl,_,_,_,_,_,_) -> typeCheckPostfixPrec e
-    (_,_,_,Just Refl,_,_,_,_,_) -> typeCheckP8 e
-    (_,_,_,_,Just Refl,_,_,_,_) -> typeCheckP7 e
-    (_,_,_,_,_,Just Refl,_,_,_) -> typeCheckP6 e
-    (_,_,_,_,_,_,Just Refl,_,_) -> typeCheckP4 e
-    (_,_,_,_,_,_,_,Just Refl,_) -> typeCheckP1 e
-    (_,_,_,_,_,_,_,_,Just Refl) -> typeCheckP0 e
+    (Just Refl,_,_,_) -> typeCheckAtom e
+    (_,Just Refl,_,_) -> typeCheckPostfixPrec e
+    (_,_,Just Refl,_) -> typeCheckP1 e
+    (_,_,_,Just Refl) -> typeCheckP0 e
     _ -> error "impossible case typeCheckExpr"
 
 typeCheckAtom :: 
@@ -101,12 +92,6 @@ typeCheckAtom (PInt bk n) = do
           (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t) (ActualType . show $ Z) ) 
           pure (MkSomeExpression . Val $ n, Z)
     Nothing -> pure (MkSomeExpression . Val $ n, Z)
-typeCheckAtom (PDouble bk _) = do  
-  (tell . pure)  (bk, NonImplementedFeature "Floating Point type")
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckAtom (PBool bk _) = do  
-  (tell . pure)  (bk, NonImplementedFeature "Boolean type")
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
 typeCheckAtom (PVar bk x) = do
   env <- ask 
   case expectedType env of 
@@ -263,9 +248,6 @@ typeCheckAtom (PIf bk (c,t,f)) = do
         (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ Z) (ActualType . show $ demote @c'))
         pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
 
-typeCheckAtom (PArray bk _) = do 
-  (tell . pure) (bk, NonImplementedFeature "Arrays")
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
 typeCheckAtom (PTuple bk a b) = do 
   env <- ask 
   case expectedType env of 
@@ -296,27 +278,8 @@ typeCheckAtom (PTuple bk a b) = do
               (tell . pure) (bk, TypeMismatch' (ExpectedType $ show (Tuple ta tb)) (ActualType . show $ demote @(PTuple a' b')))
               pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
     _ -> do 
-      (tell . pure) (bk, TypeMismatch' (ExpectedType $ show $ expectedType env) (ActualType . show $ "A tuple type."))
+      (tell . pure) (bk, TypeMismatch' (ExpectedType $ show $ expectedType env) (ActualType  "A tuple type."))
       pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-
-
-typeCheckPrefixPrec :: 
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  ) 
-  => EPrec ParsingStage PrefixPrec -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
-typeCheckPrefixPrec (PUMinus bk e) = do 
-  env <- ask
-  MkSomeExpression @e' e' <- withExpectedType (Just $ Z) $ fst <$> typeCheckExpr e
-  case (sing @e',expectedType env) of 
-    (STCon (matches @"Z" -> Just Refl) SNil, et) | et == Just (Z) || et == Nothing 
-      -> pure (MkSomeExpression $ Minus (Val 0) e', Z)
-    _ -> do 
-      (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ Z) (ActualType . show $ demote @e'))
-      pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-
-typeCheckPrefixPrec (OfHigherPrefixPrec e) = typeCheckExpr e
 
 
 typeCheckPostfixPrec :: 
@@ -325,10 +288,7 @@ typeCheckPostfixPrec ::
   , Applicative w
   ) 
   => EPrec ParsingStage PostfixPrec -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
-typeCheckPostfixPrec (PApp bk _ []) = do 
-  (tell . pure) (bk, NonImplementedFeature "Functions with no arguments")
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "fst") [arg]) = do 
+typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "fst") arg) = do 
   env <- ask 
   MkSomeExpression @arg' arg' <- withExpectedType Nothing $ fst <$> typeCheckExpr arg 
   case sing @arg' of 
@@ -348,7 +308,7 @@ typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "fst") [arg]) = do
     _ -> do 
       (tell . pure) (bk, TypeMismatch' (ExpectedType "A tuple argument") (ActualType . show $ demote @arg'))
       pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "snd") [arg]) = do 
+typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "snd") arg) = do 
   env <- ask 
   MkSomeExpression @arg' arg' <- withExpectedType Nothing $ fst <$> typeCheckExpr arg 
   case sing @arg' of 
@@ -369,7 +329,7 @@ typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "snd") [arg]) = do
       (tell . pure) (bk, TypeMismatch' (ExpectedType "A tuple argument") (ActualType . show $ demote @arg'))
       pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
 
-typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg]) = do 
+typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "formula") arg) = do 
   env <- ask 
   MkSomeExpression arg' <- withExpectedType Nothing $ fst <$> typeCheckExpr arg 
   case arg' of 
@@ -392,7 +352,7 @@ typeCheckPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg]) = do
       pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
 
           
-typeCheckPostfixPrec (PApp bk f [arg]) = do 
+typeCheckPostfixPrec (PApp bk f arg) = do 
   env <- ask 
   MkSomeExpression @f' f'     <- withExpectedType Nothing $ fst <$> typeCheckExpr f 
   MkSomeExpression @arg' arg' <- withExpectedType Nothing $ fst <$> typeCheckExpr arg 
@@ -417,151 +377,7 @@ typeCheckPostfixPrec (PApp bk f [arg]) = do
       Nothing -> do 
         (tell . pure) (bk, TypeMismatch' (ExpectedType $ "Function Type") (ActualType . show $ demote @f'))
         pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckPostfixPrec (PApp bk f (x:xs)) = typeCheckExpr (PApp bk (PApp bk f [x]) xs)
-typeCheckPostfixPrec (PAppArr bk _ _) = do 
-  (tell . pure) (bk, NonImplementedFeature "Arrays")
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
 typeCheckPostfixPrec (OfHigherPostfixPrec e) = typeCheckExpr e
-
-
-typeCheckP8:: 
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  ) 
-  => EPrec ParsingStage 8 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
-typeCheckP8 (PPower bk _ _) = do  
-  (tell . pure) (bk, NonImplementedFeature "Power notation" )
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP8 (OfHigher8 e) = typeCheckExpr e
-
-typeCheckP7:: 
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  ) 
-  => EPrec ParsingStage 7 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
-typeCheckP7 (PMul bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just Z})(typeCheckP7 $ PMul bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil) 
-        -> pure (MkSomeExpression $ Var @(PZ --> PZ --> PZ) "mul" $$ l' $$ r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP7 (PDiv bk _ _) = do  
-  (tell . pure) (bk, NonImplementedFeature "Division notation" )
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP7 (PMod bk _ _) = do  
-  (tell . pure) (bk, NonImplementedFeature "Modulo notation" )
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP7 (OfHigher7 e) = typeCheckExpr e
-
-typeCheckP6:: 
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  ) 
-  => EPrec ParsingStage 6 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
-typeCheckP6 (PPlus bk l r) = typeCheckExpr (PMinus bk l $ PParen bk $ PMinus bk (OfHigher6 $ PInt bk 0) r)
-typeCheckP6 (PMinus bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just (Z)})(typeCheckP6 $ PMinus bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil) 
-         -> pure (MkSomeExpression $ Minus l' r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP6 (OfHigher6 e) = typeCheckExpr e
-
-
-typeCheckP4 :: 
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  ) 
-  => EPrec ParsingStage 4 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
-typeCheckP4 (PLT bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just (Z)})(typeCheckP4 $ PLT bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil) 
-        -> pure (MkSomeExpression $ Less l' r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP4 (PLTEQ bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just (Z)})(typeCheckP4 $ PLTEQ bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil) 
-        -> pure (MkSomeExpression $ Var @(PZ --> PZ --> PZ) "lteq" $$ l' $$ r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP4 (PGT bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just (Z)})(typeCheckP4 $ PGT bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil)  
-        -> pure (MkSomeExpression $ Var @(PZ --> PZ --> PZ) "gt" $$ l' $$ r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP4 (PGTEQ bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just (Z)})(typeCheckP4 $ PGTEQ bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil)  
-        -> pure (MkSomeExpression $ Var @(PZ --> PZ --> PZ) "gteq" $$ l' $$ r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP4 (PEQ bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just (Z)})(typeCheckP4 $ PEQ bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil) 
-        -> pure (MkSomeExpression $ Var @(PZ --> PZ --> PZ) "eq" $$ l' $$ r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP4 (PNEQ bk l r) = ask >>= \env -> case expectedType env of 
-  Nothing -> local (\env' -> env'{expectedType=Just (Z)})(typeCheckP4 $ PNEQ bk l r)
-  Just (Z) -> do 
-    MkSomeExpression @l' l' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr l)
-    MkSomeExpression @r' r' <- fst <$> local (\env' -> env'{expectedType=Just (Z)}) (typeCheckExpr r) 
-    case (sing @l',sing @r') of 
-      (STCon (matches @"Z" -> Just Refl) SNil, STCon (matches @"Z" -> Just Refl) SNil) 
-        -> pure (MkSomeExpression $ Var @(PZ --> PZ --> PZ) "neq" $$ l' $$ r', Z )
-      _ -> pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-  Just t -> do 
-    (tell . pure) (bk, TypeMismatch' (ExpectedType . show $ t ) (ActualType . show $ Z))
-    pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP4 (OfHigher4 e) = typeCheckExpr e
 
 
 typeCheckP1 :: 
@@ -570,10 +386,7 @@ typeCheckP1 ::
   , Applicative w
   ) 
   => EPrec ParsingStage 1 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types) 
-typeCheckP1 (PLambda bk [] _ _) = do
-  (tell . pure) (bk, NonImplementedFeature "Functions with no arguments")
-  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP1 (PLambda bk [(yieldVarName -> Just arg, gltype)] mgbody body) = ask >>= \env -> case expectedType env of 
+typeCheckP1 (PLambda bk (yieldVarName -> Just arg, gltype) mgbody body) = ask >>= \env -> case expectedType env of 
   Just et@(eltype0 :-> ebody0) -> case (toSing eltype0, toSing ebody0, toSing gltype) of
     ( SomeSing @_ @eltype eltype , SomeSing @_ @ebody ebody, SomeSing @_ @gltype' gltype') 
       -> withSingI eltype 
@@ -613,8 +426,10 @@ typeCheckP1 (PLambda bk [(yieldVarName -> Just arg, gltype)] mgbody body) = ask 
   et -> do 
     (tell . pure) (bk, TypeMismatch' (ExpectedType $ show et) (ActualType "A function type"))
     pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
-typeCheckP1 (PLambda bk (arg:args) mgbody body) 
-  = typeCheckP1 $ PLambda bk [arg] Nothing  (PLambda bk args mgbody body) 
+typeCheckP1 (PLambda bk (_, _) _ _) = do 
+  (tell . pure) (bk, CustomError' "Function arguments must be variables." )
+  pure (MkSomeExpression (Bottom (CustomError "") [] ), Top)
+
 typeCheckP1 (OfHigher1 e) = typeCheckExpr e 
 
 typeCheckP0 :: 
@@ -630,10 +445,11 @@ typeCheckP0 (OfHigher0 e) = typeCheckExpr e
 -----------------------------
 
 
-typeCheckA0 :: 
+typeCheckA0 :: forall m w. 
   ( Effects m
   , Monoid (w (BookeepInfo,TypeCheckError))
   , Applicative w
+  , Default (m (TypeCheckEnv m))
   ) 
   => ZP.A0 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (A m, TypeCheckEnv m)
 typeCheckA0 (ZP.Print e _) = withExpectedType Nothing $ fst <$> typeCheckExpr e >>= \case 
@@ -672,7 +488,7 @@ typeCheckA0 (ZP.Assign (yieldVarName -> Just x) e bk) = withExpectedType Nothing
           _ -> do 
             (tell . pure) (bk, TypeMismatch' (ExpectedType $ show tt) (ActualType . show $ demote @e'))
             pure ABottom 
-typeCheckA0 (ZP.SysCommand "reset" _) = runAndReturnEnv . pure $ SysCommand "reset"
+typeCheckA0 (ZP.SysCommand "reset" _) = runAndReturnIEnv @(TypeCheckEnv m) @m @w . pure $ SysCommand "reset"
 typeCheckA0 (ZP.SysCommand s bk) = runAndReturnEnv $ do 
   (tell . pure) (bk, NonImplementedFeature  $ "sys command: " <> show s <> ".")
   pure ABottom
@@ -688,6 +504,8 @@ typeCheckA1 ::
   ( Effects m
   , Monoid (w (BookeepInfo,TypeCheckError))
   , Applicative w
+  , Default (m (TypeCheckEnv m))
+
   ) 
   => ZP.A1 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) ([A m], TypeCheckEnv m)
 typeCheckA1 (ZP.OfA0 a) = (\(a',env) -> ([a'],env)) <$> typeCheckA0 a
@@ -719,6 +537,20 @@ typeCheckA1 (ZP.Seq _ a as) = fst <$> typeCheckA0 a >>= \case
 
 runAndReturnEnv :: Monad m => ReaderT env m a -> ReaderT env m (a,env)
 runAndReturnEnv ma = ask >>= \env -> (,env) <$> ma 
+
+runAndReturnIEnv :: forall env m w a. 
+  ( Effects m
+  , Default (m env)
+  , Monoid (w (BookeepInfo,TypeCheckError))
+  , Applicative w
+  ) 
+  => ReaderT env ((WriterT (w (BookeepInfo,TypeCheckError))  m)) a 
+  -> ReaderT env  ((WriterT (w (BookeepInfo,TypeCheckError))  m))(a,env)
+runAndReturnIEnv ma = do 
+  env' <- lift . lift $ def 
+  a <- ma 
+  pure (a,env')
+
 
 
 withDeclaredFreshVar :: Monad m 

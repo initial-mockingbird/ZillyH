@@ -1,0 +1,7 @@
+Int z := 5;
+Int -> Int f := /. x : Int => x-5 ;
+Int -> Int g := /. x : Int => x-z ;
+Int x := f(5);
+Int y := g(z);
+print(x);
+print(y);

@@ -1,0 +1,33 @@
+::zilly
+(1,2)
+Z x := 9;
+Z y := 0;
+(Z,Z) zs := (2,3);
+(Z,lazy<Z>) zlx := (plus(2)(1),'x');
+(lazy<Z>,Z) lzx := ('y',mul(3)(9));
+(lazy<Z>,lazy<Z>) llx := ('plus(y)(100)','x');
+Z llx1 := fst(llx);
+Z llx2 := snd(llx);
+zs
+zlx
+lzx 
+llx 
+llx1
+llx2
+x := plus(x)(1);
+y := plus(y)(500);
+llx1 := fst(llx);
+llx2 := snd(llx);
+zs
+zlx
+lzx
+llx
+llx1
+llx2
+fst(llx)
+formula(llx)
+zs := (snd(zs),fst(zs));
+(Z,Z) => (Z,Z) fZ := fn((Z,Z) t) -> (snd(t),fst(t));
+fZ(zs)
+fZ(fZ(zs))
+zs := (42,snd(zs));

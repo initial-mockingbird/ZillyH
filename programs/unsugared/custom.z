@@ -1,0 +1,9 @@
+::zilly
+Z y := 5;
+(lazy<Z>,lazy<Z>) ly := ('mul(y)(9)','minus(mul(y)(9))(5)');
+ly
+y := plus(y)(10);
+ly
+formula(minus)
+(λ(Z l) -> λ(Z r) -> minus(l)(r))(2)
+(λ(Z l) -> λ(Z r) -> minus(l)(r))(2)(3)

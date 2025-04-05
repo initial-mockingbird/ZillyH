@@ -1,0 +1,9 @@
+::zilly
+Z => Z fib := fn(Z x) -> if(lt(x)(2),x,plus(fib(minus(x)(1)))(fib(minus(x)(2))));
+eq(fib(0))(0)
+eq(fib(1))(1)
+eq(fib(2))(1)
+eq(fib(3))(2)
+eq(fib(4))(3)
+eq(fib(5))(5)
+eq(fib(20))(6765)

@@ -1,0 +1,3 @@
+::zilly+
+Z => lazy<Z> f := fn(lazy<Z> x) => Z -> x;
+f(5)

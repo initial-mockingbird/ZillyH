@@ -1,0 +1,17 @@
+::zilly+
+Z x := 5;
+Z y := 6;
+x
+y
+and(x)(y)
+sys.reset()
+x
+y
+and(1)(2)
+Z x := 5;
+Z y := 6;
+x
+y
+.
+x
+y

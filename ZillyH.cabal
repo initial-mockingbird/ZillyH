@@ -43,6 +43,7 @@ library
       Zilly.Classic.Parser
       Zilly.Classic.Parsing.Utilities
       Zilly.Classic.Runner
+      Zilly.Runner
       Zilly.Unsugared.ADT.Action
       Zilly.Unsugared.ADT.Expression
       Zilly.Unsugared.ADT.TypeCheck

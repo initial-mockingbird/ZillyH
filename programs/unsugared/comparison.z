@@ -1,0 +1,18 @@
+::zilly
+Z x := 5;
+eq(eq(x)(x)     )( 1)
+eq(eq(x)(plus(x)(1) ) )( 0)
+eq(eq(x)(0)     )( 0)
+eq(lt(x)(9)     )( 1)
+eq(gt(x)(0)     )( 1)
+eq(lteq(x)(5)    )( 1)
+eq(lteq(x)(9)    )( 1)
+eq(lteq(x)(0)    )( 0)
+eq(gteq(x)(5)    )( 1)
+eq(gteq(x)(9)    )( 0)
+eq(gteq(x)(0)    )( 1)
+eq(neq(x)(5)    )( 0)
+eq(neq(x)(6)    )( 1)
+eq(mul(x)(5)     )( 25)
+eq(mul(x)(1)     )( 5)
+eq(mul(x)(0)     )( 0)

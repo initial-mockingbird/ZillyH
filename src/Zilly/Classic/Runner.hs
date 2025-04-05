@@ -142,6 +142,10 @@ iMap = do
 
 instance (Effects m) => Default (m (TypeRepMap (E m))) where 
   def = valueStore <$> liftIO iMap
+
+instance (Effects m) => Default (m (TypeCheckEnv m)) where 
+  def = typingEnv <$> liftIO iMap
+
     
 newtype ErrorLog' a = ErrorLog [a] 
   deriving newtype (Semigroup, Monoid,Functor,Applicative)
