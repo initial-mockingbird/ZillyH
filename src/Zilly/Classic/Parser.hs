@@ -801,7 +801,7 @@ type instance ELambdaX ParsingStage = BookeepInfo
 mkLambda :: Parser (EPrec ParsingStage 1 -> EPrec ParsingStage 1)
 mkLambda
   = (PLambda
-  <$> (mkBookeepInfo <* ("fn" <|> "fun") )
+  <$> (mkBookeepInfo <* "fn" )
   <*> parens (liftA2 (\t e -> (e,t2NT t)) pTypes expr `sepBy` ",")
   <*> optionMaybe ("=>" *> fmap t2NT pTypes) )
   <* "->"

@@ -151,6 +151,18 @@ ex12 = do
   fc <- lines <$> readFile "./programs/unsugared/fix.z"
   traverse_ (putStrLn <=< i) fc
 
+ex13 ::  IO ()
+ex13 = do
+  i  <- buildUniversalInterpreter
+  fc <- lines <$> readFile "./programs/unsugared/bad_redeclarations.z"
+  traverse_ (putStrLn <=< i) fc
+
+ex14 ::  IO ()
+ex14 = do
+  i  <- buildUniversalInterpreter
+  fc <- lines <$> readFile "./programs/unsugared/functions_with_return.z"
+  traverse_ (putStrLn <=< i) fc
+
 
 
 nm :: IO ()

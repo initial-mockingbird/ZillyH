@@ -1,0 +1,6 @@
+::zilly+
+Z => Z f0 := fn(Z x) => Z -> x + 1;
+Z => Z => Z f1 := fn(Z x) => Z => Z -> fn(Z y) => Z -> x - y;
+::zilly
+Z => Z f0 := fn(Z x) => Z -> plus(x)(1);
+Z => Z => Z f1 := fn(Z x) => Z => Z -> fn(Z y) => Z -> minus(x)(y);
