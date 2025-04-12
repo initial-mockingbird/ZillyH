@@ -4,39 +4,42 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
-module Control.Monad.Random where 
+module Control.Monad.Random where
 
-import Control.Monad 
+import Control.Monad
 import Control.Monad.State
 import Control.Applicative
 import Control.Monad.Reader
-import Debug.Trace 
+import Debug.Trace
 
-class Monad m => MonadRandom m where 
+class Monad m => MonadRandom m where
   randInt :: Int -> m Int
 
 
 
-newtype RandomT m a = RandomT {runRandomT :: StateT Int m a} 
-  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadFail, Alternative, MonadPlus ) 
+newtype RandomT m a = RandomT {runRandomT :: StateT Float m a}
+  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadFail, Alternative, MonadPlus )
 
-instance Monad m => MonadRandom (RandomT m) where 
-  randInt ub = RandomT $ do 
-    n <- get 
-    trace (show n) $ pure ()
-    let n' = (ub * 41 + n) `mod` 1697
+instance Monad m => MonadRandom (RandomT m) where
+  randInt ub = RandomT $ do
+    n <- get
+    -- new_seed = sem * 997 - floor(sem * 997)
+    -- num = floor(new_seed *) mod n
+    -- num = floor(new_seed * n)
+    --let n' = (ub * 41 + n) `mod` 1697
+    let n' = n * 997 - (fromInteger . floor) (n * 997)
     put n'
-    pure n'
+    pure . max 0 . floor $ fromIntegral ub * n'
 
 
-instance MonadReader r m => MonadReader r (RandomT m)  where 
+instance MonadReader r m => MonadReader r (RandomT m)  where
   local f (RandomT a) = RandomT $ local f a
-  ask  = RandomT $ ask 
+  ask  = RandomT $ ask
   reader f = RandomT $ reader f
 
-evalRandomIO :: MonadIO m => Int -> RandomT m a -> m a
+evalRandomIO :: MonadIO m => Float -> RandomT m a -> m a
 evalRandomIO n (RandomT f) = evalStateT f n
 
 
-runRandomIO :: Int -> RandomT m a -> m (a,Int)
+runRandomIO :: Float -> RandomT m a -> m (a,Float)
 runRandomIO n (RandomT f) = runStateT f n

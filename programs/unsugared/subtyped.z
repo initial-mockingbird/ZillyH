@@ -1,3 +1,10 @@
 ::zilly+
+lazy<Z> x0 := plus(3)(2);
+lazy<Z> x1 := 3 - 2;
+x0
+x1
+lazy<Z> x := 3 + 2;
 Z => lazy<Z> f := fn(lazy<Z> x) => Z -> x;
+Z => Z f1 := fn(lazy<Z> x) => Z -> x;
+lazy<Z> => Z f2 := fn(lazy<Z> x) => Z -> x;
 f(5)

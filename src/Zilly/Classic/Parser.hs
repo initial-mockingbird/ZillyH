@@ -101,11 +101,11 @@ keywords = stdLib ++
   , "#DIV/0!"
   , "#NUM!"
   , "#NAME?"
-  ] 
+  ]
 
 -- | standard library for Lilly
 stdLib :: [String]
-stdLib = 
+stdLib =
   [ "log"
   , "sin"
   , "cos"
@@ -139,12 +139,12 @@ reservedOperators =
 -- Parser definition
 ----------------------------
 
-data ParserState = PST 
+data ParserState = PST
   { pstIdent      :: Natural
   , insideComment :: Bool
   }
 
-initialPST :: ParserState 
+initialPST :: ParserState
 initialPST = PST {pstIdent=0,insideComment=False}
 
 type Parser a = ParsecT String ParserState Identity a
@@ -156,7 +156,7 @@ type Parser a = ParsecT String ParserState Identity a
 instance u ~ () => IsString (Parser u ) where
   fromString str
     | str `elem` keywords = keyword str
-    | str `elem` reservedOperators 
+    | str `elem` reservedOperators
       = token (string str *> notFollowedBy (choice $ (void . string) <$> ["+","-","=","<",">","%","^",":"]) )
     | otherwise           = void $ token (string str)
 
@@ -172,13 +172,13 @@ anyKeyword = choice $ fmap keyword keywords
 -- Book-keeping.
 ---------------------------
 
-data BookeepInfo = BI 
+data BookeepInfo = BI
   { tokenPos   :: SourcePos
-  , identLevel :: Natural 
+  , identLevel :: Natural
   }
 
 mkBookeepInfo :: Parser BookeepInfo
-mkBookeepInfo = BI <$> getPosition <*> fmap pstIdent getState 
+mkBookeepInfo = BI <$> getPosition <*> fmap pstIdent getState
 
 ----------------------------
 -- Aux structures
@@ -196,11 +196,11 @@ data family TPrec (ctx :: Type) (n :: Natural)
 
 type Inf     = 0xffffffffffffffff
 
--- | Precedence of atoms. Defined as Infinity since 
+-- | Precedence of atoms. Defined as Infinity since
 -- they have the highest precedence.
 type Atom    = Inf
 
--- | One level bellow atom precedence. Needed to be defined as 
+-- | One level bellow atom precedence. Needed to be defined as
 -- a constant due to restrictions on type family evaluation inside GADTs.
 type PredInf = 0xfffffffffffffffe
 
@@ -240,17 +240,17 @@ data instance TPrec ctx Atom where
   -- | Variables: any valid identifier
   TVar       :: TVX ctx -> String             -> TPrec ctx Atom
   -- | Tuples @(A,B)@
-  TTuple     :: forall n ctx. (SingI n, (n < Atom) ~ True) 
-    => TTX ctx -> TPrec ctx n -> TPrec ctx n -> TPrec ctx Atom 
+  TTuple     :: forall n ctx. (SingI n, (n < Atom) ~ True)
+    => TTX ctx -> TPrec ctx n -> TPrec ctx n -> TPrec ctx Atom
   -- | Parentheses: @(type)@
   TParen     :: forall n ctx. (SingI n, (n < Atom) ~ True)
     => TPX ctx -> TPrec ctx n -> TPrec ctx Atom
  -- | Invisible Lazy type: @lazy@
   TLazySp      :: forall n ctx. (SingI n, (n < Atom) ~ True)
-    => TLSPX ctx -> TPrec ctx n -> TPrec ctx Atom 
+    => TLSPX ctx -> TPrec ctx n -> TPrec ctx Atom
   -- | Invisible Lazy Star type: @lazy*@
   TLazySpS     :: forall n ctx. (SingI n, (n < Atom) ~ True)
-    => TLSSPX ctx -> TPrec ctx n -> TPrec ctx Atom 
+    => TLSSPX ctx -> TPrec ctx n -> TPrec ctx Atom
   -- | Invisible Array type: @array[]@. TODO: multi dimensional array
   TArrayS :: forall n ctx. (SingI n, (n < Atom) ~ True)
     => TASX ctx -> TPrec ctx n -> TPrec ctx Atom
@@ -317,30 +317,30 @@ mkFunT p = TFun <$> (mkBookeepInfo <* ("fn" <|> "fun")) <*> parens p
 mkVarT ::  Parser (String -> TPrec ParsingStage Inf)
 mkVarT = TVar <$> mkBookeepInfo
 
-mkParenOrTupleT :: forall {n0} n. (SingI n, n0 ~ Inf, (n < n0) ~ True) 
+mkParenOrTupleT :: forall {n0} n. (SingI n, n0 ~ Inf, (n < n0) ~ True)
   => Parser (TPrec ParsingStage n -> Maybe (TPrec ParsingStage n) -> TPrec ParsingStage n0)
-mkParenOrTupleT = f <$> mkBookeepInfo 
+mkParenOrTupleT = f <$> mkBookeepInfo
   where
     f :: BookeepInfo -> TPrec ParsingStage n -> Maybe (TPrec ParsingStage n) -> TPrec ParsingStage n0
-    f bk a = \case 
+    f bk a = \case
       Just b -> TTuple bk a b
       Nothing -> TParen bk a
 
 mkLazySpT :: forall n0. (SingI n0, (n0 < Atom) ~ True)
-  => Parser (TPrec ParsingStage n0 -> TPrec ParsingStage Atom) 
-mkLazySpT =  TLazySp <$> mkBookeepInfo 
+  => Parser (TPrec ParsingStage n0 -> TPrec ParsingStage Atom)
+mkLazySpT =  TLazySp <$> mkBookeepInfo
 
-mkLazySpST :: forall {n0}. (n0 ~ PredInf) 
-  => Parser (TPrec ParsingStage n0 -> TPrec ParsingStage Atom) 
-mkLazySpST = TLazySpS <$> mkBookeepInfo 
+mkLazySpST :: forall {n0}. (n0 ~ PredInf)
+  => Parser (TPrec ParsingStage n0 -> TPrec ParsingStage Atom)
+mkLazySpST = TLazySpS <$> mkBookeepInfo
 
-mkArrayST :: forall {n0}. (n0 ~ PredInf) 
-  => Parser (TPrec ParsingStage n0 -> TPrec ParsingStage Atom) 
-mkArrayST =  TArrayS <$> mkBookeepInfo 
+mkArrayST :: forall {n0}. (n0 ~ PredInf)
+  => Parser (TPrec ParsingStage n0 -> TPrec ParsingStage Atom)
+mkArrayST =  TArrayS <$> mkBookeepInfo
 
 
 pTypeAtom :: Parser (TPrec ParsingStage Atom)
-pTypeAtom 
+pTypeAtom
   =   mkZT
   <|> mkDoubleT
   <|> mkBoolT
@@ -353,49 +353,49 @@ pTypeAtom
   <|> parens (mkParenOrTupleT <*> pTypes <*> optionMaybe ("," *> pTypes) )
   <|> mkFunT (((,) <$> pTypes <*> optionMaybe ident) `sepBy` "," )
   <|> mkVarT <*> ident
-  
+
 instance (SingI n',SingI n, (n' > n) ~ True) => TPrec ctx n' PU.< TPrec ctx n where
-  upcast = case sing @n of 
+  upcast = case sing @n of
     SNat @n'' -> case sameNat (SNat @n'') (SNat @0) of
-      Just Refl     -> OfHigherTPrec0 
+      Just Refl     -> OfHigherTPrec0
       Nothing -> error "TPrec can only be one of the following: Inf-1, 0."
-  downcast t 
-    = withKnownNat (sing @n) 
-    $ withKnownNat (sing @n') 
+  downcast t
+    = withKnownNat (sing @n)
+    $ withKnownNat (sing @n')
     $ case decideEquality (sing @n) (SNat @0) of
-      Just Refl     -> case t of 
-        OfHigherTPrec0 @x f -> withKnownNat (sing @x) $ case sCompare' @n' @x of 
-          EQ' -> withEqRefl @n' @x $ Just f 
-          LT' -> Just $ upcast  @(TPrec ctx x) @(TPrec ctx n') f  
-          GT' -> downcast @(TPrec ctx n') @(TPrec ctx x) f  
-        _ -> Nothing 
+      Just Refl     -> case t of
+        OfHigherTPrec0 @x f -> withKnownNat (sing @x) $ case sCompare' @n' @x of
+          EQ' -> withEqRefl @n' @x $ Just f
+          LT' -> Just $ upcast  @(TPrec ctx x) @(TPrec ctx n') f
+          GT' -> downcast @(TPrec ctx n') @(TPrec ctx x) f
+        _ -> Nothing
       Nothing -> error "TPrec can only be one of the following: 0."
 
-data Ordering' a b where 
+data Ordering' a b where
   EQ' :: forall a b. ((a == b) ~ True, (b == a) ~ True) => Ordering' a b
   LT' :: forall a b. ((a <  b) ~ True, (b > a ) ~ True) => Ordering' a b
   GT' :: forall a b. ((a >  b) ~ True, (b < a ) ~ True) => Ordering' a b
 
-sCompare' :: forall {k} (a :: k) (b :: k). (SOrd k, SingI a, SingI b) => Ordering' a b 
-sCompare' = case (sing @a %== sing @b, sing @a %< sing @b, sing @a %> sing @b) of 
-  (STrue,_,_) -> downEQ' @a @b $ EQ' 
-  (_,STrue,_) -> downLT' @a @b $ LT' 
+sCompare' :: forall {k} (a :: k) (b :: k). (SOrd k, SingI a, SingI b) => Ordering' a b
+sCompare' = case (sing @a %== sing @b, sing @a %< sing @b, sing @a %> sing @b) of
+  (STrue,_,_) -> downEQ' @a @b $ EQ'
+  (_,STrue,_) -> downLT' @a @b $ LT'
   (_,_,STrue) -> downGT' @a @b $ GT'
   _           -> error "impossible case. SOrd imposes a total order."
 
 downLT' :: forall {k} (a :: k) (b :: k) r. (SOrd k, SingI a, SingI b, (a < b) ~ True) => (( (b > a) ~ True) => r) -> r
-downLT' f = case sing @b %> sing @a  of 
-    STrue  -> f 
+downLT' f = case sing @b %> sing @a  of
+    STrue  -> f
     SFalse -> error "error in reversing LT'"
 
 downGT' :: forall {k} (a :: k) (b :: k) r. (SOrd k, SingI a, SingI b, (a > b) ~ True) => (( (b < a) ~ True) => r) -> r
-downGT' f = case sing @b %< sing @a  of 
-    STrue  -> f 
+downGT' f = case sing @b %< sing @a  of
+    STrue  -> f
     SFalse -> error "error in reversing GT'"
 
 downEQ' :: forall {k} (a :: k) (b :: k) r. (SOrd k, SingI a, SingI b, (a == b) ~ True) => (( (b == a) ~ True) => r) -> r
-downEQ' f = case sing @b %== sing @a  of 
-    STrue  -> f 
+downEQ' f = case sing @b %== sing @a  of
+    STrue  -> f
     SFalse -> error "error in reversing EQ'"
 
 
@@ -408,7 +408,7 @@ trivialRefl :: () :~: ()
 trivialRefl = Refl
 
 withEqRefl :: forall a b r. (a == b) ~ True => ((a ~ b) => r) -> r
-withEqRefl f = case eqToRefl @a @b of 
+withEqRefl f = case eqToRefl @a @b of
   Refl -> f
 
 --
@@ -423,32 +423,32 @@ data instance TPrec ctx 0 where
   OfHigherTPrec0 :: forall n ctx. (SingI n,(n > 0) ~ True )
     => TPrec ctx n -> TPrec ctx 0
 
-type family TARX (ctx :: Type) :: Type 
+type family TARX (ctx :: Type) :: Type
 type instance TARX ParsingStage = BookeepInfo
 
-mkArrowT :: forall {n0} n. (SingI n, n0 ~ 0, (n > n0) ~ True) 
+mkArrowT :: forall {n0} n. (SingI n, n0 ~ 0, (n > n0) ~ True)
   => Parser (TPrec ParsingStage n -> TPrec ParsingStage 0 -> TPrec ParsingStage 0)
 mkArrowT = TArrow <$> mkBookeepInfo
 --
 --
 pTypes :: Parser (Types ParsingStage)
-pTypes = precedence $ 
+pTypes = precedence $
   sops InfixR  [mkArrowT <* "=>"] |-<
   Atom pTypeAtom
 
-t2NT :: forall n ctx. (SingI n) => TPrec ctx n-> T.Types 
-t2NT f = case sing @n of 
-  SNat -> case (sameNat (SNat @n) (SNat @0), sameNat (SNat @n) (SNat @Atom)) of 
-    (Just Refl,_) -> case f of 
+t2NT :: forall n ctx. (SingI n) => TPrec ctx n-> T.Types
+t2NT f = case sing @n of
+  SNat -> case (sameNat (SNat @n) (SNat @0), sameNat (SNat @n) (SNat @Atom)) of
+    (Just Refl,_) -> case f of
       OfHigherTPrec0 f' -> t2NT f'
       TArrow _ a b -> t2NT a T.:-> t2NT b
-    (_,Just Refl) -> case f of 
-      TZ _ -> T.Z 
-      TDouble _ -> T.ZDouble 
-      TBool   _ -> T.ZBool 
-      TString _ -> T.ZString 
-      TNull   _ -> T.ZNull 
-      TInfer {} -> T.ZInfer 
+    (_,Just Refl) -> case f of
+      TZ _ -> T.Z
+      TDouble _ -> T.ZDouble
+      TBool   _ -> T.ZBool
+      TString _ -> T.ZString
+      TNull   _ -> T.ZNull
+      TInfer {} -> T.ZInfer
       TFun _ _  -> error "functions still in debate"
       TVar _ v  -> T.TVar (T.TV $ Text.pack v)
       TTuple _ a b -> T.Tuple (t2NT a) (t2NT b)
@@ -476,22 +476,22 @@ data instance EPrec ctx Atom where
   -- | IEEE doubles @1,0.5,1e5,1E5,1e-10,-5e-5,-5E-5@
   PDouble  :: EDX ctx -> Double -> EPrec ctx Atom
   -- | Booleans: @true,false@
-  PBool    :: EBX ctx  -> Bool   -> EPrec ctx Atom 
+  PBool    :: EBX ctx  -> Bool   -> EPrec ctx Atom
   -- | Variables: any identifier
   PVar     :: EVX ctx  -> String -> EPrec ctx Atom
   -- | Array literals: @[expr0,expr1,....]@
   PArray   :: EAX ctx -> [EPrec ctx 0] -> EPrec ctx Atom
   -- | Tuples @(expr,expr)@
-  PTuple   :: forall n ctx. (SingI n,(n < Atom) ~ True) 
+  PTuple   :: forall n ctx. (SingI n,(n < Atom) ~ True)
     => ETX ctx -> EPrec ctx n -> EPrec ctx n -> EPrec ctx Atom
   -- | parenthesis: @(expr)@
-  PParen   :: forall n ctx. (SingI n,(n < Atom) ~ True) 
+  PParen   :: forall n ctx. (SingI n,(n < Atom) ~ True)
     => EPX ctx -> EPrec ctx n    -> EPrec ctx Atom
   -- | Quoted expressions: @'expr'@
-  PDefer   :: forall n ctx. (SingI n,(n < Atom) ~ True) 
+  PDefer   :: forall n ctx. (SingI n,(n < Atom) ~ True)
     => EDefX ctx -> EPrec ctx n    -> EPrec ctx Atom
   -- | If function: @if(expr,expr,expr)@
-  PIf :: forall n0 n1 n2 ctx. 
+  PIf :: forall n0 n1 n2 ctx.
     ( (n0 < Atom) ~ True
     , (n1 < Atom) ~ True
     , (n2 < Atom) ~ True
@@ -499,8 +499,8 @@ data instance EPrec ctx Atom where
     , SingI n1
     , SingI n2
     )
-    => EIfX ctx  
-    -> (EPrec ctx n0, EPrec ctx n1, EPrec ctx n2) 
+    => EIfX ctx
+    -> (EPrec ctx n0, EPrec ctx n1, EPrec ctx n2)
     -> EPrec ctx Atom
 
 type family EIX (ctx :: Type) :: Type
@@ -526,75 +526,75 @@ type instance EIfX ParsingStage = BookeepInfo
 
 
 
-mkIf :: forall {n} n0 n1 n2. 
+mkIf :: forall {n} n0 n1 n2.
   ( n ~ Atom
   , SingI n0
   , SingI n1
   , SingI n2
   , (n0 < n) ~ True
-  , (n1 < n) ~ True 
-  , (n2 < n) ~ True 
+  , (n1 < n) ~ True
+  , (n2 < n) ~ True
   ) => Parser (EPrec ParsingStage n0, EPrec ParsingStage n1, EPrec ParsingStage n2) -> Parser (EPrec ParsingStage Atom)
 mkIf p = "if" *> parens (PIf <$> mkBookeepInfo <*> p)
 
 ident :: Parser String
-ident = mkIdent anyKeyword 
+ident = mkIdent anyKeyword
 
 
-mkInt :: forall {n0}. (n0 ~ Atom) 
+mkInt :: forall {n0}. (n0 ~ Atom)
   =>  Parser (Int -> EPrec ParsingStage n0)
 mkInt = PInt <$> mkBookeepInfo
 
-mkDouble :: forall {n0}. (n0 ~ Atom) 
+mkDouble :: forall {n0}. (n0 ~ Atom)
   =>  Parser (Double -> EPrec ParsingStage n0)
 mkDouble = PDouble <$> mkBookeepInfo
 
-mkBool :: forall {n0}. (n0 ~ Atom) 
+mkBool :: forall {n0}. (n0 ~ Atom)
   =>  Parser (Bool -> EPrec ParsingStage n0)
 mkBool = PBool <$> mkBookeepInfo
 
-mkVar :: forall {n0}. (n0 ~ Atom) 
+mkVar :: forall {n0}. (n0 ~ Atom)
   =>  Parser (String -> EPrec ParsingStage n0)
-mkVar = PVar <$> mkBookeepInfo 
+mkVar = PVar <$> mkBookeepInfo
 
-mkParen :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True) 
-  =>  Parser (EPrec ParsingStage n) -> Parser (EPrec ParsingStage n0) 
+mkParen :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True)
+  =>  Parser (EPrec ParsingStage n) -> Parser (EPrec ParsingStage n0)
 mkParen p = parens $ PParen <$> mkBookeepInfo <*> p
 
 
-mkParenOrTupleP :: forall {n0} n. (SingI n, n0 ~ Inf, (n < n0) ~ True) 
+mkParenOrTupleP :: forall {n0} n. (SingI n, n0 ~ Inf, (n < n0) ~ True)
   => Parser (EPrec ParsingStage n -> Maybe (EPrec ParsingStage n) -> EPrec ParsingStage n0)
-mkParenOrTupleP = f <$> mkBookeepInfo 
+mkParenOrTupleP = f <$> mkBookeepInfo
   where
     f :: BookeepInfo -> EPrec ParsingStage n -> Maybe (EPrec ParsingStage n) -> EPrec ParsingStage n0
-    f bk a = \case 
+    f bk a = \case
       Just b -> PTuple bk a b
       Nothing -> PParen bk a
 
 
-mkDefer :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True) 
+mkDefer :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True)
   =>  Parser (EPrec ParsingStage n) -> Parser (EPrec ParsingStage n0)
 mkDefer p = quoted $ PDefer <$> mkBookeepInfo <*> p
 
-mkArray :: forall {n0}. (n0 ~ Atom) 
+mkArray :: forall {n0}. (n0 ~ Atom)
   =>  Parser (EPrec ParsingStage 0) -> Parser (EPrec ParsingStage n0)
 mkArray  p = bracketed' $ PArray <$> mkBookeepInfo <*> p `sepBy` ","
 
 atom :: Parser (EPrec ParsingStage Atom)
-atom 
-  = pNumber 
+atom
+  = pNumber
   <|> mkBool   <*> (True <$ "true" <|> False <$ "false")
-  <|> mkArray expr 
+  <|> mkArray expr
   <|> mkDefer expr
   <|> mkIf ((,,) <$> (expr <* ",")  <*> (expr <* ",") <*> expr)
   <|> parens (mkParenOrTupleP <*> expr <*> optionMaybe ("," *> expr))
   <|> mkVar    <*> ident
-  where 
-    pNumber' 
-      = try (mkDouble <*> floating) 
+  where
+    pNumber'
+      = try (mkDouble <*> floating)
       <|> mkInt <*> (read <$> many1 digit)
       <?> "malformed number literal"
-    
+
     pNumber = pNumber' <* spaces
 
 -----------------------------------
@@ -603,23 +603,23 @@ atom
 --
 data instance EPrec ctx PrefixPrec where
   PUMinus :: EUMX ctx -> EPrec ctx PrefixPrec -> EPrec ctx PrefixPrec
-  OfHigherPrefixPrec :: forall n ctx. (SingI n,(n > PrefixPrec) ~ True) 
+  OfHigherPrefixPrec :: forall n ctx. (SingI n,(n > PrefixPrec) ~ True)
     => EPrec ctx n -> EPrec ctx PrefixPrec
 
 type family EUMX (ctx :: Type) :: Type
-type instance EUMX ParsingStage = BookeepInfo 
+type instance EUMX ParsingStage = BookeepInfo
 
 data instance EPrec ctx PostfixPrec where
   -- Function applications: @expr(expr00,expr01,....)(expr10,expr11,...)...@
   PApp    :: EAppX ctx -> EPrec ctx PostfixPrec -> [EPrec ctx 0] -> EPrec ctx PostfixPrec
   PAppArr :: EAAppX ctx -> EPrec ctx PostfixPrec -> [EPrec ctx 0] -> EPrec ctx PostfixPrec
-  OfHigherPostfixPrec :: forall n ctx. (SingI n,(n > PostfixPrec) ~ True) 
+  OfHigherPostfixPrec :: forall n ctx. (SingI n,(n > PostfixPrec) ~ True)
     => EPrec ctx n -> EPrec ctx PostfixPrec
 
-type family EAppX (ctx :: Type)  :: Type 
-type family EAAppX (ctx :: Type) :: Type 
+type family EAppX (ctx :: Type)  :: Type
+type family EAAppX (ctx :: Type) :: Type
 
-type instance EAppX ParsingStage = BookeepInfo 
+type instance EAppX ParsingStage = BookeepInfo
 type instance EAAppX ParsingStage = BookeepInfo
 
 mkApp :: Parser (EPrec ParsingStage 0) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
@@ -641,15 +641,15 @@ mkUMinus = PUMinus <$> mkBookeepInfo
 -- | Precedence 8 operators.
 data instance EPrec ctx 8 where
   -- | Power operator: @expr^expr@, right associative.
-  PPower    :: forall n ctx. (SingI n,(n > 8) ~ True) 
+  PPower    :: forall n ctx. (SingI n,(n > 8) ~ True)
     => EPowX ctx -> EPrec ctx n -> EPrec ctx 8 -> EPrec ctx 8
-  OfHigher8 :: forall n ctx. (SingI n,(n > 8) ~ True) 
+  OfHigher8 :: forall n ctx. (SingI n,(n > 8) ~ True)
     =>              EPrec ctx n                -> EPrec ctx 8
 
-type family EPowX (ctx :: Type) :: Type 
-type instance EPowX ParsingStage = BookeepInfo 
+type family EPowX (ctx :: Type) :: Type
+type instance EPowX ParsingStage = BookeepInfo
 
-mkPower :: forall {n0} n. (SingI n,n0 ~ 8, (n > n0) ~ True) 
+mkPower :: forall {n0} n. (SingI n,n0 ~ 8, (n > n0) ~ True)
   => Parser (EPrec ParsingStage n -> EPrec ParsingStage n0 -> EPrec ParsingStage n0)
 mkPower = PPower <$> mkBookeepInfo
 
@@ -660,20 +660,20 @@ mkPower = PPower <$> mkBookeepInfo
 -- | Precedence 7 operators.
 data instance EPrec ctx 7 where
   -- | Multiplication operator: @expr * expr@, left associative.
-  PMul      :: forall n ctx. (SingI n,(n > 7) ~ True) 
+  PMul      :: forall n ctx. (SingI n,(n > 7) ~ True)
     => EMulX ctx-> EPrec ctx 7 -> EPrec ctx n -> EPrec ctx 7
   -- | Division operator: @expr / expr@, left associative.
-  PDiv      :: forall n ctx. (SingI n,(n > 7) ~ True) 
+  PDiv      :: forall n ctx. (SingI n,(n > 7) ~ True)
     => EDivX ctx -> EPrec ctx 7 -> EPrec ctx n -> EPrec ctx 7
   -- | Mod operator: @expr % expr@, left associative.
-  PMod      :: forall n ctx. (SingI n,(n > 7) ~ True) 
+  PMod      :: forall n ctx. (SingI n,(n > 7) ~ True)
     => EModX ctx -> EPrec ctx 7 -> EPrec ctx n -> EPrec ctx 7
-  OfHigher7 :: forall n ctx. (SingI n,(n > 7) ~ True) 
+  OfHigher7 :: forall n ctx. (SingI n,(n > 7) ~ True)
     =>                           EPrec ctx n -> EPrec ctx 7
 
 type family EMulX (ctx :: Type) :: Type
-type family EDivX (ctx :: Type) :: Type 
-type family EModX (ctx :: Type) :: Type 
+type family EDivX (ctx :: Type) :: Type
+type family EModX (ctx :: Type) :: Type
 
 type instance EMulX ParsingStage = BookeepInfo
 type instance EDivX ParsingStage = BookeepInfo
@@ -696,19 +696,19 @@ mkMod = PMod <$> mkBookeepInfo
 -- | Precedence 6 operators.
 data instance EPrec ctx 6 where
   -- | Plus operator: @expr + expr@, left associative.
-  PPlus     :: forall n ctx. (SingI n,(n > 6) ~ True) 
+  PPlus     :: forall n ctx. (SingI n,(n > 6) ~ True)
     => EPlusX ctx -> EPrec ctx 6 ->  EPrec ctx n -> EPrec ctx 6
   -- | Minus operator: @expr - expr@, left associative.
-  PMinus    :: forall n ctx. (SingI n,(n > 6) ~ True) 
+  PMinus    :: forall n ctx. (SingI n,(n > 6) ~ True)
     => EMinusX ctx -> EPrec ctx 6 ->  EPrec ctx n -> EPrec ctx 6
-  OfHigher6 :: forall n ctx. (SingI n,(n > 6) ~ True) 
+  OfHigher6 :: forall n ctx. (SingI n,(n > 6) ~ True)
     =>                            EPrec ctx n -> EPrec ctx 6
 
 type family EPlusX (ctx :: Type) :: Type
-type family EMinusX (ctx :: Type) :: Type 
+type family EMinusX (ctx :: Type) :: Type
 
 type instance EPlusX ParsingStage  = BookeepInfo
-type instance EMinusX ParsingStage = BookeepInfo 
+type instance EMinusX ParsingStage = BookeepInfo
 
 mkMinus :: forall {n0} n . (SingI n,n0 ~ 6, (n > n0) ~ True) => Parser (EPrec ParsingStage n0 -> EPrec ParsingStage n -> EPrec ParsingStage n0)
 mkMinus = PMinus <$> mkBookeepInfo
@@ -723,39 +723,39 @@ mkPlus = PPlus <$> mkBookeepInfo
 -- | Precedence 4 operators.
 data instance EPrec ctx 4 where
   -- | Less Than operator: @expr < expr@, non assoc associative.
-  PLT       :: forall n ctx. (SingI n,(n > 4) ~ True) 
+  PLT       :: forall n ctx. (SingI n,(n > 4) ~ True)
     => EPLTX ctx -> EPrec ctx n ->  EPrec ctx n -> EPrec ctx 4
   -- | Less Than or Equal operator: @expr <= expr@, non assoc associative.
-  PLTEQ     :: forall n ctx. (SingI n,(n > 4) ~ True) 
+  PLTEQ     :: forall n ctx. (SingI n,(n > 4) ~ True)
     => EPLTEQX ctx -> EPrec ctx n ->  EPrec ctx n -> EPrec ctx 4
   -- | Greater Than operator: @expr > expr@, non assoc associative.
-  PGT       :: forall n ctx. (SingI n,(n > 4) ~ True) 
+  PGT       :: forall n ctx. (SingI n,(n > 4) ~ True)
     => EPGTX ctx -> EPrec ctx n ->  EPrec ctx n -> EPrec ctx 4
   -- | Greater Than or Equal operator: @expr >= expr@, non assoc associative.
-  PGTEQ     :: forall n ctx. (SingI n,(n > 4) ~ True) 
+  PGTEQ     :: forall n ctx. (SingI n,(n > 4) ~ True)
     => EPGTEQX ctx -> EPrec ctx n ->  EPrec ctx n -> EPrec ctx 4
   -- | Equal operator: @expr = expr@, non assoc associative.
-  PEQ       :: forall n ctx. (SingI n,(n > 4) ~ True) 
+  PEQ       :: forall n ctx. (SingI n,(n > 4) ~ True)
     => EPEQX ctx -> EPrec ctx n ->  EPrec ctx n -> EPrec ctx 4
   -- | Different operator : @expr <> expr@, non assoc associative.
-  PNEQ      :: forall n ctx. (SingI n,(n > 4) ~ True) 
+  PNEQ      :: forall n ctx. (SingI n,(n > 4) ~ True)
     => EPNEQX ctx -> EPrec ctx n ->  EPrec ctx n -> EPrec ctx 4
-  OfHigher4 :: forall n ctx. (SingI n,(n > 4) ~ True) 
+  OfHigher4 :: forall n ctx. (SingI n,(n > 4) ~ True)
     =>                            EPrec ctx n -> EPrec ctx 4
 
 type family EPLTX   (ctx :: Type) :: Type
-type family EPLTEQX (ctx :: Type) :: Type 
-type family EPGTX   (ctx :: Type) :: Type 
-type family EPGTEQX (ctx :: Type) :: Type 
-type family EPEQX   (ctx :: Type) :: Type 
-type family EPNEQX  (ctx :: Type) :: Type 
+type family EPLTEQX (ctx :: Type) :: Type
+type family EPGTX   (ctx :: Type) :: Type
+type family EPGTEQX (ctx :: Type) :: Type
+type family EPEQX   (ctx :: Type) :: Type
+type family EPNEQX  (ctx :: Type) :: Type
 
 type instance EPLTX   ParsingStage = BookeepInfo
-type instance EPLTEQX ParsingStage = BookeepInfo 
-type instance EPGTX   ParsingStage = BookeepInfo 
-type instance EPGTEQX ParsingStage = BookeepInfo 
-type instance EPEQX   ParsingStage = BookeepInfo 
-type instance EPNEQX  ParsingStage = BookeepInfo 
+type instance EPLTEQX ParsingStage = BookeepInfo
+type instance EPGTX   ParsingStage = BookeepInfo
+type instance EPGTEQX ParsingStage = BookeepInfo
+type instance EPEQX   ParsingStage = BookeepInfo
+type instance EPNEQX  ParsingStage = BookeepInfo
 
 
 mkPLT :: forall {n0} n. (SingI n,n0 ~ 4, (n > n0) ~ True) => Parser (EPrec ParsingStage n -> EPrec ParsingStage n -> EPrec ParsingStage n0)
@@ -780,28 +780,28 @@ mkPNEQ = PNEQ <$>  mkBookeepInfo
 -- Precedence 0 Expressions
 ------------------------------
 
-data instance EPrec ctx 1 where 
--- | Lambda functions: 
+data instance EPrec ctx 1 where
+-- | Lambda functions:
   -- @
-  --  fn(type0 var0, type1 var1,...) => return_type -> expr 
+  --  fn(type0 var0, type1 var1,...) => return_type -> expr
   --  fn(type0 var0, type1 var1,...) -> expr
   -- @
-  PLambda 
-    :: ELambdaX ctx 
+  PLambda
+    :: ELambdaX ctx
     -> [(EPrec ctx 0, T.Types)]
     -> Maybe T.Types
     -> EPrec ctx 1
     -> EPrec ctx 1
   OfHigher1 :: forall n ctx. (SingI n,(n > 1) ~ True) => EPrec ctx n -> EPrec ctx 1
 
-type family ELambdaX (ctx :: Type) :: Type 
-type instance ELambdaX ParsingStage = BookeepInfo 
+type family ELambdaX (ctx :: Type) :: Type
+type instance ELambdaX ParsingStage = BookeepInfo
 
 
 mkLambda :: Parser (EPrec ParsingStage 1 -> EPrec ParsingStage 1)
-mkLambda 
-  = (PLambda 
-  <$> (mkBookeepInfo <* ("fn" <|> "fun") ) 
+mkLambda
+  = (PLambda
+  <$> (mkBookeepInfo <* ("fn" <|> "fun") )
   <*> parens (liftA2 (\t e -> (e,t2NT t)) pTypes expr `sepBy` ",")
   <*> optionMaybe ("=>" *> fmap t2NT pTypes) )
   <* "->"
@@ -819,36 +819,36 @@ data instance EPrec ctx 0 where
 expr :: Parser (EPrec ParsingStage 0)
 expr = fmap OfHigher0 . precedence $
   sops Prefix [mkLambda] |-<
-  sops InfixN 
+  sops InfixN
     [ mkPLTEQ <* "<="
     , mkPGTEQ <* ">="
     , mkPNEQ  <* "<>"
-    , mkPLT   <* "<" 
+    , mkPLT   <* "<"
     , mkPGT   <* ">"
     , mkPEQ   <* "="
 
     ] |-<
-  sops InfixL 
+  sops InfixL
     [ mkMinus <* "-"
     , mkPlus  <* "+"
     ] |-<
-  sops InfixL 
+  sops InfixL
     [ mkMul <* "*"
     , mkDiv <* "/"
     , mkMod <* "%"
     ] |-<
   sops InfixR  [ mkPower  <* "^"] |-<
   sops Prefix  [ mkUMinus <* "-"] |-<
-  sops Postfix 
+  sops Postfix
     [ mkApp    expr
     , mkAppArr expr
     ] |-<
-  
+
   Atom atom
 
-instance (SingI n', SingI n, (n' > n) ~ True) => EPrec ctx n' PU.< EPrec ctx n where 
-  upcast = case sing @n of 
-    SNat -> case 
+instance (SingI n', SingI n, (n' > n) ~ True) => EPrec ctx n' PU.< EPrec ctx n where
+  upcast = case sing @n of
+    SNat -> case
       ( sameNat (SNat @n) (SNat @0)
       , sameNat (SNat @n) (SNat @1)
       , sameNat (SNat @n) (SNat @4)
@@ -867,10 +867,10 @@ instance (SingI n', SingI n, (n' > n) ~ True) => EPrec ctx n' PU.< EPrec ctx n w
       (_,_,_,_,_,_,Just Refl,_) -> OfHigherPostfixPrec
       (_,_,_,_,_,_,_,Just Refl) -> OfHigherPrefixPrec
       _                         -> error "Error. Upcast Expression Precedences must be one of: 0,1,4,6,7,8,Postfix,Prefix."
-  downcast t 
+  downcast t
     = withKnownNat (sing @n')
     $ withKnownNat (sing @n)
-    $ case 
+    $ case
       ( sameNat (SNat @n) (SNat @0)
       , sameNat (SNat @n) (SNat @1)
       , sameNat (SNat @n) (SNat @4)
@@ -883,88 +883,88 @@ instance (SingI n', SingI n, (n' > n) ~ True) => EPrec ctx n' PU.< EPrec ctx n w
 
       ) of
       (Just Refl,_,_,_,_,_,_,_,_) -> case t of
-        OfHigher0 f -> genericDowncast f 
-      (_,Just Refl,_,_,_,_,_,_,_) -> case t of 
+        OfHigher0 f -> genericDowncast f
+      (_,Just Refl,_,_,_,_,_,_,_) -> case t of
         OfHigher1 f -> genericDowncast f
         _           -> Nothing
-      (_,_,Just Refl,_,_,_,_,_,_) -> case t of 
+      (_,_,Just Refl,_,_,_,_,_,_) -> case t of
         OfHigher4 f -> genericDowncast f
         _           -> Nothing
-      (_,_,_,Just Refl,_,_,_,_,_) -> case t of 
+      (_,_,_,Just Refl,_,_,_,_,_) -> case t of
         OfHigher6 f -> genericDowncast f
         _           -> Nothing
-      (_,_,_,_,Just Refl,_,_,_,_) -> case t of 
+      (_,_,_,_,Just Refl,_,_,_,_) -> case t of
         OfHigher7 f -> genericDowncast f
         _           -> Nothing
-      (_,_,_,_,_,Just Refl,_,_,_) -> case t of 
+      (_,_,_,_,_,Just Refl,_,_,_) -> case t of
         OfHigher8 f -> genericDowncast f
         _           -> Nothing
-      (_,_,_,_,_,_,Just Refl,_,_) -> case t of 
+      (_,_,_,_,_,_,Just Refl,_,_) -> case t of
         OfHigherPostfixPrec f -> genericDowncast f
         _           -> Nothing
-      (_,_,_,_,_,_,_,Just Refl,_) -> case t of 
+      (_,_,_,_,_,_,_,Just Refl,_) -> case t of
         OfHigherPrefixPrec f -> genericDowncast f
         _           -> Nothing
-      (_,_,_,_,_,_,_,_,Just Refl) -> case t of 
+      (_,_,_,_,_,_,_,_,Just Refl) -> case t of
         _           -> Nothing
       _                         -> error "Error. Downcast Expression Precedences must be one of: 0,1,4,6,7,8,Postfix,Prefix,Atom."
-    where 
+    where
       genericDowncast :: forall x. (SingI x)
         =>  EPrec ctx x -> Maybe (EPrec ctx n')
-      genericDowncast f = withKnownNat (sing @x) $ case sCompare' @n' @x of 
-          EQ' -> withEqRefl @n' @x $ Just f 
-          LT' -> Just $ upcast  @(EPrec ctx x) @(EPrec ctx n') f  
-          GT' -> downcast @(EPrec ctx n') @(EPrec ctx x) f  
+      genericDowncast f = withKnownNat (sing @x) $ case sCompare' @n' @x of
+          EQ' -> withEqRefl @n' @x $ Just f
+          LT' -> Just $ upcast  @(EPrec ctx x) @(EPrec ctx n') f
+          GT' -> downcast @(EPrec ctx n') @(EPrec ctx x) f
 
 -----------------------------------------
 -- Action Grammar
 -----------------------------------------
 
-data A1 ctx 
+data A1 ctx
   = Seq (ASeqX ctx) (A0 ctx) [A0 ctx]
   | OfA0 (A0 ctx)
 
-type family ASeqX (ctx :: Type) :: Type 
+type family ASeqX (ctx :: Type) :: Type
 
 type instance ASeqX ParsingStage = Void
 
 pattern MkSeq b bs <-  Seq _ b bs
   where MkSeq b bs = Seq undefined b bs
 
-data A0 ctx 
+data A0 ctx
   = Decl T.Types (Expr ctx) (Expr ctx) (ADeclX ctx)
   | Assign (Expr ctx) (Expr ctx)     (AAssignX ctx)
   | Print (Expr ctx)           (APrintX ctx)
   | SysCommand String (SysCommandX ctx)
 
 type family ADeclX      (ctx :: Type) :: Type
-type family AAssignX    (ctx :: Type) :: Type 
+type family AAssignX    (ctx :: Type) :: Type
 type family APrintX     (ctx :: Type) :: Type
-type family SysCommandX (ctx :: Type) :: Type 
+type family SysCommandX (ctx :: Type) :: Type
 
 type instance ADeclX     ParsingStage   = BookeepInfo
 type instance AAssignX    ParsingStage  = BookeepInfo
 type instance APrintX     ParsingStage  = BookeepInfo
-type instance SysCommandX ParsingStage  = BookeepInfo 
+type instance SysCommandX ParsingStage  = BookeepInfo
 
 instance A0 ctx PU.< A1 ctx where
   upcast = OfA0
-  downcast t = case t of 
-    OfA0 t' -> Just t' 
-    _       -> Nothing 
+  downcast t = case t of
+    OfA0 t' -> Just t'
+    _       -> Nothing
 
 
 
 mkDecl :: Parser T.Types -> Parser (Expr ParsingStage) -> Parser (Expr ParsingStage) -> Parser (A0 ParsingStage)
-mkDecl pType' ident' expr' 
+mkDecl pType' ident' expr'
   = mkBookeepInfo <**> (Decl <$> pType' <*> ident' <* token (string ":=") <*> expr')
 
 mkAssign :: Parser (Expr ParsingStage) -> Parser (Expr ParsingStage) -> Parser (A0 ParsingStage)
 mkAssign ident' expr' = mkBookeepInfo <**> (Assign <$> ident' <* token (string ":=") <*> expr')
 
-mkSysCommand :: Parser (A0 ParsingStage) 
-mkSysCommand = special <|> normal 
-  where 
+mkSysCommand :: Parser (A0 ParsingStage)
+mkSysCommand = special <|> normal
+  where
     special :: Parser (A0 ParsingStage)
     special = mkBookeepInfo <**> ("." $> SysCommand "reset")
     normal :: Parser (A0 ParsingStage)
@@ -972,7 +972,7 @@ mkSysCommand = special <|> normal
 
 a0 :: Parser (A0 ParsingStage)
 a0
-  =   mkSysCommand 
+  =   mkSysCommand
   <|> flip Print <$> mkBookeepInfo <*> try (fully expr)
   <|> try (mkDecl (t2NT <$> pTypes) expr expr)
   <|> mkAssign expr expr
@@ -991,10 +991,10 @@ action' =  a0' <* optional (lexeme (string ";"))
 -----------------------------------------
 
 parseFile' :: FilePath -> IO (Either ParseError (A1 ParsingStage))
-parseFile' fp = readFile fp >>= \c -> do 
+parseFile' fp = readFile fp >>= \c -> do
   let c' = lines c
   let as =  traverse (runParser (spaces *> action') initialPST "") c'
-  case as of 
+  case as of
     Right []     -> pure . Right . OfA0 $ Print (OfHigher0 $ PInt undefined 0) undefined
     Right (x:xs) -> pure . Right $ Seq undefined x xs
     Left e       -> pure . Left $ e
@@ -1056,9 +1056,9 @@ runTests = forM_ (zip [(1 :: Int)..] tests) $ \(i,s) -> do
   putStrLn $ either show (const "success!") $ parseAction' s
   putStrLn "---------------------------"
 
-yieldVarName :: forall n ctx. SingI n => EPrec ctx n -> Maybe String 
-yieldVarName x = case sing @n of 
-    SNat -> case 
+yieldVarName :: forall n ctx. SingI n => EPrec ctx n -> Maybe String
+yieldVarName x = case sing @n of
+    SNat -> case
       ( sameNat (SNat @n) (SNat @0)
       , sameNat (SNat @n) (SNat @1)
       , sameNat (SNat @n) (SNat @4)
@@ -1069,38 +1069,38 @@ yieldVarName x = case sing @n of
       , sameNat (SNat @n) (SNat @PrefixPrec)
       , sameNat (SNat @n) (SNat @Atom)
       ) of
-      (Just Refl,_,_,_,_,_,_,_,_) -> case x of 
+      (Just Refl,_,_,_,_,_,_,_,_) -> case x of
         OfHigher0 x' -> yieldVarName x'
-      (_,Just Refl,_,_,_,_,_,_,_) -> case x of 
+      (_,Just Refl,_,_,_,_,_,_,_) -> case x of
         OfHigher1 x' -> yieldVarName x'
-        _            -> Nothing 
-      (_,_,Just Refl,_,_,_,_,_,_) -> case x of 
+        _            -> Nothing
+      (_,_,Just Refl,_,_,_,_,_,_) -> case x of
         OfHigher4 x' -> yieldVarName x'
-        _            -> Nothing 
-      (_,_,_,Just Refl,_,_,_,_,_) -> case x of 
+        _            -> Nothing
+      (_,_,_,Just Refl,_,_,_,_,_) -> case x of
         OfHigher6 x' -> yieldVarName x'
-        _            -> Nothing 
-      (_,_,_,_,Just Refl,_,_,_,_) -> case x of 
+        _            -> Nothing
+      (_,_,_,_,Just Refl,_,_,_,_) -> case x of
         OfHigher7 x' -> yieldVarName x'
-        _            -> Nothing 
+        _            -> Nothing
 
-      (_,_,_,_,_,Just Refl,_,_,_) -> case x of 
+      (_,_,_,_,_,Just Refl,_,_,_) -> case x of
         OfHigher8 x' -> yieldVarName x'
-        _            -> Nothing 
-      (_,_,_,_,_,_,Just Refl,_,_) -> case x of 
+        _            -> Nothing
+      (_,_,_,_,_,_,Just Refl,_,_) -> case x of
         OfHigherPostfixPrec x' -> yieldVarName x'
-        _            -> Nothing 
-      (_,_,_,_,_,_,_,Just Refl,_) -> case x of 
+        _            -> Nothing
+      (_,_,_,_,_,_,_,Just Refl,_) -> case x of
         OfHigherPrefixPrec x' -> yieldVarName x'
-        _            -> Nothing 
-      (_,_,_,_,_,_,_,_,Just Refl) -> case x of 
-        PVar _ s -> Just s 
-        _        -> Nothing 
+        _            -> Nothing
+      (_,_,_,_,_,_,_,_,Just Refl) -> case x of
+        PVar _ s -> Just s
+        _        -> Nothing
       _                         -> error "Error. Upcast Expression Precedences must be one of: 0,1,4,6,7,8,Postfix,Prefix."
 
-instance SingI n => Show (TPrec ctx n) where 
-  showsPrec p  = withKnownNat (sing @n) $ case (sameNat (sing @n) (SNat @Atom), sameNat (sing @n) (SNat @0)) of 
-    (Just Refl,_) -> \case 
+instance SingI n => Show (TPrec ctx n) where
+  showsPrec p  = withKnownNat (sing @n) $ case (sameNat (sing @n) (SNat @Atom), sameNat (sing @n) (SNat @0)) of
+    (Just Refl,_) -> \case
       TZ _ -> showString "Z"
       TDouble _ -> showString "F"
       TBool _ -> showString "Bool"
@@ -1114,15 +1114,15 @@ instance SingI n => Show (TPrec ctx n) where
       TLazySp _ a -> showString "Lazy<" . shows a . showString ">"
       TLazySpS _ a -> showString "Lazy*<" . shows a . showString ">"
       TArrayS _ a -> showString "Array[,]<" . shows a . showString ">"
-    (_, Just Refl) -> \case 
+    (_, Just Refl) -> \case
       OfHigherTPrec0 a -> shows a
       TArrow _ a b -> showParen (p > 0) $ shows a . showString " => " . shows b
     _ -> const $ showString "Precedence not defined"
 
 
-instance SingI n => Show (EPrec ctx n) where 
+instance SingI n => Show (EPrec ctx n) where
 
-  showsPrec p = withKnownNat (sing @n) $ case  
+  showsPrec p = withKnownNat (sing @n) $ case
       ( sameNat (SNat @n) (SNat @0)
       , sameNat (SNat @n) (SNat @1)
       , sameNat (SNat @n) (SNat @4)
@@ -1133,63 +1133,63 @@ instance SingI n => Show (EPrec ctx n) where
       , sameNat (SNat @n) (SNat @PrefixPrec)
       , sameNat (SNat @n) (SNat @Atom)
       ) of
-      (Just Refl,_,_,_,_,_,_,_,_) -> \case 
+      (Just Refl,_,_,_,_,_,_,_,_) -> \case
         OfHigher0 e -> showsPrec p e
-      (_,Just Refl,_,_,_,_,_,_,_) -> \case 
-        PLambda _ [(x,t)] mt e -> showParen (p > 1) 
-          $ showString "fn(" . shows t . showString " " 
-          . shows x . (maybe (showString "") $ \s -> showString " => " . shows s) mt 
+      (_,Just Refl,_,_,_,_,_,_,_) -> \case
+        PLambda _ [(x,t)] mt e -> showParen (p > 1)
+          $ showString "fn(" . shows t . showString " "
+          . shows x . (maybe (showString "") $ \s -> showString " => " . shows s) mt
           . showString " -> "
           . shows e
-        PLambda ctx ((x,t) : xs) mt e -> showParen (p > 1) 
-          $ showString "fn(" . shows t . showString " " 
-          . shows x . (maybe (showString "") $ \s -> showString " => " . shows s) mt 
+        PLambda ctx ((x,t) : xs) mt e -> showParen (p > 1)
+          $ showString "fn(" . shows t . showString " "
+          . shows x . (maybe (showString "") $ \s -> showString " => " . shows s) mt
           . showString " -> "
           . showsPrec 1 (PLambda ctx xs mt e)
         OfHigher1 x -> showsPrec p x
-      (_,_,Just Refl,_,_,_,_,_,_) -> \case 
-        PLT _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " < " . showsPrec 5 b 
-        PLTEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " <= " . showsPrec 5 b 
-        PGT _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " > " . showsPrec 5 b 
-        PGTEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " >= " . showsPrec 5 b 
-        PEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " = " . showsPrec 5 b 
-        PNEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " <> " . showsPrec 5 b 
-        OfHigher4 a  -> showsPrec p a  
+      (_,_,Just Refl,_,_,_,_,_,_) -> \case
+        PLT _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " < " . showsPrec 5 b
+        PLTEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " <= " . showsPrec 5 b
+        PGT _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " > " . showsPrec 5 b
+        PGTEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " >= " . showsPrec 5 b
+        PEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " = " . showsPrec 5 b
+        PNEQ _ a b -> showParen (p > 4) $ showsPrec 4 a . showString " <> " . showsPrec 5 b
+        OfHigher4 a  -> showsPrec p a
 
-      (_,_,_,Just Refl,_,_,_,_,_) -> \case 
-        PPlus _ a b -> showParen (p > 6) $ showsPrec 6 a . showString " + " . showsPrec 7 b 
-        PMinus _ a b -> showParen (p > 6) $ showsPrec 6 a . showString " - " . showsPrec 7 b 
-        OfHigher6 a  -> showsPrec p a  
-      (_,_,_,_,Just Refl,_,_,_,_) -> \case 
-        PMul _ a b -> showParen (p > 7) $ showsPrec 7 a . showString " * " . showsPrec 8 b 
-        PDiv _ a b -> showParen (p > 7) $ showsPrec 7 a . showString " / " . showsPrec 8 b 
-        PMod _ a b -> showParen (p > 7) $ showsPrec 7 a . showString " % " . showsPrec 8 b 
-        OfHigher7 a  -> showsPrec p a  
-      (_,_,_,_,_,Just Refl,_,_,_) -> \case 
-        PPower _ a b -> showParen (p > 8) $ showsPrec 9 a . showString " * " . showsPrec 8 b 
-        OfHigher8 a  -> showsPrec p a  
-      (_,_,_,_,_,_,Just Refl,_,_) -> \case 
-        PApp _ f (x:xs) -> showParen (p > 10) 
-          $ showsPrec 11 f 
-          . showParen True (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs) 
-        PAppArr _ f (x:xs) -> showParen (p > 10) 
-          $ showsPrec 11 f 
-          . showString "[" 
-          . (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs) 
+      (_,_,_,Just Refl,_,_,_,_,_) -> \case
+        PPlus _ a b -> showParen (p > 6) $ showsPrec 6 a . showString " + " . showsPrec 7 b
+        PMinus _ a b -> showParen (p > 6) $ showsPrec 6 a . showString " - " . showsPrec 7 b
+        OfHigher6 a  -> showsPrec p a
+      (_,_,_,_,Just Refl,_,_,_,_) -> \case
+        PMul _ a b -> showParen (p > 7) $ showsPrec 7 a . showString " * " . showsPrec 8 b
+        PDiv _ a b -> showParen (p > 7) $ showsPrec 7 a . showString " / " . showsPrec 8 b
+        PMod _ a b -> showParen (p > 7) $ showsPrec 7 a . showString " % " . showsPrec 8 b
+        OfHigher7 a  -> showsPrec p a
+      (_,_,_,_,_,Just Refl,_,_,_) -> \case
+        PPower _ a b -> showParen (p > 8) $ showsPrec 9 a . showString " * " . showsPrec 8 b
+        OfHigher8 a  -> showsPrec p a
+      (_,_,_,_,_,_,Just Refl,_,_) -> \case
+        PApp _ f (x:xs) -> showParen (p > 10)
+          $ showsPrec 11 f
+          . showParen True (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs)
+        PAppArr _ f (x:xs) -> showParen (p > 10)
+          $ showsPrec 11 f
+          . showString "["
+          . (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs)
           . showString "]"
-        OfHigherPostfixPrec a  -> showsPrec p a 
-      (_,_,_,_,_,_,_,Just Refl,_) -> \case 
-        PUMinus _ a -> showParen (p > 11) 
+        OfHigherPostfixPrec a  -> showsPrec p a
+      (_,_,_,_,_,_,_,Just Refl,_) -> \case
+        PUMinus _ a -> showParen (p > 11)
           $ showString "-" . showsPrec 11 a
-        OfHigherPrefixPrec a -> showsPrec p a 
-      (_,_,_,_,_,_,_,_,Just Refl) -> \case 
+        OfHigherPrefixPrec a -> showsPrec p a
+      (_,_,_,_,_,_,_,_,Just Refl) -> \case
         PInt _ n -> shows n
         PDouble _ n -> shows n
         PBool _ n -> shows n
         PVar _ n -> showString n
         PArray _ [] -> showString "[]"
-        PArray _ (x:xs) -> showString "[" 
-          . (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs) 
+        PArray _ (x:xs) -> showString "["
+          . (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs)
           . showString "]"
         PTuple _ a b -> showString "(" . shows a . showString ", " . shows b . showString ")"
         PParen _ a -> showParen True $ shows a
@@ -1199,13 +1199,13 @@ instance SingI n => Show (EPrec ctx n) where
           . showString ", " . shows c . showString ")"
       _ -> const $ showString "Precedence not defined"
 
-          
-instance Show (A0 ctx) where 
+
+instance Show (A0 ctx) where
   show (Decl t e e' _) = show t <> " " <> show e <> " := " <> show e' <> ";"
   show (Assign e e' _) = show e <> " := " <> show e' <> ";"
   show (Print e _)     = show e
   show (SysCommand e _) = "sys." <> e <> "();"
 
-instance Show (A1 ctx) where 
+instance Show (A1 ctx) where
   show (OfA0 x) = show x
   show (Seq _ x xs) = unlines $ show x : fmap show xs

@@ -23,11 +23,11 @@
 
 module Zilly.Unsugared.Runner where
 
-import Zilly.Unsugared.ADT.TypeCheck 
-import Zilly.Unsugared.ADT.Action 
+import Zilly.Unsugared.ADT.TypeCheck
+import Zilly.Unsugared.ADT.Action
 import Zilly.Unsugared.ADT.Expression
-import Zilly.Unsugared.Newtypes 
-import Zilly.Unsugared.Environment.TypedMap 
+import Zilly.Unsugared.Newtypes
+import Zilly.Unsugared.Environment.TypedMap
 import Zilly.Unsugared.Parser qualified as P
 
 import Data.Map.Strict (Map)
@@ -39,43 +39,43 @@ import Control.Concurrent
 import Data.Functor (void)
 import Control.Monad ((<=<))
 import Data.Foldable (traverse_)
-import System.IO.Error 
+import System.IO.Error
 import Control.Monad.Reader
 import Control.Monad.Writer.Strict
 import Control.Applicative (Alternative)
 import Debug.Trace (trace)
-import Control.Monad.Random 
+import Control.Monad.Random
 import Control.Monad.State
 import Data.Default
 
 data GammaEnv m = GammaEnv
-  { typingEnv :: TypeCheckEnv m 
+  { typingEnv :: TypeCheckEnv m
   , valueStore :: TypeRepMap (E m)
   }
 
 iMap :: Effects m => IO (GammaEnv m)
-iMap = do 
+iMap = do
   minusV <- newMVar $ minusStd
   plusV  <- newMVar $ plusStd
   ltV    <- newMVar $ ltStd
   eqV    <- newMVar $ eqStd
   gtV    <- newMVar $ gtStd
-  orV    <- newMVar $ orStd 
+  orV    <- newMVar $ orStd
   notV   <- newMVar $ notStd
   andV   <- newMVar $ andStd
   ltEqV  <- newMVar $ ltEqStd
   gtEqV  <- newMVar $ gtEqStd
   nEqV   <- newMVar $ nEqStd
   absV   <- newMVar $ absStd
-  chsV   <- newMVar $ chsStd 
+  chsV   <- newMVar $ chsStd
   _mltV  <- newMVar $ _mltStd
-  _mulV  <- newMVar $ _mulStd 
+  _mulV  <- newMVar $ _mulStd
   mulV   <- newMVar $ mulStd
-  randV  <- newMVar $ randomStd 
+  randV  <- newMVar $ randomStd
 
-  pure $ GammaEnv 
+  pure $ GammaEnv
     { typingEnv = TCE
-        { getGamma= M.fromList $ mappend [("not", Z :-> Z),("random", Z :-> Z)] $ mkBinTypeOp <$> 
+        { getGamma= M.fromList $ mappend [("not", Z :-> Z),("random", Z :-> Z)] $ mkBinTypeOp <$>
             [ "minus"
             , "plus"
             , "lt"
@@ -111,21 +111,21 @@ iMap = do
             , ("chs",MkSomeExpression chsStd)
             , ("random",MkSomeExpression randomStd)
             ]
-        , expectedType= Nothing 
+        , expectedType= Nothing
         }
-    , valueStore = TypeRepMap . M.fromList $ 
+    , valueStore = TypeRepMap . M.fromList $
       [ mkStoreFun "minus" minusV
       , mkStoreFun "plus" plusV
-      , mkStoreFun "lt" ltV 
-      , mkStoreFun "eq" eqV 
-      , mkStoreFun "gt" gtV 
-      , mkStoreFun "or" orV 
-      , mkStoreFun "and" andV 
-      , mkStoreFun "lteq" ltEqV 
+      , mkStoreFun "lt" ltV
+      , mkStoreFun "eq" eqV
+      , mkStoreFun "gt" gtV
+      , mkStoreFun "or" orV
+      , mkStoreFun "and" andV
+      , mkStoreFun "lteq" ltEqV
       , mkStoreFun "gteq" gtEqV
-      , mkStoreFun "neq" nEqV 
-      , mkStoreFun "_mlt" _mltV 
-      , mkStoreFun "_mul" _mulV 
+      , mkStoreFun "neq" nEqV
+      , mkStoreFun "_mlt" _mltV
+      , mkStoreFun "_mul" _mulV
       , mkStoreFun "mul"  mulV
       , ("not",MkAny notV)
       , ("abs",MkAny absV)
@@ -134,47 +134,47 @@ iMap = do
       ]
 
     }
-  where 
+  where
     binType = Z :-> Z :-> Z
     mkBinTypeOp x = (x, binType)
 
     mkStoreFun x y = (x,MkAny y)
 
-instance (Effects m) => Default (m (TypeRepMap (E m))) where 
+instance (Effects m) => Default (m (TypeRepMap (E m))) where
   def = valueStore <$> liftIO iMap
-    
-instance (Effects m) => Default (m (TypeCheckEnv m)) where 
+
+instance (Effects m) => Default (m (TypeCheckEnv m)) where
   def = typingEnv <$> liftIO iMap
 
-newtype ErrorLog' a = ErrorLog [a] 
+newtype ErrorLog' a = ErrorLog [a]
   deriving newtype (Semigroup, Monoid,Functor,Applicative)
 
-instance Show (ErrorLog' (P.BookeepInfo, TypeCheckError)) where 
-  show (ErrorLog es) = concatMap (\x -> showError x <> "\n\n") es 
-    where 
-      showError :: (P.BookeepInfo, TypeCheckError) -> String 
-      showError (P.tokenPos -> sp, tce) = concat 
-        [ "At line: " 
-        , show . sourceLine $ sp 
+instance Show (ErrorLog' (P.BookeepInfo, TypeCheckError)) where
+  show (ErrorLog es) = concatMap (\x -> showError x <> "\n\n") es
+    where
+      showError :: (P.BookeepInfo, TypeCheckError) -> String
+      showError (P.tokenPos -> sp, tce) = concat
+        [ "At line: "
+        , show . sourceLine $ sp
         , " column: "
-        , show . sourceColumn $ sp 
+        , show . sourceColumn $ sp
         , ". "
         , showTypeCheckError tce
         ]
-      showTypeCheckError :: TypeCheckError -> String 
+      showTypeCheckError :: TypeCheckError -> String
       showTypeCheckError (NonImplementedFeature f) = "Non implemented feature: " <> f
-      showTypeCheckError (CustomError' ce) = ce 
-      showTypeCheckError (TypeMismatch' (ExpectedType e) (ActualType t)) = concat 
+      showTypeCheckError (CustomError' ce) = ce
+      showTypeCheckError (TypeMismatch' (ExpectedType e) (ActualType t)) = concat
         [ "Type Mismatch. "
         , "Expected type: " <> show e
         , ", But got instead: " <> show t
         ]
-      showTypeCheckError (FromGammaError' (TypeMismatch s (ExpectedType e) (ActualType t))) = concat 
+      showTypeCheckError (FromGammaError' (TypeMismatch s (ExpectedType e) (ActualType t))) = concat
         [ "Variable type Mismatch: " <> show s
         , ". Expected type: " <> show e
         , ", But got instead: " <> show t
         ]
-      showTypeCheckError (FromGammaError' (VariableNotDefined s))  
+      showTypeCheckError (FromGammaError' (VariableNotDefined s))
         = "Variable not defined: " <> show s
       showTypeCheckError (FromGammaError' (VariableAlreadyDeclared s))
         = "Trying to declare an already existing variable: " <> show s
@@ -184,24 +184,24 @@ instance Show (ErrorLog' (P.BookeepInfo, TypeCheckError)) where
 
 
 type ErrorLog = ErrorLog' (P.BookeepInfo,TypeCheckError)
-data Err 
-    = PErr ParseError 
+data Err
+    = PErr ParseError
     | TCErr ErrorLog
 
-data EvalEnvSt = EvalEnvSt 
-  { randomSeed :: !Int 
+data EvalEnvSt = EvalEnvSt
+  { randomSeed :: !Float
 
   }
 
-initialEvalEnvSt :: EvalEnvSt 
-initialEvalEnvSt = EvalEnvSt 
-  { randomSeed = 2
+initialEvalEnvSt :: EvalEnvSt
+initialEvalEnvSt = EvalEnvSt
+  { randomSeed = 0.3141592653589793238462643383279
   }
 
 newtype EvalEnv a = EvalEnv { runEvalEnv' :: RandomT (StateT EvalEnvSt (ReaderT (TypeRepMap (E EvalEnv)) IO )) a}
   deriving newtype (Functor,Applicative,Monad,Alternative,MonadFail,MonadIO,MonadReader (TypeRepMap (E EvalEnv)))
 
-instance MonadRandom EvalEnv where 
+instance MonadRandom EvalEnv where
   randInt n = EvalEnv $ randInt n
 
 runEvalEnv :: EvalEnvSt -> TypeRepMap (E EvalEnv) -> EvalEnv a -> IO (a,EvalEnvSt)
@@ -215,7 +215,7 @@ instance Show Err where
   show (TCErr e) = "Typing Error!\n" <> show e
 
 typeCheckProgram :: forall m. Effects m => P.A1 P.ParsingStage ->  TypeCheckEnv m -> m ( [A m],ErrorLog, TypeCheckEnv m)
-typeCheckProgram a env = runWriterT (flip runReaderT env $ typeCheckA1 @m a) >>= \case 
+typeCheckProgram a env = runWriterT (flip runReaderT env $ typeCheckA1 @m a) >>= \case
   ((as,env'),logs) -> pure (as,logs,env')
 
 parseAndTypecheck :: FilePath -> IO (Either Err [A EvalEnv], EvalEnvSt)
@@ -234,8 +234,8 @@ parseAndTypecheck' fp = fst <$> parseAndTypecheck fp >>= \case
 parseAndRun :: FilePath -> IO (Either String [A EvalEnv],EvalEnvSt)
 parseAndRun fp = parseAndTypecheck fp >>= \case
   (e@(Left _),st)  -> pure (Left . show $ e,st)
-  (Right as,st) -> (runEvalEnv st empty) $ evalProgram as >>= \case 
-    Left errs -> pure . Left . showRuntimeError $ errs 
+  (Right as,st) -> (runEvalEnv st empty) $ evalProgram as >>= \case
+    Left errs -> pure . Left . showRuntimeError $ errs
     Right (_,as') -> pure . Right $ as'
 
 
@@ -245,23 +245,23 @@ parseAndRun' fp = fst <$> parseAndRun fp >>= \case
   Right as -> traverse_ print as
 
 parseAndResponse :: EvalEnvSt -> GammaEnv EvalEnv -> String -> IO (String, GammaEnv EvalEnv, EvalEnvSt)
-parseAndResponse st env s = case P.parseAction' s of 
+parseAndResponse st env s = case P.parseAction' s of
   Left e -> pure ("Error: parsing error, " <> show e, env,st)
-  Right a 
+  Right a
     -> (runEvalEnv st (valueStore env) ) (typeCheckProgram @EvalEnv a (typingEnv env)) >>= \case
       ((_,ErrorLog elog@(_:_),tEnv'),st') -> pure ("Error: " <> show (ErrorLog elog),env{typingEnv=tEnv'},st')
-      ((as,_,tEnv'),st') -> runEvalEnv st' (valueStore env) (evalProgram as) >>= \case 
+      ((as,_,tEnv'),st') -> runEvalEnv st' (valueStore env) (evalProgram as) >>= \case
         (Left err,st'') -> pure ("Error: runtime error, " <> showRuntimeError err,env{typingEnv=tEnv'},st'')
-        (Right (newStore,as'),st'') -> do   
+        (Right (newStore,as'),st'') -> do
           -- aux <- sequence [ (\(MkAny v') -> (\v2 -> k <> " :- " <> show v2) <$> liftIO  (tryReadMVar v')) v  | (k,v) <- (\(TypeRepMap m) -> M.assocs m) newStore]
           -- liftIO $ traverse_ putStrLn aux
-          pure 
-            ( unlines $ uncurry g <$> zip as as' 
+          pure
+            ( unlines $ uncurry g <$> zip as as'
             , GammaEnv{typingEnv=tEnv',valueStore=newStore}
             , st''
             )
-  where 
-    g :: A m -> A m -> String 
+  where
+    g :: A m -> A m -> String
     g (Print e0) e1 = "OK: " <> show e0 <> " ==> " <> show e1
     g l r = "ACK: " <> show l <> " ==> " <> show r
 
@@ -271,101 +271,99 @@ buildInterpreter = do
   mst <- newMVar initialEvalEnvSt
   pure $ \s -> do
     env <- readMVar mv
-    st  <- readMVar mst 
+    st  <- readMVar mst
     catchIOError
       ( do
         (results,newEnv,st') <- parseAndResponse st env s
         void $ swapMVar mv newEnv
         void $ swapMVar mst st'
         pure results
-      ) 
+      )
       (\e -> pure ("Error: " <> show e))
 
 
 ex0 :: IO ()
-ex0 = do 
-  i  <- buildInterpreter 
+ex0 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/equality.z"
   traverse_ (putStrLn <=< i) fc
 
 ex1 :: IO ()
-ex1 = do 
-  i  <- buildInterpreter 
+ex1 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/comparison.z"
   traverse_ (putStrLn <=< i) fc
 
 ex2 :: IO ()
-ex2 = do 
-  i  <- buildInterpreter 
+ex2 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/lazy1.z"
   traverse_ (putStrLn <=< i) fc
 
 ex3 :: IO ()
-ex3 = do 
-  i  <- buildInterpreter 
+ex3 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/lazy2.z"
   traverse_ (putStrLn <=< i) fc
 
 ex4 :: IO ()
-ex4 = do 
-  i  <- buildInterpreter 
+ex4 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/functions.z"
   traverse_ (putStrLn <=< i) fc
 
 ex5 :: IO ()
-ex5 = do 
-  i  <- buildInterpreter 
+ex5 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/functions2.z"
   traverse_ (putStrLn <=< i) fc
 
 ex6 :: IO ()
-ex6 = do 
-  i  <- buildInterpreter 
+ex6 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/lazy3.z"
   traverse_ (putStrLn <=< i) fc
 
 ex7 ::  IO ()
-ex7 = do 
-  i  <- buildInterpreter 
+ex7 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/fibo.z"
   traverse_ (putStrLn <=< i) fc
 
 ex8 ::  IO ()
-ex8 = do 
-  i  <- buildInterpreter 
+ex8 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/subtyped.z"
   traverse_ (putStrLn <=< i) fc
 
 ex9 ::  IO ()
-ex9 = do 
-  i  <- buildInterpreter 
+ex9 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/tuples.z"
   traverse_ (putStrLn <=< i) fc
 
 ex10 ::  IO ()
-ex10 = do 
-  i  <- buildInterpreter 
+ex10 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/reset.z"
   traverse_ (putStrLn <=< i) fc
 
 ex11 ::  IO ()
-ex11 = do 
-  i  <- buildInterpreter 
+ex11 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/random.z"
   traverse_ (putStrLn <=< i) fc
 
 ex12 ::  IO ()
-ex12 = do 
-  i  <- buildInterpreter 
+ex12 = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/fix.z"
   traverse_ (putStrLn <=< i) fc
 
 
 
 nm :: IO ()
-nm = do 
-  i  <- buildInterpreter 
+nm = do
+  i  <- buildInterpreter
   fc <- lines <$> readFile "./programs/custom.z"
   traverse_ (putStrLn <=< i) fc
-
-

@@ -7,3 +7,6 @@ ly
 formula(minus)
 (λ(Z l) -> λ(Z r) -> minus(l)(r))(2)
 (λ(Z l) -> λ(Z r) -> minus(l)(r))(2)(3)
+::zilly+
+y
+3 + 5

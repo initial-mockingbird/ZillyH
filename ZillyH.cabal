@@ -34,6 +34,7 @@ library
       Data.Default
       Data.Ord.Singletons
       Data.Proof
+      Data.Theorems.Equality
       Parser.Numbers
       Parser.Utilities
       Utilities.Codes
