@@ -64,10 +64,10 @@ interpret st@(UIST{process,currentMode}) s = case runParser parseChange () "" s 
     Right (Just newMode) -> case newMode of
       UnsugaredInterpreter -> do
         f' <- Unsugared.buildInterpreter
-        pure ("ACK: " <> s <> " ==> " <> "Interpreter mode changed.",UIST f' UnsugaredInterpreter)
+        pure ("ACK: " "Interpreter mode changed.",UIST f' UnsugaredInterpreter)
       ClassicInterpreter -> do
         f' <- Classic.buildInterpreter
-        pure ("ACK: " <> s <> " ==> " <> "Interpreter mode changed.", UIST f' ClassicInterpreter)
+        pure ("ACK: "  <> "Interpreter mode changed.", UIST f' ClassicInterpreter)
 
 
 

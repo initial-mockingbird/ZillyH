@@ -264,8 +264,8 @@ parseAndResponse st env s = case P.parseAction' s of
             )
   where
     g :: A m -> A m -> String
-    g (Print e0) e1 = "OK: " <> show e0 <> " ==> " <> show e1
-    g l r = "ACK: " <> show l <> " ==> " <> show r
+    g (Print e0) e1 = "OK: " <> show e1
+    g l r = "ACK: " <> show r
 
 buildInterpreter ::  IO (String -> IO String)
 buildInterpreter = do
