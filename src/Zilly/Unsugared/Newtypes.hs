@@ -194,9 +194,6 @@ type PZInfer    = PTCon "Infer"  '[]
 type PLazyS a   = PTCon "Lazy*"  '[a]
 type PZArray a  = PTCon "Array" '[a]
 
-matches :: forall (a :: Symbol) (b :: Symbol). SingI a => SSymbol b -> Maybe (b :~: a)
-matches b@(SSymbol ) =  case sing @a of
-  SSymbol -> sameSymbol b (SSymbol @a)
 
 -- infixr 0 :%->
 -- pattern SZ         = STCon "Z"      []

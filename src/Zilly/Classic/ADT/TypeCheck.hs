@@ -45,6 +45,7 @@ import Data.Theorems.Equality
 import Data.Type.Equality (gcastWith)
 import Data.Eq.Singletons
 import Data.Ord.Singletons
+import Data.Matchers
 
 data TypeCheckEnv m = TCE
   { getGamma     :: Map String Types -- ^ Maps variables to their ltypes

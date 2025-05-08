@@ -32,6 +32,7 @@ library
   exposed-modules:
       Control.Monad.Random
       Data.Default
+      Data.Matchers
       Data.Ord.Singletons
       Data.Proof
       Data.Theorems.Equality

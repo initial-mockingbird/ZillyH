@@ -41,6 +41,7 @@ import Data.Singletons.TH ((:~:)(..))
 import Debug.Trace (trace)
 import Data.List.Singletons hiding (Map)
 import Data.Default
+import Data.Matchers
 
 data TypeCheckEnv m = TCE
   { getGamma     :: Map String Types -- ^ Maps variables to their ltypes
@@ -61,17 +62,15 @@ typeCheckExpr :: forall n m w.
   , SingI n
   )
   => EPrec ParsingStage n -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
-typeCheckExpr e = case
-  ( decideEquality' @n @Atom
-  , decideEquality' @n @PostfixPrec
-  , decideEquality' @n @1
-  , decideEquality' @n @0
-  ) of
-    (Just Refl,_,_,_) -> typeCheckAtom e
-    (_,Just Refl,_,_) -> typeCheckPostfixPrec e
-    (_,_,Just Refl,_) -> typeCheckP1 e
-    (_,_,_,Just Refl) -> typeCheckP0 e
-    _ -> error "impossible case typeCheckExpr"
+typeCheckExpr e | Just Refl <- matches @Atom (sing @n)
+                = typeCheckAtom e
+                | Just Refl <- matches @PostfixPrec (sing @n)
+                = typeCheckPostfixPrec e
+                | Just Refl <- matches @1 (sing @n)
+                = typeCheckP1 e
+                | Just Refl <- matches @0 (sing @n)
+                = typeCheckP0 e
+                | otherwise = error "impossible case typeCheckExpr"
 
 typeCheckAtom ::
   ( Effects m

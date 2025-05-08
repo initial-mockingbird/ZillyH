@@ -55,81 +55,26 @@ data GammaEnv m = GammaEnv
 
 iMap :: Effects m => IO (GammaEnv m)
 iMap = do
-  minusV <- newMVar $ minusStd
-  plusV  <- newMVar $ plusStd
-  ltV    <- newMVar $ ltStd
-  eqV    <- newMVar $ eqStd
-  gtV    <- newMVar $ gtStd
-  orV    <- newMVar $ orStd
-  notV   <- newMVar $ notStd
-  andV   <- newMVar $ andStd
-  ltEqV  <- newMVar $ ltEqStd
-  gtEqV  <- newMVar $ gtEqStd
-  nEqV   <- newMVar $ nEqStd
-  absV   <- newMVar $ absStd
-  chsV   <- newMVar $ chsStd
-  _mltV  <- newMVar $ _mltStd
-  _mulV  <- newMVar $ _mulStd
-  mulV   <- newMVar $ mulStd
+  subV   <- newMVar $ subStd
+  ltV'    <- newMVar $ ltStd'
   randV  <- newMVar $ randomStd
 
   pure $ GammaEnv
     { typingEnv = TCE
-        { getGamma= M.fromList $ mappend [("not", Z :-> Z),("random", Z :-> Z)] $ mkBinTypeOp <$>
-            [ "minus"
-            , "plus"
+        { getGamma= M.fromList $ mappend [("random", Z :-> Z)] $ mkBinTypeOp <$>
+            [ "sub"
             , "lt"
-            , "eq"
-            , "gt"
-            , "or"
-            , "and"
-            , "lteq"
-            , "gteq"
-            , "neq"
-            , "abs"
-            , "chs"
-            , "_mlt"
-            , "_mul"
-            , "mul"
             ]
         , getCValues = M.fromList $
-            [ ("minus",MkSomeExpression minusStd)
-            , ("plus",MkSomeExpression plusStd)
-            , ("lt",MkSomeExpression ltStd)
-            , ("eq",MkSomeExpression eqStd)
-            , ("gt",MkSomeExpression gtStd)
-            , ("or",MkSomeExpression orStd)
-            , ("and",MkSomeExpression andStd)
-            , ("lteq",MkSomeExpression ltEqStd)
-            , ("gteq",MkSomeExpression gtEqStd)
-            , ("neq",MkSomeExpression nEqStd)
-            , ("_mlt",MkSomeExpression _mltStd)
-            , ("_mul",MkSomeExpression _mulStd)
-            , ("mul",MkSomeExpression mulStd)
-            , ("not",MkSomeExpression notStd)
-            , ("abs",MkSomeExpression absStd)
-            , ("chs",MkSomeExpression chsStd)
+            [ ("sub",MkSomeExpression minusStd)
+            , ("lt",MkSomeExpression ltStd')
             , ("random",MkSomeExpression randomStd)
             ]
         , expectedType= Nothing
         }
     , valueStore = TypeRepMap . M.fromList $
-      [ mkStoreFun "minus" minusV
-      , mkStoreFun "plus" plusV
-      , mkStoreFun "lt" ltV
-      , mkStoreFun "eq" eqV
-      , mkStoreFun "gt" gtV
-      , mkStoreFun "or" orV
-      , mkStoreFun "and" andV
-      , mkStoreFun "lteq" ltEqV
-      , mkStoreFun "gteq" gtEqV
-      , mkStoreFun "neq" nEqV
-      , mkStoreFun "_mlt" _mltV
-      , mkStoreFun "_mul" _mulV
-      , mkStoreFun "mul"  mulV
-      , ("not",MkAny notV)
-      , ("abs",MkAny absV)
-      , ("chs",MkAny chsV)
+      [ mkStoreFun "sub" subV
+      , mkStoreFun "lt" ltV'
       , ("random", MkAny randV)
       ]
 

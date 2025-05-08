@@ -371,6 +371,13 @@ minusStd
   $ Lambda "r"
   $ Minus (Var @(PZ) "l") (Var @(PZ) "r")
 
+subStd :: Effects m => E m (PZ --> PZ --> PZ)
+subStd
+  = Lambda "r"
+  $ Lambda "l"
+  $ Minus (Var @(PZ) "l") (Var @(PZ) "r")
+
+
 
 plusStd :: Effects m => E m (PZ --> PZ --> PZ)
 plusStd
@@ -385,6 +392,14 @@ ltStd
   = Lambda "l"
   $ Lambda "r"
   $ Less (Var @(PZ) "l") (Var @(PZ) "r")
+
+ltStd' :: Effects m => E m (PZ --> PZ --> PZ)
+ltStd'
+  = Lambda "r"
+  $ Lambda "l"
+  $ Less (Var @(PZ) "l") (Var @(PZ) "r")
+
+
 
 eqStd ::Effects m => E m (PZ --> PZ --> PZ)
 eqStd

@@ -71,6 +71,11 @@ interpret st@(UIST{process,currentMode}) s = case runParser parseChange () "" s 
 
 
 
+exStd :: IO ()
+exStd = do
+  i  <- buildUniversalInterpreter
+  fc <- lines <$> readFile "./programs/unsugared/std.z"
+  traverse_ (putStrLn <=< i) fc
 
 ex0 :: IO ()
 ex0 = do
