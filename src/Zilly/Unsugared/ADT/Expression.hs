@@ -381,16 +381,16 @@ subStd
 
 plusStd :: Effects m => E m (PZ --> PZ --> PZ)
 plusStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ Minus (Var @(PZ) "l")
     (Minus (Val 0) (Var @(PZ) "r"))
 
 
 ltStd :: Effects m => E m (PZ --> PZ --> PZ)
 ltStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ Less (Var @(PZ) "l") (Var @(PZ) "r")
 
 ltStd' :: Effects m => E m (PZ --> PZ --> PZ)
@@ -403,22 +403,22 @@ ltStd'
 
 eqStd ::Effects m => E m (PZ --> PZ --> PZ)
 eqStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ (Var @(PZ --> PZ --> PZ) "and")
     $$  ( (Var @(PZ --> PZ) "not")
-        $$  Less (Var @(PZ) "l") (Var @(PZ) "r")
+        $$  Less (Var @(PZ) "r") (Var @(PZ) "l")
         )
     $$  ( (Var @(PZ --> PZ) "not")
-        $$  Less (Var @(PZ) "r") (Var @(PZ) "l")
+        $$  Less (Var @(PZ) "l") (Var @(PZ) "r")
         )
 
 gtStd :: Effects m => E m (PZ --> PZ --> PZ)
 gtStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ (Var @(PZ --> PZ --> PZ) "and")
-  $$ (Less (Var @(PZ) "r") (Var @(PZ) "l"))
+  $$ (Less (Var @(PZ) "l") (Var @(PZ) "r"))
   $$  (  Var @(PZ --> PZ) "not"
       $$  ( Var @(PZ --> PZ --> PZ) "eq"
           $$ (Var @(PZ) "l")
@@ -430,8 +430,8 @@ gtStd
 
 orStd :: Effects m => E m (PZ --> PZ --> PZ)
 orStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ If
     (Var @(PZ) "l")
     (cTrue)
@@ -452,8 +452,8 @@ notStd
 
 andStd :: Effects m => E m (PZ --> PZ --> PZ)
 andStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ If
     (Var @(PZ) "l")
     ( If
@@ -468,8 +468,8 @@ andStd
 
 ltEqStd :: Effects m => E m (PZ --> PZ --> PZ)
 ltEqStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $   ( Var @(PZ --> PZ --> PZ) "or")
   $$  ( Less (Var @(PZ) "l") (Var @(PZ) "r") )
   $$  ( Var @(PZ --> PZ --> PZ) "eq"
@@ -480,33 +480,33 @@ ltEqStd
 
 gtEqStd :: Effects m => E m (PZ --> PZ --> PZ)
 gtEqStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $   ( Var @(PZ --> PZ --> PZ) "or")
   $$  ( (Var @(PZ --> PZ --> PZ) "gt")
-      $$ (Var @(PZ) "l")
-      $$ (Var @(PZ) "r") )
-  $$  ( Var @(PZ --> PZ --> PZ) "eq"
-      $$ (Var @(PZ) "l")
       $$ (Var @(PZ) "r")
+      $$ (Var @(PZ) "l") )
+  $$  ( Var @(PZ --> PZ --> PZ) "eq"
+      $$ (Var @(PZ) "r")
+      $$ (Var @(PZ) "l")
       )
 
 
 nEqStd :: Effects m => E m (PZ --> PZ --> PZ)
 nEqStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ (Var @(PZ --> PZ) "not")
   $$  ( Var @(PZ --> PZ --> PZ) "eq"
-      $$ (Var @(PZ) "l")
       $$ (Var @(PZ) "r")
+      $$ (Var @(PZ) "l")
       )
 
 absStd :: Effects m => E m (PZ --> PZ)
 absStd
   = Lambda "x"
   $ If
-    (Less (Var @(PZ) "x") (Val 0))
+    (Less (Var @(PZ) "x") (Val 0) )
     (Minus (Val 0) (Var @(PZ) "x"))
     (Var @(PZ) "x")
 
@@ -518,8 +518,8 @@ chsStd
 
 _mltStd :: Effects m => E m (PZ --> PZ --> PZ)
 _mltStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ If
     (  Var @(PZ --> PZ --> PZ) "eq"
     $$ Var @(PZ) "l"
@@ -528,46 +528,69 @@ _mltStd
     (Val 0)
     ( Var @(PZ --> PZ --> PZ) "plus"
     $$  ( Var @(PZ --> PZ --> PZ) "_mlt"
-        $$ (Minus (Var @(PZ) "l") (Val 1))
         $$ (Var @(PZ) "r")
+        $$ (Minus (Var @(PZ) "l") (Val 1))
         )
     $$ (Var @(PZ) "r")
     )
 
 _mulStd :: Effects m => E m (PZ --> PZ --> PZ)
 _mulStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ If
     (Less
       (Val 0)
       (Var @(PZ) "l")
     )
-    ( Var @(PZ --> PZ --> PZ) "_mlt"
-    $$ Var @(PZ) "l"
-    $$ Var @(PZ) "r"
+    ( If
+      (Less
+        (Val 0)
+        (Var @(PZ) "r")
+      )
+      ( (Var @(PZ --> PZ --> PZ) "_mlt") -- l > 0 & r > 0
+        $$ (Var @(PZ) "r")
+        $$ (Var @(PZ) "l")
+      )
+      ( Var @(PZ --> PZ) "chs" -- l > 0 & r < 0
+        $$  ( Var @(PZ --> PZ --> PZ) "_mlt"
+            $$ (Var @(PZ --> PZ) "chs" $$ Var @(PZ) "r")
+            $$ (Var @(PZ) "l")
+            )
+      )
+
     )
-    ( (Var @(PZ --> PZ) "chs")
-    $$  ( Var @(PZ --> PZ --> PZ) "_mlt"
-        $$ Var @(PZ) "l"
-        $$ Var @(PZ) "r"
-        )
+    ( If
+      (Less
+        (Val 0)
+        (Var @(PZ) "r")
+      )
+      ( Var @(PZ --> PZ) "chs" -- l < 0 & r > 0
+        $$  ( Var @(PZ --> PZ --> PZ) "_mlt"
+            $$ (Var @(PZ) "r")
+            $$ (Var @(PZ --> PZ) "chs" $$ Var @(PZ) "l")
+            )
+      )
+      ( Var @(PZ --> PZ --> PZ) "_mlt"
+      $$ (Var @(PZ --> PZ) "chs" $$ Var @(PZ) "r")
+      $$ (Var @(PZ --> PZ) "chs" $$  Var @(PZ) "l")
+      ) -- l < 0 & r < 0
     )
 
 mulStd :: Effects m => E m (PZ --> PZ --> PZ)
 mulStd
-  = Lambda "l"
-  $ Lambda "r"
+  = Lambda "r"
+  $ Lambda "l"
   $ If
     (Less
       (Var @(PZ --> PZ) "abs" $$ Var @(PZ) "l")
       (Var @(PZ --> PZ) "abs" $$ Var @(PZ) "r")
     )
     (  (Var @(PZ --> PZ --> PZ) "_mul" )
-    $$ (Var @(PZ) "l")
     $$ (Var @(PZ) "r")
+    $$ (Var @(PZ) "l")
     )
     (  (Var @(PZ --> PZ --> PZ) "_mul" )
-    $$ (Var @(PZ) "r")
     $$ (Var @(PZ) "l")
+    $$ (Var @(PZ) "r")
     )

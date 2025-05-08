@@ -55,6 +55,7 @@ data GammaEnv m = GammaEnv
 
 iMap :: Effects m => IO (GammaEnv m)
 iMap = do
+  subV   <- newMVar $ subStd
   minusV <- newMVar $ minusStd
   plusV  <- newMVar $ plusStd
   ltV    <- newMVar $ ltStd
@@ -76,16 +77,17 @@ iMap = do
   pure $ GammaEnv
     { typingEnv = TCE
         { getGamma= M.fromList $ mappend [("not", Z :-> Z),("random", Z :-> Z)] $ mkBinTypeOp <$>
-            [ "minus"
+            [ "sub"
+            , "minus"
             , "plus"
             , "lt"
             , "eq"
             , "gt"
             , "or"
             , "and"
-            , "lteq"
-            , "gteq"
-            , "neq"
+            , "le"
+            , "ge"
+            , "ne"
             , "abs"
             , "chs"
             , "_mlt"
@@ -93,16 +95,17 @@ iMap = do
             , "mul"
             ]
         , getCValues = M.fromList $
-            [ ("minus",MkSomeExpression minusStd)
+            [ ("sub",MkSomeExpression subStd)
+            , ("minus",MkSomeExpression minusStd)
             , ("plus",MkSomeExpression plusStd)
             , ("lt",MkSomeExpression ltStd)
             , ("eq",MkSomeExpression eqStd)
             , ("gt",MkSomeExpression gtStd)
             , ("or",MkSomeExpression orStd)
             , ("and",MkSomeExpression andStd)
-            , ("lteq",MkSomeExpression ltEqStd)
-            , ("gteq",MkSomeExpression gtEqStd)
-            , ("neq",MkSomeExpression nEqStd)
+            , ("le",MkSomeExpression ltEqStd)
+            , ("ge",MkSomeExpression gtEqStd)
+            , ("ne",MkSomeExpression nEqStd)
             , ("_mlt",MkSomeExpression _mltStd)
             , ("_mul",MkSomeExpression _mulStd)
             , ("mul",MkSomeExpression mulStd)
@@ -114,16 +117,17 @@ iMap = do
         , expectedType= Nothing
         }
     , valueStore = TypeRepMap . M.fromList $
-      [ mkStoreFun "minus" minusV
+      [ mkStoreFun "sub" subV
+      , mkStoreFun "minus" minusV
       , mkStoreFun "plus" plusV
       , mkStoreFun "lt" ltV
       , mkStoreFun "eq" eqV
       , mkStoreFun "gt" gtV
       , mkStoreFun "or" orV
       , mkStoreFun "and" andV
-      , mkStoreFun "lteq" ltEqV
-      , mkStoreFun "gteq" gtEqV
-      , mkStoreFun "neq" nEqV
+      , mkStoreFun "le" ltEqV
+      , mkStoreFun "ge" gtEqV
+      , mkStoreFun "ne" nEqV
       , mkStoreFun "_mlt" _mltV
       , mkStoreFun "_mul" _mulV
       , mkStoreFun "mul"  mulV

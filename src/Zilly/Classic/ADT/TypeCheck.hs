@@ -447,8 +447,8 @@ typeCheckP7::
 typeCheckP7 (PMul @n bk l r) = typeCheckExpr
   (PApp bk
     (OfHigherPostfixPrec $ PVar @ParsingStage bk "mul")
-    [ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    [ gcastWith proof $ OfHigher0 r
+    , OfHigher0 l
     ]
   )
   where
@@ -471,8 +471,8 @@ typeCheckP6::
 typeCheckP6 (PPlus @n bk l r) = typeCheckExpr
   (PApp bk
     (OfHigherPostfixPrec $ PVar @ParsingStage bk "plus")
-    [ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    [ gcastWith proof  $ OfHigher0 r
+    , OfHigher0 l
     ]
   )
   where
@@ -500,8 +500,8 @@ typeCheckP4 ::
 typeCheckP4 (PLT @n bk l r) = typeCheckExpr
   (PApp bk
     (OfHigherPostfixPrec $ PVar @ParsingStage bk "lt")
-    [ gcastWith proof  $ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    [ gcastWith proof  $ OfHigher0 r
+    , gcastWith proof  $ OfHigher0 l
     ]
   )
   where
@@ -509,9 +509,9 @@ typeCheckP4 (PLT @n bk l r) = typeCheckExpr
     proof =  sPOTransitivity @_ @(>@#@$) @n @4 @0 Refl Refl
 typeCheckP4 (PLTEQ @n bk l r) = typeCheckExpr
   (PApp bk
-    (OfHigherPostfixPrec $ PVar @ParsingStage bk "lteq")
-    [ gcastWith proof  $ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    (OfHigherPostfixPrec $ PVar @ParsingStage bk "le")
+    [ gcastWith proof  $ OfHigher0 r
+    , gcastWith proof  $ OfHigher0 l
     ]
   )
   where
@@ -520,8 +520,8 @@ typeCheckP4 (PLTEQ @n bk l r) = typeCheckExpr
 typeCheckP4 (PGT @n bk l r) = typeCheckExpr
   (PApp bk
     (OfHigherPostfixPrec $ PVar @ParsingStage bk "gt")
-    [ gcastWith proof  $ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    [ gcastWith proof  $ OfHigher0 r
+    , gcastWith proof  $ OfHigher0 l
     ]
   )
   where
@@ -529,9 +529,9 @@ typeCheckP4 (PGT @n bk l r) = typeCheckExpr
     proof =  sPOTransitivity @_ @(>@#@$) @n @4 @0 Refl Refl
 typeCheckP4 (PGTEQ @n bk l r) = typeCheckExpr
   (PApp bk
-    (OfHigherPostfixPrec $ PVar @ParsingStage bk "gteq")
-    [ gcastWith proof  $ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    (OfHigherPostfixPrec $ PVar @ParsingStage bk "ge")
+    [ gcastWith proof  $ OfHigher0 r
+    , gcastWith proof  $ OfHigher0 l
     ]
   )
   where
@@ -540,8 +540,8 @@ typeCheckP4 (PGTEQ @n bk l r) = typeCheckExpr
 typeCheckP4 (PEQ @n bk l r) = typeCheckExpr
   (PApp bk
     (OfHigherPostfixPrec $ PVar @ParsingStage bk "eq")
-    [ gcastWith proof  $ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    [ gcastWith proof  $ OfHigher0 r
+    , gcastWith proof  $ OfHigher0 l
     ]
   )
   where
@@ -549,9 +549,9 @@ typeCheckP4 (PEQ @n bk l r) = typeCheckExpr
     proof =  sPOTransitivity @_ @(>@#@$) @n @4 @0 Refl Refl
 typeCheckP4 (PNEQ @n bk l r) = typeCheckExpr
   (PApp bk
-    (OfHigherPostfixPrec $ PVar @ParsingStage bk "neq")
-    [ gcastWith proof  $ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    (OfHigherPostfixPrec $ PVar @ParsingStage bk "ne")
+    [ gcastWith proof  $ OfHigher0 r
+    , gcastWith proof  $ OfHigher0 l
     ]
   )
   where
