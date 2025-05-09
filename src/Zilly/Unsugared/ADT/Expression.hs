@@ -331,7 +331,7 @@ instance Show (E m a) where
     Less  a b  -> showString "_lt(" . shows a . showString ")(" . shows b . showString ")"
     -- Minus  a b -> showParen (p > 6) $ showsPrec 6 a . showString " - " . showsPrec 7 b
     -- Less  a b -> showParen (p > 10) $ showsPrec 4 a . showString " < " . showsPrec 5 b
-    Random a  -> showString "random(" . shows a . showChar ')'
+    Random a  -> showString "_random(" . shows a . showChar ')'
     Bottom _ _-> showString "BOTTOM"
     MkTuple a b -> showString "(" . shows a . showString ", " . shows b . showString ")"
     FstT a -> showString "fst(" . shows a . showString ")"
