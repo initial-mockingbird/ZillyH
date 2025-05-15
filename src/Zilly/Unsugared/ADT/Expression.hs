@@ -242,23 +242,23 @@ evalE (MkTuple a b) = do
   MkSomeExpression a' <- evalE a
   MkSomeExpression b' <- evalE b
   pure . MkSomeExpression $ MkTuple a' b'
-evalE (FstT t) = case t of
-  (MkTuple a _) -> pure . MkSomeExpression $ a
-  (Var x) -> ask >>= getL x >>= \case
-    Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
-    Right a -> evalE $ FstT a
-  (Subtyped @_ @sub t') -> case sing @sub of
+evalE (FstT t) = evalE t >>= \case
+  MkSomeExpression (MkTuple a _) -> pure . MkSomeExpression $ a
+  -- (Var x) -> ask >>= getL x >>= \case
+  --   Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
+  --   Right a -> evalE $ FstT a
+  MkSomeExpression (Subtyped @_ @sub t') -> case sing @sub of
     STCon n (SCons sa (SCons sb SNil)) -> withKnownSymbol n $ case sameSymbol n (SSymbol @"Tuple") of
       Just Refl ->  withSingI sa $ withSingI sb $ evalE (FstT t')
       _ -> error "Error on evaling 'FstT'-expression. Can only eval tuple arguments"
     _ -> error "Error on evaling 'FstT'-expression. Can only eval tuple arguments"
   _ -> error "Error on evaling 'FstT'-expression. Tuple args normal form can only be tuples or subtyped tuples"
-evalE (SndT t) = case t of
-  (MkTuple _ b) -> pure . MkSomeExpression $ b
-  (Var x) -> ask >>= getL x >>= \case
-    Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
-    Right a -> evalE $ SndT a
-  (Subtyped @_ @sub t') -> case sing @sub of
+evalE (SndT t) = evalE t >>= \case
+  MkSomeExpression (MkTuple _ b) -> pure . MkSomeExpression $ b
+  -- (Var x) -> ask >>= getL x >>= \case
+  --   Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
+  --   Right a -> evalE $ SndT a
+  MkSomeExpression (Subtyped @_ @sub t') -> case sing @sub of
     STCon n (SCons sa (SCons sb SNil)) -> withKnownSymbol n $ case sameSymbol n (SSymbol @"Tuple") of
       Just Refl ->  withSingI sa $ withSingI sb $ evalE (SndT t')
       _ -> error "Error on evaling 'FstT'-expression. Can only eval tuple arguments"

@@ -8,5 +8,6 @@ t0
 t1
 t2
 t3
-(Z,lazy<Z>) t4 := (1,'sub(fst(t4))(4)');
-t4
+(lazy<Z>,lazy<Z>) t5 := ('snd(t5)','fst(t5)');
+(Z,Z) t6 := t5;
+t6

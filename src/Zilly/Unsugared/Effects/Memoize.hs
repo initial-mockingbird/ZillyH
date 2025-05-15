@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 module Zilly.Unsugared.Effects.Memoize where
 
 import Zilly.Unsugared.Effects.CC
@@ -28,17 +29,23 @@ runMemoized (Memoized mrc mv r) = do
       liftIO $ putMVar mv v
       pure v
 
-memoizeWithCC :: (MonadIO m, MonadCC m) => m a -> m (Memoized m a)
+memoizeWithCC :: (MonadFail m, MonadIO m, MonadCC m) => m a -> m (Memoized m a)
 memoizeWithCC f = do
   mvar <- liftIO $ newEmptyMVar
   cc <- getCC
   icycle <- liftIO $ newMVar cc
+  l <- liftIO $ newMVar @Int (-1)
   let rc = do
         cc' <- getCC
         last_cycle <- liftIO $ readMVar icycle
-        if cc' == last_cycle
-          then return False
-          else do
+        l' <- liftIO $ readMVar l
+        case (cc' == last_cycle, cc' == l') of
+          (True,_) -> pure False
+          (False,False) ->  do
+            pure True
+          (False,True) -> do
             void $ liftIO $ swapMVar icycle cc'
-            return True
-  pure $ Memoized rc mvar f
+            fail "circular reference"
+  let post = getCC >>= liftIO . swapMVar icycle
+  let pre = getCC >>= liftIO . swapMVar l
+  pure $ Memoized rc mvar (pre *> f <* post)
