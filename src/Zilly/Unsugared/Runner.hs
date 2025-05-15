@@ -29,6 +29,7 @@ import Zilly.Unsugared.ADT.Expression
 import Zilly.Unsugared.Newtypes
 import Zilly.Unsugared.Environment.TypedMap
 import Zilly.Unsugared.Parser qualified as P
+import Zilly.Unsugared.Effects.CC
 
 import Data.Map.Strict (Map)
 import Data.Map qualified as M
@@ -135,25 +136,51 @@ data Err
 
 data EvalEnvSt = EvalEnvSt
   { randomSeed :: !Float
-
+  , currentCC  :: !Int
   }
 
 initialEvalEnvSt :: EvalEnvSt
 initialEvalEnvSt = EvalEnvSt
   { randomSeed = 0.3141592653589793238462643383279
+  , currentCC = 0
   }
 
-newtype EvalEnv a = EvalEnv { runEvalEnv' :: RandomT (StateT EvalEnvSt (ReaderT (TypeRepMap (E EvalEnv)) IO )) a}
-  deriving newtype (Functor,Applicative,Monad,Alternative,MonadFail,MonadIO,MonadReader (TypeRepMap (E EvalEnv)))
+newtype EvalEnv a = EvalEnv { runEvalEnv' ::
+  CCStateT
+    (RandomT
+      (StateT EvalEnvSt
+        (ReaderT (TypeRepMap (E EvalEnv)) IO
+        )
+      )
+    )
+  a}
+  deriving newtype
+    ( Functor
+    , Applicative
+    , Monad
+    , Alternative
+    , MonadFail
+    , MonadIO
+    , MonadReader (TypeRepMap (E EvalEnv))
+    )
 
 instance MonadRandom EvalEnv where
-  randInt n = EvalEnv $ randInt n
+  randInt n = EvalEnv . lift $ randInt n
+
+instance MonadCC EvalEnv where
+  getCC = EvalEnv getCC
+  cycleCC = EvalEnv cycleCC
 
 runEvalEnv :: EvalEnvSt -> TypeRepMap (E EvalEnv) -> EvalEnv a -> IO (a,EvalEnvSt)
-runEvalEnv st env (EvalEnv f) =  flip runReaderT env $ flip runStateT st $ do
-  (a,seed) <- runRandomIO (randomSeed st) f
-  _ <- modify $ \st' -> st'{randomSeed=seed}
-  pure a
+runEvalEnv st env (EvalEnv f)
+  =  flip runReaderT env
+  $ flip runStateT st
+  $ do
+    ((a,newCC),seed) <- runRandomIO (randomSeed st)
+      $ runCCStateT (currentCC st)
+      $  f
+    _ <- modify $ \st' -> st'{randomSeed=seed,currentCC=newCC}
+    pure a
 
 instance Show Err where
   show (PErr e)  = "Parser Error!\n" <> show e

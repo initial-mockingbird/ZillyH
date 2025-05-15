@@ -1,0 +1,12 @@
+lazy<Z> lr := 'random(100)';
+lazy<Z> => Z f := fn(lazy<Z> lrp) -> sub(lrp)(lrp);
+(Z,Z) t0 := (lr,lr);
+(lazy<Z>,lazy<Z>) t1 := ('lr','lr');
+lazy<(Z,Z)> t2 := '(lr,lr)';
+Z t3 := f(formula(lr));
+t0
+t1
+t2
+t3
+(Z,lazy<Z>) t4 := (1,'sub(fst(t4))(4)');
+t4

@@ -168,6 +168,13 @@ ex14 = do
   fc <- lines <$> readFile "./programs/unsugared/functions_with_return.z"
   traverse_ (putStrLn <=< i) fc
 
+ex15 ::  IO ()
+ex15 = do
+  i  <- buildUniversalInterpreter
+  fc <- lines <$> readFile "./programs/unsugared/cc_0.z"
+  traverse_ (putStrLn <=< i) fc
+
+
 
 
 nm :: IO ()

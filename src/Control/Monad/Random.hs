@@ -11,6 +11,7 @@ import Control.Monad.State
 import Control.Applicative
 import Control.Monad.Reader
 import Debug.Trace
+import Control.Monad.Trans.Class
 
 class Monad m => MonadRandom m where
   randInt :: Int -> m Int
@@ -18,7 +19,15 @@ class Monad m => MonadRandom m where
 
 
 newtype RandomT m a = RandomT {runRandomT :: StateT Float m a}
-  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadFail, Alternative, MonadPlus )
+  deriving newtype
+    ( Functor
+    , Applicative
+    , Monad
+    , MonadIO
+    , MonadFail
+    , Alternative
+    , MonadPlus
+    )
 
 instance Monad m => MonadRandom (RandomT m) where
   randInt ub = RandomT $ do
@@ -36,6 +45,9 @@ instance MonadReader r m => MonadReader r (RandomT m)  where
   local f (RandomT a) = RandomT $ local f a
   ask  = RandomT $ ask
   reader f = RandomT $ reader f
+
+instance MonadTrans RandomT where
+  lift = RandomT . lift
 
 evalRandomIO :: MonadIO m => Float -> RandomT m a -> m a
 evalRandomIO n (RandomT f) = evalStateT f n

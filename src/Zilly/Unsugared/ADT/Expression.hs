@@ -55,6 +55,8 @@ import Prelude.Singletons --(SMaybe(..), withSingI, demote, SomeSing(..))
 import Debug.Trace (trace)
 import Control.Monad.Random
 import GHC.TypeLits
+import Zilly.Unsugared.Effects.CC
+import Zilly.Unsugared.Effects.Memoize
 
 type Effects m =
   ( Functor m
@@ -66,6 +68,7 @@ type Effects m =
   , EvalMonad (E m) ~ m
   , MonadFail m
   , MonadRandom m
+  , MonadCC m
   )
 
 type instance EvalMonad (E m) = m
@@ -76,32 +79,29 @@ data  E  (m :: Type -> Type) (a :: PTypes) where
   Var      :: SingI ltype => LensM (E m) ltype -> E m (Ftype ltype)
   Minus    :: E m PZ -> E m PZ  -> E m PZ
   Less     :: E m PZ -> E m PZ  -> E m PZ
-  If       :: SingI x => E m PZ -> E m x          -> E m x -> E m x
+  If       :: E m PZ -> E m x          -> E m x -> E m x
   -- 'a' is the type of the expression before rvalue
   -- that is: /. (x : Lazy Int) => x + 1
   Lambda   :: (SingI ltype, SingI b) => LensM (E m) ltype  -> E m b  -> E m (ltype --> b)
   Defer    :: SingI a => E m a -> E m (PLazy a)
-  Formula  :: SingI ltype => LensM (E m) ltype -> E m ltype
+  Formula  :: forall ltype m. LensM (E m) ltype -> E m ltype
   Random   :: E m PZ -> E m PZ
   App      :: forall ltype  b m.
     ( SingI ltype
-    , SingI b
-
     )
     => E m (ltype --> b)
     -> E m ltype
     -> E m b
   LambdaC  :: (SingI ltype, SingI b)
     => TypeRepMap (E m) -> LensM (E m) ltype -> E m b -> E m (ltype --> b)
-  LazyC    :: SingI a => TypeRepMap (E m) -> E m a -> E m a
+  LazyC    :: TypeRepMap (E m) -> E m a ->  Memoized m (SomeExpression m) -> E m a
   Subtyped :: forall sup sub m.
-    ( SingI sup
-    , SingI sub
+    ( SingI sub
     , (UpperBound sup sub == Just sup) ~ True
     ) => E m sub -> E m sup
   MkTuple :: (SingI a, SingI b) => E m a -> E m b -> E m (PTuple a b)
-  FstT  :: (SingI a, SingI b) => E m (PTuple a b) -> E m a
-  SndT  :: (SingI a, SingI b) => E m (PTuple a b) -> E m b
+  FstT  :: forall a b m. SingI b => E m (PTuple a b) -> E m a
+  SndT  :: forall a b m. SingI a => E m (PTuple a b) -> E m b
 
   Bottom   :: EvalError -> [EvalError] -> E m PTop
 
@@ -118,6 +118,10 @@ unsafeCoerceExpression (MkSomeExpression @a' e) = case decideEquality (sing @a) 
   Just Refl -> e
   Nothing -> error $ "Error at unsafeCoerceExpression. Expected type: "
     <> withShow @a <> " but instead got: " <> withShow @a'
+
+
+memoVal :: forall a m. (SingI a, Effects m) => E m a -> m (Memoized m (SomeExpression m))
+memoVal  e = memoizeWithCC . evalE $ e
 
 evalE :: forall a m. (SingI a, Effects m) => E m a -> m (SomeExpression m)
 evalE e@(Val {})  = pure $ MkSomeExpression e
@@ -153,7 +157,10 @@ evalE (If c a b) = do
     _ -> error "Error on evaling 'if'-expression. Integer values can only be values or bottom after reduction."
 evalE (Lambda @arg @body arg body)
   = (\env -> MkSomeExpression $ LambdaC @arg @body env arg body) <$> ask
-evalE (Defer a)   = ask >>= pure . MkSomeExpression . flip LazyC a
+evalE (Defer a)   = do
+  env <- ask
+  ma <- memoizeWithCC $ local (const env) $ evalE a
+  pure . MkSomeExpression $ LazyC env a ma
 evalE (Formula @ltype x) =  ask >>= viewM x >>= \case
   Left e ->  pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
   Right a
@@ -212,7 +219,7 @@ evalE (App @ltype f x) = do
       _ -> error "Error on evaling 'function application'-expression. Subtyped functions must be functions themselves."
     _ -> error "Error on evaling 'function application'-expression. Function values can only be closures, subtyped functions, or bottom after reduction."
 evalE f@(LambdaC {}) = pure . MkSomeExpression $ f
-evalE (LazyC env e)  = local (const env) $ evalE e
+evalE (LazyC _ _ mem)  = runMemoized mem
 evalE b@(Bottom {})  = pure . MkSomeExpression $ b
 evalE (Subtyped @sup @sub e) = do
   MkSomeExpression @e' e' <- evalE e
@@ -220,7 +227,7 @@ evalE (Subtyped @sup @sub e) = do
     $ withSingIFtype @sub
     $ withSingIUBType @sup @sub
     $ case decideEquality (sing @(e')) (sing @(Ftype sub)) of
-      Nothing -> error "Eror on evaling 'subtyped'-expression. Non matching types"
+      Nothing -> error "Error on evaling 'subtyped'-expression. Non matching types"
       Just Refl -> case sing @(UpperBound sup sub) of
         SJust @_ @sx sx
           -> ftypeRespectsUpperBound @sup @sub
@@ -235,17 +242,23 @@ evalE (MkTuple a b) = do
   MkSomeExpression a' <- evalE a
   MkSomeExpression b' <- evalE b
   pure . MkSomeExpression $ MkTuple a' b'
-evalE (FstT t) = evalE t >>= \case
-  MkSomeExpression (MkTuple a _) -> pure . MkSomeExpression $ a
-  MkSomeExpression (Subtyped @_ @sub t') -> case sing @sub of
+evalE (FstT t) = case t of
+  (MkTuple a _) -> pure . MkSomeExpression $ a
+  (Var x) -> ask >>= getL x >>= \case
+    Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
+    Right a -> evalE $ FstT a
+  (Subtyped @_ @sub t') -> case sing @sub of
     STCon n (SCons sa (SCons sb SNil)) -> withKnownSymbol n $ case sameSymbol n (SSymbol @"Tuple") of
       Just Refl ->  withSingI sa $ withSingI sb $ evalE (FstT t')
       _ -> error "Error on evaling 'FstT'-expression. Can only eval tuple arguments"
     _ -> error "Error on evaling 'FstT'-expression. Can only eval tuple arguments"
   _ -> error "Error on evaling 'FstT'-expression. Tuple args normal form can only be tuples or subtyped tuples"
-evalE (SndT t) = evalE t >>= \case
-  MkSomeExpression (MkTuple _ b) -> pure . MkSomeExpression $ b
-  MkSomeExpression (Subtyped @_ @sub t') -> case sing @sub of
+evalE (SndT t) = case t of
+  (MkTuple _ b) -> pure . MkSomeExpression $ b
+  (Var x) -> ask >>= getL x >>= \case
+    Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
+    Right a -> evalE $ SndT a
+  (Subtyped @_ @sub t') -> case sing @sub of
     STCon n (SCons sa (SCons sb SNil)) -> withKnownSymbol n $ case sameSymbol n (SSymbol @"Tuple") of
       Just Refl ->  withSingI sa $ withSingI sb $ evalE (SndT t')
       _ -> error "Error on evaling 'FstT'-expression. Can only eval tuple arguments"
@@ -324,7 +337,7 @@ instance Show (E m a) where
       . showString " -> " .  showsPrec 0 t
     App  f a -> showParen (p > 10) $ showsPrec 10 f . showChar '(' . shows a . showChar ')'
     Defer  v -> showString "'" . showsPrec 11 v . showString "'"
-    LazyC _ e -> showsPrec p e -- showChar '<' . showsPrec 10 e . showString  ", " . showsPrec 10 env . showChar '>'
+    LazyC _ e _ -> showsPrec p e -- showChar '<' . showsPrec 10 e . showString  ", " . showsPrec 10 env . showChar '>'
     Formula  e -> showString "formula(" . (shows . UT . varNameM) e . showChar ')'
     Subtyped  e ->  showsPrec p e --showString "@@" . showsPrec p e
     Minus a b  -> showString "_minus(" . shows a . showString ")(" . shows b . showString ")"

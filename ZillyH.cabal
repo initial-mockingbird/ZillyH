@@ -49,7 +49,9 @@ library
       Zilly.Unsugared.ADT.Action
       Zilly.Unsugared.ADT.Expression
       Zilly.Unsugared.ADT.TypeCheck
-      Zilly.Unsugared.Environment.CC
+      Zilly.Unsugared.Effects.CC
+      Zilly.Unsugared.Effects.Cycle
+      Zilly.Unsugared.Effects.Memoize
       Zilly.Unsugared.Environment.TypedMap
       Zilly.Unsugared.Newtypes
       Zilly.Unsugared.Parser
