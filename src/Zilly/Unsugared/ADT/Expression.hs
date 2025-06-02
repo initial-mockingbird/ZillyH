@@ -271,7 +271,7 @@ evalE (SndT t) = evalE t >>= \case
 --------------------------
 
 connector :: Int -> Bool
-connector = (> 0)
+connector = (/= 0)
 
 rConnector :: Bool -> Int
 rConnector = \case
