@@ -431,7 +431,7 @@ gtStd
   = Lambda "r"
   $ Lambda "l"
   $ (Var @(PZ --> PZ --> PZ) "and")
-  $$ (Less (Var @(PZ) "l") (Var @(PZ) "r"))
+  $$ (Less (Var @(PZ) "r") (Var @(PZ) "l"))
   $$  (  Var @(PZ --> PZ) "not"
       $$  ( Var @(PZ --> PZ --> PZ) "eq"
           $$ (Var @(PZ) "l")
