@@ -314,9 +314,9 @@ typeCheckPrefixPrec ::
   => EPrec ParsingStage PrefixPrec -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckPrefixPrec (PUMinus  bk e) = typeCheckExpr
   (PApp bk
-    (OfHigherPostfixPrec $ PVar @ParsingStage bk "minus")
-    [ OfHigher0 $ PInt bk 0
-    , OfHigher0 e
+    (OfHigherPostfixPrec $ PVar @ParsingStage bk "sub")
+    [ OfHigher0 e
+    , OfHigher0 $ PInt bk 0
     ]
   )
 typeCheckPrefixPrec (OfHigherPrefixPrec e) = typeCheckExpr e
