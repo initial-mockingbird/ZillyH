@@ -480,9 +480,9 @@ typeCheckP6 (PPlus @n bk l r) = typeCheckExpr
     proof =  sPOTransitivity @_ @(>@#@$) @n @6 @0 Refl Refl
 typeCheckP6 (PMinus @n bk l r) = typeCheckExpr
   (PApp bk
-    (OfHigherPostfixPrec $ PVar @ParsingStage bk "minus")
-    [ OfHigher0 l
-    , gcastWith proof  $ OfHigher0 r
+    (OfHigherPostfixPrec $ PVar @ParsingStage bk "sub")
+    [ gcastWith proof  $ OfHigher0 r
+    , OfHigher0 l
     ]
   )
   where
