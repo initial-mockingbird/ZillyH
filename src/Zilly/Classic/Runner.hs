@@ -77,7 +77,7 @@ iMap = do
 
   pure $ GammaEnv
     { typingEnv = TCE
-        { getGamma= M.fromList $ mappend [("not", Z :-> Z),("random", Z :-> Z)] $ mkBinTypeOp <$>
+        { getGamma= M.fromList $ mappend [("not", Z :-> Z),("chs", Z :-> Z), ("random", Z :-> Z)] $ mkBinTypeOp <$>
             [ "sub"
             , "minus"
             , "plus"
@@ -90,7 +90,6 @@ iMap = do
             , "ge"
             , "ne"
             , "abs"
-            , "chs"
             , "_mlt"
             , "_mul"
             , "mul"
