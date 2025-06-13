@@ -48,6 +48,7 @@ import Debug.Trace (trace)
 import Control.Monad.Random
 import Control.Monad.State
 import Data.Default
+import Control.Monad.Error.Class
 
 data GammaEnv m = GammaEnv
   { typingEnv :: TypeCheckEnv m
@@ -91,6 +92,10 @@ instance (Effects m) => Default (m (TypeRepMap (E m))) where
 
 instance (Effects m) => Default (m (TypeCheckEnv m)) where
   def = typingEnv <$> liftIO iMap
+
+type instance EvalMonad (E EvalEnv) = EvalEnv
+instance HasTypeRepMap (E EvalEnv) where
+instance MonadError String EvalEnv where
 
 newtype ErrorLog' a = ErrorLog [a]
   deriving newtype (Semigroup, Monoid,Functor,Applicative)

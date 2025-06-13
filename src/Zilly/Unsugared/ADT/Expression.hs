@@ -57,21 +57,23 @@ import Control.Monad.Random
 import GHC.TypeLits
 import Zilly.Unsugared.Effects.CC
 import Zilly.Unsugared.Effects.Memoize
-
+import Control.Monad.Error.Class
 type Effects m =
   ( Functor m
   , Applicative m
   , Monad m
   , Alternative m
   , MonadIO m
-  , MonadReader (TypeRepMap (E m)) m
+  , HasTypeRepMap (E m)
   , EvalMonad (E m) ~ m
-  , MonadFail m
+  , MonadError String m
   , MonadRandom m
   , MonadCC m
   )
 
 type instance EvalMonad (E m) = m
+
+
 
 {-| Zilly expression Language. |-}
 data  E  (m :: Type -> Type) (a :: PTypes) where
@@ -125,9 +127,7 @@ memoVal  e = memoizeWithCC . evalE $ e
 
 evalE :: forall a m. (SingI a, Effects m) => E m a -> m (SomeExpression m)
 evalE e@(Val {})  = pure $ MkSomeExpression e
-evalE  (Var l )   = ask >>= getL l >>= \case
-  Left e -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
-  Right a -> evalE a
+evalE  (Var l )   = getEnv >>= getL l >>= evalE
 evalE (Minus l r) = do
   MkSomeExpression ml' <-  evalE l
   MkSomeExpression mr' <-  evalE r
@@ -156,14 +156,12 @@ evalE (If c a b) = do
         False -> evalE b
     _ -> error "Error on evaling 'if'-expression. Integer values can only be values or bottom after reduction."
 evalE (Lambda @arg @body arg body)
-  = (\env -> MkSomeExpression $ LambdaC @arg @body env arg body) <$> ask
+  = (\env -> MkSomeExpression $ LambdaC @arg @body env arg body) <$> getEnv
 evalE (Defer a)   = do
-  env <- ask
-  ma <- memoizeWithCC $ local (const env) $ evalE a
+  env <- getEnv
+  ma <- memoizeWithCC $ withEnv env $ evalE a
   pure . MkSomeExpression $ LazyC env a ma
-evalE (Formula @ltype x) =  ask >>= viewM x >>= \case
-  Left e ->  pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
-  Right a
+evalE (Formula @ltype x) =  getEnv >>= viewM x >>= \a
     -> withSingIFtype @ltype
     $ ftypeIsSubtype @ltype
     $ (pure . MkSomeExpression ) a
@@ -186,14 +184,10 @@ evalE (App @ltype f x) = do
     (LambdaC @arg env binded body,_)
       -> withSingIFtype @arg
       $ case upcastable @(Ftype arg) @mx' of
-        SameTypeUB _ -> setFL binded env mx' >>= \case
-          Left e     -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
-          Right env' -> local (const env') $ evalE body
+        SameTypeUB _ -> setFL binded env mx' >>= \env' -> withEnv env' $ evalE body
         LeftUB _
           -> eqWeakening @(UpperBound (Ftype arg) mx') @(Just (Ftype arg) )
-          $ setFL binded env (Subtyped @(Ftype arg) mx') >>= \case
-          Left e     -> pure . MkSomeExpression . flip Bottom [] . FromGammaError $ e
-          Right env' -> local (const env') $ evalE body
+          $ setFL binded env (Subtyped @(Ftype arg) mx') >>= \env' -> withEnv env' $ evalE body
         _ -> error "Error on evaling 'function application'-expression. Argument type does not match that of the call."
 
     (Subtyped @sup @sub f',_) -> case sing @sup of
@@ -357,7 +351,7 @@ instance Show (E m a) where
 -- Standard library
 ---------------------------
 
-fstStd :: forall x a b m. (Ftype x ~ PTuple a b, SingI x, SingI a, SingI b, Effects m) => E m (x --> a)
+fstStd :: forall x a b m. (Ftype x ~ PTuple a b, SingI x, SingI a, SingI b, EnvEffs m) => E m (x --> a)
 fstStd
   = withSingIFtype @a
   $ withSingIFtype @b
@@ -365,7 +359,7 @@ fstStd
   $ FstT (Var @x "t")
 
 
-sndStd :: forall x a b m. (Ftype x ~ PTuple a b, SingI x, SingI a, SingI b, Effects m) => E m (x --> b)
+sndStd :: forall x a b m. (Ftype x ~ PTuple a b, SingI x, SingI a, SingI b, EnvEffs m) => E m (x --> b)
 sndStd
   = withSingIFtype @a
   $ withSingIFtype @b
@@ -373,18 +367,18 @@ sndStd
   $ SndT (Var @x "t")
 
 
-randomStd :: Effects m => E m (PZ --> PZ)
+randomStd :: EnvEffs m => E m (PZ --> PZ)
 randomStd
   = Lambda "x"
   $ Random (Var @(PZ) "x")
 
-minusStd :: Effects m => E m (PZ --> PZ --> PZ)
+minusStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 minusStd
   = Lambda "l"
   $ Lambda "r"
   $ Minus (Var @(PZ) "l") (Var @(PZ) "r")
 
-subStd :: Effects m => E m (PZ --> PZ --> PZ)
+subStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 subStd
   = Lambda "r"
   $ Lambda "l"
@@ -392,7 +386,7 @@ subStd
 
 
 
-plusStd :: Effects m => E m (PZ --> PZ --> PZ)
+plusStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 plusStd
   = Lambda "r"
   $ Lambda "l"
@@ -400,13 +394,13 @@ plusStd
     (Minus (Val 0) (Var @(PZ) "r"))
 
 
-ltStd :: Effects m => E m (PZ --> PZ --> PZ)
+ltStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 ltStd
   = Lambda "r"
   $ Lambda "l"
   $ Less (Var @(PZ) "l") (Var @(PZ) "r")
 
-ltStd' :: Effects m => E m (PZ --> PZ --> PZ)
+ltStd' :: EnvEffs m => E m (PZ --> PZ --> PZ)
 ltStd'
   = Lambda "r"
   $ Lambda "l"
@@ -414,7 +408,7 @@ ltStd'
 
 
 
-eqStd ::Effects m => E m (PZ --> PZ --> PZ)
+eqStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 eqStd
   = Lambda "r"
   $ Lambda "l"
@@ -426,7 +420,7 @@ eqStd
         $$  Less (Var @(PZ) "l") (Var @(PZ) "r")
         )
 
-gtStd :: Effects m => E m (PZ --> PZ --> PZ)
+gtStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 gtStd
   = Lambda "r"
   $ Lambda "l"
@@ -441,7 +435,7 @@ gtStd
 
 
 
-orStd :: Effects m => E m (PZ --> PZ --> PZ)
+orStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 orStd
   = Lambda "r"
   $ Lambda "l"
@@ -454,7 +448,7 @@ orStd
       (cFalse)
 
 
-notStd :: Effects m => E m (PZ --> PZ)
+notStd :: EnvEffs m => E m (PZ --> PZ)
 notStd
   = Lambda "l"
   $ If
@@ -463,7 +457,7 @@ notStd
     (cTrue)
 
 
-andStd :: Effects m => E m (PZ --> PZ --> PZ)
+andStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 andStd
   = Lambda "r"
   $ Lambda "l"
@@ -479,7 +473,7 @@ andStd
 
 
 
-ltEqStd :: Effects m => E m (PZ --> PZ --> PZ)
+ltEqStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 ltEqStd
   = Lambda "r"
   $ Lambda "l"
@@ -491,7 +485,7 @@ ltEqStd
       )
 
 
-gtEqStd :: Effects m => E m (PZ --> PZ --> PZ)
+gtEqStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 gtEqStd
   = Lambda "r"
   $ Lambda "l"
@@ -505,7 +499,7 @@ gtEqStd
       )
 
 
-nEqStd :: Effects m => E m (PZ --> PZ --> PZ)
+nEqStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 nEqStd
   = Lambda "r"
   $ Lambda "l"
@@ -515,7 +509,7 @@ nEqStd
       $$ (Var @(PZ) "l")
       )
 
-absStd :: Effects m => E m (PZ --> PZ)
+absStd :: EnvEffs m => E m (PZ --> PZ)
 absStd
   = Lambda "x"
   $ If
@@ -523,13 +517,13 @@ absStd
     (Minus (Val 0) (Var @(PZ) "x"))
     (Var @(PZ) "x")
 
-chsStd :: Effects m => E m (PZ --> PZ)
+chsStd :: EnvEffs m => E m (PZ --> PZ)
 chsStd
   = Lambda "x"
   $ Minus (Val 0) (Var @(PZ) "x")
 
 
-_mltStd :: Effects m => E m (PZ --> PZ --> PZ)
+_mltStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 _mltStd
   = Lambda "r"
   $ Lambda "l"
@@ -547,7 +541,7 @@ _mltStd
     $$ (Var @(PZ) "r")
     )
 
-_mulStd :: Effects m => E m (PZ --> PZ --> PZ)
+_mulStd :: EnvEffs m => E m (PZ --> PZ --> PZ)
 _mulStd
   = Lambda "r"
   $ Lambda "l"
@@ -590,7 +584,7 @@ _mulStd
       ) -- l < 0 & r < 0
     )
 
-mulStd :: Effects m => E m (PZ --> PZ --> PZ)
+mulStd :: (EnvEffs m) => E m (PZ --> PZ --> PZ)
 mulStd
   = Lambda "r"
   $ Lambda "l"

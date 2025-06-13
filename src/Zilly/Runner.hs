@@ -175,6 +175,13 @@ ex15 = do
   traverse_ (putStrLn <=< i) fc
 
 
+ex16 ::  IO ()
+ex16 = do
+  i  <- buildUniversalInterpreter
+  fc <- lines <$> readFile "./programs/equality.z"
+  traverse_ (putStrLn <=< i) fc
+
+
 
 
 nm :: IO ()

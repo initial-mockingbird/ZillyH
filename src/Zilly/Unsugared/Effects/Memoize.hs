@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Zilly.Unsugared.Effects.Memoize where
 
 import Zilly.Unsugared.Effects.CC
@@ -6,6 +7,7 @@ import Control.Concurrent hiding (yield)
 import Control.Monad.IO.Class
 import Data.Functor (void)
 import Debug.Trace (trace)
+import Control.Monad.Error.Class
 
 data Memoized m a = Memoized
   { refresh_condition    :: m Bool -- ^ True if we need to refresh the memoized val, false otherwise
@@ -29,7 +31,7 @@ runMemoized (Memoized mrc mv r) = do
       liftIO $ putMVar mv v
       pure v
 
-memoizeWithCC :: (MonadFail m, MonadIO m, MonadCC m) => m a -> m (Memoized m a)
+memoizeWithCC :: (MonadError String m, MonadIO m, MonadCC m) => m a -> m (Memoized m a)
 memoizeWithCC f = do
   mvar <- liftIO $ newEmptyMVar
   cc <- getCC
@@ -45,7 +47,7 @@ memoizeWithCC f = do
             pure True
           (False,True) -> do
             void $ liftIO $ swapMVar icycle cc'
-            fail "circular reference"
+            throwError "circular reference"
   let post = getCC >>= liftIO . swapMVar icycle
   let pre = getCC >>= liftIO . swapMVar l
   pure $ Memoized rc mvar (pre *> f <* post)

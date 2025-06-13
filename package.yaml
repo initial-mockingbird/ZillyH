@@ -1,4 +1,4 @@
-name:                ZillyH 
+name:                ZillyH
 version:             0.1.0.0
 github:              "githubuser/ICFP2024"
 license:             BSD-3-Clause
@@ -26,14 +26,15 @@ dependencies:
   - transformers
   - parsec
   - pretty
-  - text >= 1.2 
-  - jsaddle 
-  - jsaddle-wasm 
+  - text >= 1.2
+  - jsaddle
+  - jsaddle-wasm
   - singletons
   - singletons-base
   - singletons-th == 3.4
   - ghc-experimental
   - template-haskell
+  - fgl
   # - random
 
 flags:
@@ -55,7 +56,7 @@ ghc-options:
 - -Wredundant-constraints
 
 library:
-  source-dirs: 
+  source-dirs:
     - src
 
   when:
@@ -75,17 +76,17 @@ executables:
             - -optl-mexec-model=reactor
             - -optl-Wl,--export=cmain
             - -O2
-            
+
           cpp-options: -DWASM
         else:
           ghc-options:
             - -threaded
             - -rtsopts
             - -with-rtsopts=-N
- 
+
     dependencies:
     - ZillyH
-     
+
   WASM:
     main:                WASM.hs
     source-dirs:         wasm
@@ -97,14 +98,14 @@ executables:
             - -optl-mexec-model=reactor
             - -optl-Wl,--export=cmain
             - -O2
-            
+
           cpp-options: -DWASM
         else:
           ghc-options:
             - -threaded
             - -rtsopts
             - -with-rtsopts=-N
-      
+
 
     dependencies:
     - ZillyH
@@ -118,5 +119,5 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - ZillyH 
+    - ZillyH
     - HTF

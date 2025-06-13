@@ -49,6 +49,7 @@ library
       Zilly.Unsugared.ADT.Action
       Zilly.Unsugared.ADT.Expression
       Zilly.Unsugared.ADT.TypeCheck
+      Zilly.Unsugared.Effects.Block
       Zilly.Unsugared.Effects.CC
       Zilly.Unsugared.Effects.Cycle
       Zilly.Unsugared.Effects.Memoize
@@ -67,6 +68,7 @@ library
   build-depends:
       base >=4.7 && <5
     , containers
+    , fgl
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
@@ -96,6 +98,7 @@ executable Haskell-exe
       ZillyH
     , base >=4.7 && <5
     , containers
+    , fgl
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
@@ -128,6 +131,7 @@ executable WASM
       ZillyH
     , base >=4.7 && <5
     , containers
+    , fgl
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
@@ -164,6 +168,7 @@ test-suite Haskell-test
     , ZillyH
     , base >=4.7 && <5
     , containers
+    , fgl
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm

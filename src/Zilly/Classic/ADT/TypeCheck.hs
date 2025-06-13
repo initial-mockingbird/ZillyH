@@ -59,10 +59,25 @@ data TypeCheckError
   | NonImplementedFeature String
   | CustomError' String
 
-typeCheckExpr :: forall n m w.
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
+showTypeCheckError :: TypeCheckError -> String
+showTypeCheckError (FromGammaError' e) = showGammaError e
+showTypeCheckError (TypeMismatch' (ExpectedType e) (ActualType a)) =
+  "Type mismatch: expected " <> e <> ", but got " <> a
+showTypeCheckError (NonImplementedFeature s) =
+  "Non-implemented feature: " <> s
+showTypeCheckError (CustomError' s) = s
+
+type TCEffs m w =
+  ( Monoid (w (BookeepInfo,TypeCheckError))
   , Applicative w
+  , Monad m
+  , MonadIO m
+  , MonadError String m
+  , Default (m (TypeCheckEnv m))
+  )
+
+typeCheckExpr :: forall n m w.
+  ( TCEffs m w
   , SingI n
   )
   => EPrec ParsingStage n -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
@@ -89,10 +104,7 @@ typeCheckExpr e = case
     _ -> error "impossible case typeCheckExpr"
 
 typeCheckAtom ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  )
+  ( TCEffs m w )
   => EPrec ParsingStage Atom -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckAtom (PInt bk n) = do
   env <- ask
@@ -307,9 +319,7 @@ typeCheckAtom (PTuple bk a b) = do
 
 
 typeCheckPrefixPrec ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage PrefixPrec -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckPrefixPrec (PUMinus  bk e) = typeCheckExpr
@@ -323,9 +333,7 @@ typeCheckPrefixPrec (OfHigherPrefixPrec e) = typeCheckExpr e
 
 
 typeCheckPostfixPrec ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage PostfixPrec -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckPostfixPrec (PApp bk _ []) = do
@@ -428,9 +436,7 @@ typeCheckPostfixPrec (OfHigherPostfixPrec e) = typeCheckExpr e
 
 
 typeCheckP8::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage 8 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckP8 (PPower bk _ _) = do
@@ -439,9 +445,7 @@ typeCheckP8 (PPower bk _ _) = do
 typeCheckP8 (OfHigher8 e) = typeCheckExpr e
 
 typeCheckP7::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage 7 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckP7 (PMul @n bk l r) = typeCheckExpr
@@ -463,9 +467,7 @@ typeCheckP7 (PMod bk _ _) = do
 typeCheckP7 (OfHigher7 e) = typeCheckExpr e
 
 typeCheckP6::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage 6 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckP6 (PPlus @n bk l r) = typeCheckExpr
@@ -492,9 +494,7 @@ typeCheckP6 (OfHigher6 e) = typeCheckExpr e
 
 
 typeCheckP4 ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage 4 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckP4 (PLT @n bk l r) = typeCheckExpr
@@ -561,9 +561,7 @@ typeCheckP4 (OfHigher4 e) = typeCheckExpr e
 
 
 typeCheckP1 ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage 1 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckP1 (PLambda bk [] _ _) = do
@@ -614,9 +612,7 @@ typeCheckP1 (PLambda bk (arg:args) mgbody body)
 typeCheckP1 (OfHigher1 e) = typeCheckExpr e
 
 typeCheckP0 ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
   )
   => EPrec ParsingStage 0 -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (SomeExpression m,Types)
 typeCheckP0 (OfHigher0 e) = typeCheckExpr e
@@ -627,13 +623,12 @@ typeCheckP0 (OfHigher0 e) = typeCheckExpr e
 
 
 typeCheckA0 ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  , Default (m (TypeCheckEnv m))
-
+  ( TCEffs m w
   )
-  => ZP.A0 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) (A m, TypeCheckEnv m)
+  => ZP.A0 ParsingStage
+  -> ReaderT (TypeCheckEnv m)
+    (WriterT (w (BookeepInfo,TypeCheckError))  m)
+    (A m, TypeCheckEnv m)
 typeCheckA0 (ZP.Print e _) = withExpectedType Nothing $ fst <$> typeCheckExpr e >>= \case
   MkSomeExpression e' -> ask >>= \env -> pure (Print e',env)
 typeCheckA0 (ZP.Decl tt (yieldVarName  -> Just x) e bk) = ask >>= \env ->
@@ -641,7 +636,7 @@ typeCheckA0 (ZP.Decl tt (yieldVarName  -> Just x) e bk) = ask >>= \env ->
     SomeSing @_ @t' t'
       -> withSingI t'
       $ withExpectedType (Just tt)
-      $ withDeclaredVar (ABottom,env) bk x tt
+      -- $ withDeclaredVar (ABottom,env) bk x tt
       $ fst <$> typeCheckExpr e >>= \case
         MkSomeExpression @e' e' -> case upcastable @t' @e' of
           SameTypeUB _ ->  runAndReturnEnv $ pure $ Assign (mkVar @t' x) e'
@@ -651,7 +646,9 @@ typeCheckA0 (ZP.Decl tt (yieldVarName  -> Just x) e bk) = ask >>= \env ->
             $ pure . Assign (mkVar @t' x) $ Subtyped @t' e'
           _ -> do
             (tell . pure) (bk, TypeMismatch' (ExpectedType $ show tt) (ActualType . show $ demote @e'))
-            pure (ABottom, env)
+            let gammaEnv'  = M.delete x $ getGamma env
+            let getCValues' = M.delete x $ getCValues env
+            pure (ABottom, env{getGamma = gammaEnv', getCValues = getCValues'})
 typeCheckA0 (ZP.Assign (yieldVarName -> Just x) e bk) = withExpectedType Nothing $ ask >>= \env -> case M.lookup x $ getGamma env of
   Nothing -> runAndReturnEnv $ do
     (tell . pure) (bk, FromGammaError' $ VariableNotDefined x)
@@ -683,10 +680,7 @@ typeCheckA0 (ZP.Assign _ _ bk) = runAndReturnEnv $ do
 
 
 typeCheckA1 ::
-  ( Effects m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  , Default (m (TypeCheckEnv m))
+  ( TCEffs m w
 
   )
   => ZP.A1 ParsingStage -> ReaderT (TypeCheckEnv m) (WriterT (w (BookeepInfo,TypeCheckError))  m) ([A m], TypeCheckEnv m)
@@ -720,16 +714,15 @@ typeCheckA1 (ZP.Seq _ a as) = fst <$> typeCheckA0 a >>= \case
 runAndReturnEnv :: Monad m => ReaderT env m a -> ReaderT env m (a,env)
 runAndReturnEnv ma = ask >>= \env -> (,env) <$> ma
 
+
 runAndReturnIEnv :: forall env m w a.
-  ( Effects m
-  , Default (m env)
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
+  ( TCEffs m w
+  , env ~ TypeCheckEnv m
   )
   => ReaderT env ((WriterT (w (BookeepInfo,TypeCheckError))  m)) a
   -> ReaderT env  ((WriterT (w (BookeepInfo,TypeCheckError))  m))(a,env)
 runAndReturnIEnv ma = do
-  env' <- lift . lift $ def
+  env' <- lift . lift $ def @(m (TypeCheckEnv m))
   a <- ma
   pure (a,env')
 
@@ -739,26 +732,26 @@ withDeclaredFreshVar :: Monad m
   => String -> Types -> ReaderT (TypeCheckEnv f) m a -> ReaderT (TypeCheckEnv f) m a
 withDeclaredFreshVar x t = local (\env -> env{getGamma = M.insert x t $ getGamma env})
 
-withDeclaredVar ::
-  ( Monad m
-  , Monoid (w (BookeepInfo,TypeCheckError))
-  , Applicative w
-  )
-  => a
-  -> BookeepInfo
-  -> String
-  -> Types
-  -> ReaderT (TypeCheckEnv f) (WriterT (w (BookeepInfo,TypeCheckError)) m) a
-  -> ReaderT (TypeCheckEnv f) (WriterT (w (BookeepInfo,TypeCheckError)) m) a
-withDeclaredVar def bk x t ma = do
-  env <- getGamma <$> ask
-  a <- local (\env -> env{getGamma = M.insert x t $ getGamma env}) ma
-  case not $ M.member  x  env  of
-    True -> pure a
-    False -> do
-      (tell . pure) (bk, CustomError' $ "Variable re-declaration: " <> x)
-      pure def
-
+-- withDeclaredVar ::
+--   ( Monad m
+--   , Monoid (w (BookeepInfo,TypeCheckError))
+--   , Applicative w
+--   )
+--   => a
+--   -> BookeepInfo
+--   -> String
+--   -> Types
+--   -> ReaderT (TypeCheckEnv f) (WriterT (w (BookeepInfo,TypeCheckError)) m) a
+--   -> ReaderT (TypeCheckEnv f) (WriterT (w (BookeepInfo,TypeCheckError)) m) a
+-- withDeclaredVar def bk x t ma = do
+--   env <- getGamma <$> ask
+--   a <- local (\env -> env{getGamma = M.insert x t $ getGamma env}) ma
+--   case not $ M.member  x  env  of
+--     True -> pure a
+--     False -> do
+--       (tell . pure) (bk, CustomError' $ "Variable re-declaration: " <> x)
+--       pure def
+--
 
 
 withVar :: Monad m => String -> Types -> SomeExpression f -> ReaderT (TypeCheckEnv f) m a -> ReaderT (TypeCheckEnv f) m a

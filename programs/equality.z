@@ -1,3 +1,4 @@
+::zilly+
 Z x0 := 5
 Z x1 := 6
 Z x2 := 5
@@ -7,6 +8,7 @@ lazy<Z> z2 := 7
 lazy<lazy<Z>> a0 := 7
 lazy<lazy<Z>> a1 := 8
 lazy<lazy<Z>> a2 := 7
+formula(x0)
 formula(eq)
 x0 = x0
 x0 = x2

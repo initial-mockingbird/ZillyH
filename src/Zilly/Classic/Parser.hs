@@ -1023,6 +1023,9 @@ parseAction' s = case runParser (spaces *> fully action') initialPST "" s of
   Left e -> Left e
   Right a -> Right $ OfA0 a
 
+parseSingleAction :: String -> Either ParseError (A0 ParsingStage)
+parseSingleAction s = runParser (spaces *> fully action') initialPST "" s
+
 
 
 tests :: [String]

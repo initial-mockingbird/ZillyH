@@ -18,13 +18,14 @@
 {-# LANGUAGE TypeAbstractions #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ConstraintKinds #-}
 module Zilly.Unsugared.Environment.TypedMap where
 
 
 import Data.Map (Map)
 import qualified Data.Map as M
 
-import Type.Reflection 
+import Type.Reflection
 import Zilly.Unsugared.Newtypes
 
 import Debug.Trace
@@ -32,22 +33,36 @@ import Control.Concurrent hiding (yield)
 import Control.Monad.IO.Class
 import Data.Singletons
 import Data.String (IsString(..))
-import Data.Singletons.Decide 
+import Data.Singletons.Decide
 import Data.Kind (Type)
+import Control.Monad.Error.Class
 
 
 -------------------------------
 -- Errors
 --------------------------------
 
-data ExpectedType = ExpectedType String 
+data ExpectedType = ExpectedType String
 data ActualType = ActualType String
 
 data GammaErrors
-  =  TypeMismatch String ExpectedType ActualType 
+  =  TypeMismatch String ExpectedType ActualType
   |  VariableNotDefined String
   |  VariableAlreadyDeclared String
   |  VariableNotInitialized String
+
+type EnvEffs m = (MonadIO m, MonadError String m)
+
+showGammaError :: GammaErrors -> String
+showGammaError (TypeMismatch var (ExpectedType e) (ActualType a)) =
+  "Type mismatch for variable '" <> var <> "': expected " <> e <> ", but got " <> a
+showGammaError (VariableNotDefined var) =
+  "Variable '" <> var <> "' is not defined in the current scope."
+showGammaError (VariableAlreadyDeclared var) =
+  "Variable '" <> var <> "' is already declared in the current scope."
+showGammaError (VariableNotInitialized var) =
+  "Variable '" <> var <> "' is not initialized. Please ensure it has a value before accessing it."
+
 
 --------------------------------
 -- Lens interface
@@ -57,121 +72,140 @@ type family EvalMonad (f :: PTypes -> Type) :: Type -> Type
 
 -- Defines a way to get, set, set fresh and obtain the name of a variable
 data LensM (f :: PTypes -> Type) (ltype :: PTypes) = LensM
-  { getL  ::  TypeRepMap f -> (EvalMonad f) (Either GammaErrors (f (Ftype ltype)))
-  , setL  ::  TypeRepMap f -> f (Ftype ltype) -> (EvalMonad f) (Either GammaErrors (TypeRepMap f))
-  , setFL ::  TypeRepMap f -> f (Ftype ltype) ->  (EvalMonad f)(Either GammaErrors (TypeRepMap f))
+  { getL  ::  TypeRepMap f -> (EvalMonad f) (f (Ftype ltype))
+  , setL  ::  TypeRepMap f -> f (Ftype ltype) -> (EvalMonad f) (TypeRepMap f)
+  , setFL ::  TypeRepMap f -> f (Ftype ltype) ->  (EvalMonad f) (TypeRepMap f)
   , varNameM :: String
   }
 
-viewM ::LensM f ltype -> TypeRepMap f -> (EvalMonad f)(Either GammaErrors (f (Ftype ltype)))
+viewM :: LensM f ltype -> TypeRepMap f -> (EvalMonad f) (f (Ftype ltype))
 viewM  = getL
 
-setM :: LensM f ltype -> f (Ftype ltype) -> TypeRepMap f -> (EvalMonad f) (Either GammaErrors (TypeRepMap f))
+setM :: LensM f ltype -> f (Ftype ltype) -> TypeRepMap f -> (EvalMonad f) (TypeRepMap f)
 setM = flip . setL
 
-setMF :: LensM f ltype -> f (Ftype ltype) -> TypeRepMap f -> (EvalMonad f) (Either GammaErrors (TypeRepMap f))
+setMF :: LensM f ltype -> f (Ftype ltype) -> TypeRepMap f -> (EvalMonad f) (TypeRepMap f)
 setMF = flip . setFL
 
 
 
 data Any (f :: PTypes -> Type)  where
-  MkAny :: forall (a :: PTypes) f.  SingI a => MVar (f a) -> Any f 
+  MkAny :: forall (a :: PTypes) f.  SingI a => MVar (f a) -> Any f
 
 newtype TypeRepMap f = TypeRepMap (Map String (Any f))
 
 empty :: TypeRepMap f
-empty = TypeRepMap M.empty 
+empty = TypeRepMap M.empty
 
 scope :: TypeRepMap f -> [String]
-scope (TypeRepMap m) = M.keys m 
+scope (TypeRepMap m) = M.keys m
 
-isInScope :: String -> TypeRepMap ctx -> Bool 
-isInScope s (TypeRepMap m) = s `M.member` m 
+isInScope :: String -> TypeRepMap ctx -> Bool
+isInScope s (TypeRepMap m) = s `M.member` m
 
 
+undefineVar :: String -> TypeRepMap f -> TypeRepMap f
+undefineVar var (TypeRepMap m) = TypeRepMap $ M.delete var m
 
-insert :: forall a f m.  
+insert :: forall a f m.
   ( SingI a
   , MonadIO m
-
-  ) => String -> f a -> TypeRepMap f -> m (Either GammaErrors (TypeRepMap f))
+  , MonadError String m
+  ) => String -> f a -> TypeRepMap f -> m (TypeRepMap f)
 insert var val (TypeRepMap m) = case M.lookup var m of
-  Just (MkAny @a' @_ mv ) -> case decideEquality (sing @a') (sing @a) of 
+  Just (MkAny @a' @_ mv ) -> case decideEquality (sing @a') (sing @a) of
     Just Refl -> do
       liftIO $ tryTakeMVar mv >> putMVar mv val
-      pure . pure . TypeRepMap $ m
-    Nothing -> pure . Left $ TypeMismatch var 
+      pure . TypeRepMap $ m
+    Nothing -> throwError . showGammaError $ TypeMismatch var
       (ExpectedType $ withShow @a')
       (ActualType $ withShow @a)
   Nothing -> do
     mv  <- liftIO $ newMVar val
-    pure . pure . TypeRepMap $ M.insert var (MkAny @a mv) m
+    pure . TypeRepMap $ M.insert var (MkAny @a mv) m
 
-reassignWith :: forall a f m.  
+reassignWith :: forall a f m.
   ( SingI a
   , MonadIO m
-  ) => String -> (f a -> f a) -> TypeRepMap f -> m (Either GammaErrors (TypeRepMap f))
+  , MonadError String m
+  ) => String -> (f a -> f a) -> TypeRepMap f -> m (TypeRepMap f)
 reassignWith var f (TypeRepMap m) = case M.lookup var m of
-  Just (MkAny @a' @_ mv ) -> case decideEquality (sing @a') (sing @a) of 
+  Just (MkAny @a' @_ mv ) -> case decideEquality (sing @a') (sing @a) of
     Just Refl -> do
       liftIO $ takeMVar mv >>= putMVar mv . f
-      pure . pure . TypeRepMap $ m
-    Nothing -> pure . Left $ TypeMismatch var 
+      pure . TypeRepMap $ m
+    Nothing -> throwError . showGammaError $ TypeMismatch var
       (ExpectedType $ withShow @a')
       (ActualType $ withShow @a)
- 
-  Nothing -> pure . Left $ VariableNotDefined var
 
-insertFresh :: forall a f m. 
+  Nothing -> throwError . showGammaError $ VariableNotDefined var
+
+insertFresh :: forall a f m.
   ( SingI a
   , MonadIO m
-  ) => String -> f a -> TypeRepMap f -> m (Either GammaErrors (TypeRepMap f ))
+  ) => String -> f a -> TypeRepMap f -> m (TypeRepMap f )
 insertFresh var val (TypeRepMap m) = do
     mv <- liftIO $ newMVar val
-    pure . pure . TypeRepMap $ M.insert var (MkAny mv) m
+    pure . TypeRepMap $ M.insert var (MkAny mv) m
 
-declare :: forall (a :: PTypes) f m. 
+declare :: forall (a :: PTypes) f m.
   ( SingI a
   , MonadIO m
-  ) =>  String -> TypeRepMap f -> m (Either GammaErrors (TypeRepMap f))
+  , MonadError String m
+  ) =>  String -> TypeRepMap f -> m (TypeRepMap f)
 declare  var (TypeRepMap m) = case M.lookup var m of
-  Just _ -> pure . Left $ VariableAlreadyDeclared var
+  Just _ -> throwError . showGammaError $ VariableAlreadyDeclared var
   Nothing -> do
     mv <- liftIO $ newEmptyMVar @(f a)
-    !x <- pure . pure . TypeRepMap $ M.insert var (MkAny mv) m
+    !x <- pure . TypeRepMap $ M.insert var (MkAny mv) m
+    pure x
+
+declareFresh :: forall (a :: PTypes) f m.
+  ( SingI a
+  , MonadIO m
+  ) =>  String -> TypeRepMap f -> m (TypeRepMap f)
+declareFresh  var (TypeRepMap m) =  do
+    mv <- liftIO $ newEmptyMVar @(f a)
+    !x <- pure . TypeRepMap $ M.insert var (MkAny mv) m
     pure x
 
 
-yield :: forall (a :: PTypes) f m. 
+
+yield :: forall (a :: PTypes) f m.
   ( SingI a
   ,  MonadIO m
-  ) => String -> TypeRepMap f  -> m (Either GammaErrors (f a))
-yield var (TypeRepMap m) = 
+  , MonadError String m
+  ) => String -> TypeRepMap f  -> m (f a)
+yield var (TypeRepMap m) =
   case M.lookup var m of
     Just (MkAny @a' mv ) -> case decideEquality (sing @a') (sing @a)  of
-      Just Refl -> liftIO (tryReadMVar mv) >>= \case 
-        Nothing -> (error $ "Var " <> show var <> " not inizialited" ) 
-        Just e -> pure $ Right e
-      Nothing ->  pure . Left $ TypeMismatch var 
+      Just Refl -> liftIO (tryReadMVar mv) >>= \case
+        Nothing -> (error $ "Var " <> show var <> " not inizialited" )
+        Just e -> pure  e
+      Nothing -> throwError . showGammaError $ TypeMismatch var
         (ExpectedType $ withShow @a')
-        (ActualType $ withShow @a)    
-    Nothing ->  pure . Left $ VariableNotDefined var
+        (ActualType $ withShow @a)
+    Nothing ->  throwError . showGammaError $ VariableNotDefined var
 
 
-instance forall  (ltype :: PTypes) f. 
+instance forall  (ltype :: PTypes) f.
   ( SingI ltype
   , MonadIO (EvalMonad f)
+  , MonadError String (EvalMonad f)
   ) => IsString (LensM f ltype) where
-  fromString var = withSingIFtype @ltype $ LensM 
-    (yield @(Ftype ltype) var) 
-    (flip $ insert var) 
+  fromString var = withSingIFtype @ltype $ LensM
+    (yield @(Ftype ltype) var)
+    (flip $ insert var)
     (flip $ insertFresh var) var
 
 
-mkVar :: forall  (ltype :: PTypes) f. 
-  ( SingI ltype 
+mkVar :: forall  (ltype :: PTypes) f.
+  ( SingI ltype
   , MonadIO (EvalMonad f)
+  , MonadError String (EvalMonad f)
   ) => String -> LensM f ltype
 mkVar = fromString
 
-
+class HasTypeRepMap f where
+  getEnv :: (EvalMonad f) (TypeRepMap f)
+  withEnv :: TypeRepMap f -> (EvalMonad f) a -> (EvalMonad f) a
