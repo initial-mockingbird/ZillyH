@@ -37,6 +37,7 @@ library
       Data.Proof
       Data.Theorems.Equality
       Parser.Numbers
+      Parser.Patterns
       Parser.Utilities
       Utilities.Codes
       Utilities.LensM
@@ -45,6 +46,19 @@ library
       Zilly.Classic.Parser
       Zilly.Classic.Parsing.Utilities
       Zilly.Classic.Runner
+      Zilly.Puzzle.ADT.Action
+      Zilly.Puzzle.ADT.Expression
+      Zilly.Puzzle.ADT.ExtensionCheck
+      Zilly.Puzzle.ADT.Runner
+      Zilly.Puzzle.ADT.TypeCheck
+      Zilly.Puzzle.ADT.Unsugar
+      Zilly.Puzzle.Effects.Block
+      Zilly.Puzzle.Effects.CC
+      Zilly.Puzzle.Effects.Cycle
+      Zilly.Puzzle.Effects.Memoize
+      Zilly.Puzzle.Environment.TypedMap
+      Zilly.Puzzle.Newtypes
+      Zilly.Puzzle.Parser
       Zilly.Runner
       Zilly.Unsugared.ADT.Action
       Zilly.Unsugared.ADT.Expression
@@ -72,6 +86,7 @@ library
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
+    , mono-traversable
     , mtl
     , parsec
     , pretty
@@ -102,6 +117,7 @@ executable Haskell-exe
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
+    , mono-traversable
     , mtl
     , parsec
     , pretty
@@ -116,7 +132,7 @@ executable Haskell-exe
     ghc-options: -no-hs-main -optl-mexec-model=reactor -optl-Wl,--export=cmain -O2
     cpp-options: -DWASM
   else
-    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+    ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N
 
 executable WASM
   main-is: WASM.hs
@@ -135,6 +151,7 @@ executable WASM
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
+    , mono-traversable
     , mtl
     , parsec
     , pretty
@@ -149,7 +166,7 @@ executable WASM
     ghc-options: -no-hs-main -optl-mexec-model=reactor -optl-Wl,--export=cmain -O2
     cpp-options: -DWASM
   else
-    ghc-options: -threaded -rtsopts -with-rtsopts=-N
+    ghc-options: -threaded -rtsopts -with-rtsopts=-N -O2
 
 test-suite Haskell-test
   type: exitcode-stdio-1.0
@@ -172,6 +189,7 @@ test-suite Haskell-test
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
+    , mono-traversable
     , mtl
     , parsec
     , pretty

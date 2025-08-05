@@ -33,23 +33,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE BangPatterns #-}
 
-module Zilly.Unsugared.Effects.Block where
+module Zilly.Puzzle.Effects.Block where
 
-import Zilly.Classic.Parser
-import Zilly.Unsugared.Effects.CC
+import Zilly.Puzzle.Parser
+import Zilly.Puzzle.Effects.CC
 import Data.Kind (Type)
 import Data.Set qualified as S
-import Zilly.Unsugared.Newtypes qualified as T
 import Data.Graph.Inductive
 import Data.Map qualified as M
 import Data.List qualified as L
 import Data.Foldable (for_, foldlM)
 import Control.Monad.Error.Class
-import Zilly.Classic.Parser
 import Data.Matchers
 import Data.Singletons (SomeSing(..),SingI(..),sing,demote, withSingI, toSing)
-import GHC.TypeLits.Singletons
-import GHC.TypeLits
 import Data.Singletons.Decide
 import Control.Monad.IO.Class
 import Debug.Trace (trace)
@@ -293,11 +289,8 @@ instance SingI n => GetDependencies (EPrec ctx n) where
     | Just Refl <- matches @Atom (sing @n)
     = case e of
       PVar _ s -> S.singleton s
-      PArray _ as -> S.unions $ getDependencies <$> as
-      PTuple _ a b -> S.unions
-        [ getDependencies a
-        , getDependencies b
-        ]
+      PTuple _ a b xs -> S.unions
+        [ getDependencies x | x <- (a : b : xs)]
       PParen _ a -> getDependencies a
       PDefer _ s -> getDependencies s
       PIf _ (a, b, c) -> S.unions
@@ -307,8 +300,9 @@ instance SingI n => GetDependencies (EPrec ctx n) where
         ]
 
       PInt _ _ -> S.empty
-      PDouble _ _ -> S.empty
+      PFloat _ _ -> S.empty
       PBool _ _ -> S.empty
+      PString _ _ -> S.empty
     | Just Refl <- matches @PrefixPrec (sing @n)
     = case e of
       PUMinus _ a -> getDependencies a
@@ -414,14 +408,14 @@ instance SingI n => GetVar (EPrec ctx n) where
     | Just Refl <- matches @Atom (sing @n)
     = case e of
       PVar _ s -> S.singleton s
-      PArray _ as -> S.unions $ getVar <$> as
-      PTuple _ a b -> S.unions [getVar a, getVar b]
+      PTuple _ a b xs -> S.unions $  [getVar x | x <- (a : b : xs)]
       PParen _ a -> getVar a
       PDefer _ _ -> S.empty
       PIf _ _ -> S.empty
       PInt _ _ -> S.empty
-      PDouble _ _ -> S.empty
+      PFloat _ _ -> S.empty
       PBool _ _ -> S.empty
+      PString _ _ -> S.empty
 
     | Just Refl <- matches @PrefixPrec (sing @n)
     = case e of
@@ -490,14 +484,15 @@ instance SingI n => IsStaticallyConstructive (EPrec ctx n) where
     | Just Refl <- matches @Atom (sing @n)
     = case e of
       PVar _ _ -> False
-      PArray _ as -> all isStaticallyConstructive as
-      PTuple _ a b -> isStaticallyConstructive a && isStaticallyConstructive b
+      PTuple _ a b xs
+        -> all isStaticallyConstructive $ a : b : xs
       PParen _ a -> isStaticallyConstructive a
       PDefer _ _ -> True
       PIf _ _ -> False
       PInt _ _ -> True
-      PDouble _ _ -> True
+      PFloat _ _ -> True
       PBool _ _ -> True
+      PString _ _ -> True
 
     | Just Refl <- matches @PrefixPrec (sing @n)
     = case e of

@@ -181,6 +181,12 @@ ex16 = do
   fc <- lines <$> readFile "./programs/equality.z"
   traverse_ (putStrLn <=< i) fc
 
+ex17 ::  IO ()
+ex17 = do
+  i  <- buildUniversalInterpreter
+  fc <- lines <$> readFile "./programs/recursion.z"
+  traverse_ (putStrLn <=< i) fc
+
 
 
 

@@ -14,7 +14,8 @@ import Debug.Trace
 import Control.Monad.Trans.Class
 
 class Monad m => MonadRandom m where
-  randInt :: Int -> m Int
+  randInt   :: Int -> m Int
+  randFloat :: Double -> m Double
 
 
 

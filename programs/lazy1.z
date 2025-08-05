@@ -1,3 +1,4 @@
+::zilly+
 Z x0 := 5;
 Z x1 := 6;
 lazy<Z> l0 := x0;
@@ -8,7 +9,6 @@ lazy<Z> l4 := formula(l0);
 lazy<Z> l5 := formula(l1);
 lazy<Z> l6 := formula(l2);
 lazy<Z> l7 := formula(l6);
-lazy<Z> l8 := 'formula(l1) - 1';
 formula(x0)
 formula(x1)
 formula(l0)
@@ -19,3 +19,4 @@ formula(l4)
 formula(l5)
 formula(l6)
 formula(l7)
+lazy<Z> l8 := 'formula(l1) - 1';

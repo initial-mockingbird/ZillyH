@@ -1,0 +1,12 @@
+::zilly+
+R x0 := 5;
+String s0 := "Hello";
+String s1 := " ";
+String s2 := "World";
+s0 ++ s1 ++ s2
+head(s0)
+tail(s0)
+(s0 = s0)  = True
+(s0 = s1)  = False
+(s0 <> s0) = False
+(s0 <> s1) = True

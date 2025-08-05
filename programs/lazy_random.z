@@ -1,0 +1,19 @@
+Z x := 10
+lazy<Z> lx := 'random(x)';
+lx
+lx
+x := 3;
+lx
+lx
+x := 10;
+lx
+lx
+x := 5;
+lx
+lx
+x := 7;
+lx
+lx
+x := 10;
+lx
+lx

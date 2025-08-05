@@ -21,9 +21,9 @@ build wasm='1':
 [positional-arguments]
 ghci *args='':
   hpack
-  cabal repl {{args}}
+  cabal repl --repl-options "-fforce-recomp -fobject-code -O2 {{args}}"
+
 
 clean:
   cabal clean
   rm -rf ./dist/**
-

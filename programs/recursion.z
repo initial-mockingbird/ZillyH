@@ -1,0 +1,3 @@
+::zilly+
+Z => Z fact := fn(Z x) -> if(x <= 1, 1, x * fact(x - 1));
+fact(5) = 120

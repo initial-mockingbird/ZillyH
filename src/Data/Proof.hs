@@ -33,3 +33,6 @@ instance (forall (a :: k0). psi (f a) (g a))
 
 data Dict (c :: Constraint) where
   Dict :: c => Dict c
+
+data Some (c :: k -> Constraint) where
+  Some :: c a => a -> Some c

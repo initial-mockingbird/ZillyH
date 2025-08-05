@@ -58,6 +58,7 @@ import Data.Set qualified as S
 import Prelude.Singletons
 import Zilly.Unsugared.Newtypes
 import Data.Foldable (foldlM)
+import Debug.Trace (trace)
 
 data GammaEnv m = GammaEnv
   { typingEnv :: TypeCheckEnv m
@@ -381,7 +382,9 @@ tc1 xs = do
 evalAs :: [A EvalEnv] -> EvalEnv ([A EvalEnv], TypeRepMap (E EvalEnv))
 evalAs as = do
   as' <- (\acc xs f -> foldlM f acc xs) [] as $ \acc a -> do
-    (store',a') <- evalA' a
+    trace ("evaluando: " <> show a) $ pure ()
+    (store' ,a') <- evalA' a
+    trace ("store: " <> show (scope store')) $ pure ()
     modify $ \st' -> st'{gammaEnv = (gammaEnv st'){valueStore = store'}}
     pure (acc <> [a'])
   st' <- gets (valueStore . gammaEnv)
@@ -391,10 +394,13 @@ process :: String -> EvalEnv ()
 process s = do
   a <- Zilly.Classic.Runner.lex s
   (pending,mnew) <- r1 a
+
+  trace ("pending: " <> show pending) $ pure ()
   case mnew of
     Nothing -> logMsg $ "ACK: " <> show a
     Just a' -> do
       (tcs,tcEnv) <- tc1 pending
+      trace ("tcs: " <> show tcs) $ pure ()
       modify $ \st -> st{gammaEnv = (gammaEnv st){typingEnv = tcEnv}}
       (results,store) <- evalAs tcs
       modify $ \st -> st{gammaEnv = (gammaEnv st){valueStore = store}}
@@ -402,6 +408,8 @@ process s = do
       (tca, tcEnv') <- tc1 [a']
       modify $ \st -> st{gammaEnv = (gammaEnv st){typingEnv = tcEnv'}}
       (result,store') <- evalAs tca
+
+      trace "aca" $ pure ()
       modify $ \st -> st{gammaEnv = (gammaEnv st){valueStore = store'}}
       forM_ result $ \r -> case r of
         Print e -> logMsg $ "OK: " <> show e
