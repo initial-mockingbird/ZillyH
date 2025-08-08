@@ -1,0 +1,11 @@
+::zilly+
+Z => Z fib := fn(Z x) -> if(x < 2,x,fib(x-1) + fib(x-2));
+formula(fib)
+fib(0) = 0
+fib(1) = 1
+fib(2) = 1
+fib(3) = 2
+fib(4) = 3
+fib(5) = 5
+fib(20) = 6765
+fib(25) = 75025

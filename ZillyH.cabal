@@ -42,10 +42,6 @@ library
       Utilities.Codes
       Utilities.LensM
       Utilities.ShowM
-      Zilly.Classic.ADT.TypeCheck
-      Zilly.Classic.Parser
-      Zilly.Classic.Parsing.Utilities
-      Zilly.Classic.Runner
       Zilly.Puzzle.ADT.Action
       Zilly.Puzzle.ADT.Expression
       Zilly.Puzzle.ADT.ExtensionCheck
@@ -59,19 +55,6 @@ library
       Zilly.Puzzle.Environment.TypedMap
       Zilly.Puzzle.Newtypes
       Zilly.Puzzle.Parser
-      Zilly.Runner
-      Zilly.Unsugared.ADT.Action
-      Zilly.Unsugared.ADT.Expression
-      Zilly.Unsugared.ADT.TypeCheck
-      Zilly.Unsugared.Effects.Block
-      Zilly.Unsugared.Effects.CC
-      Zilly.Unsugared.Effects.Cycle
-      Zilly.Unsugared.Effects.Memoize
-      Zilly.Unsugared.Environment.TypedMap
-      Zilly.Unsugared.Newtypes
-      Zilly.Unsugared.Parser
-      Zilly.Unsugared.Parsing.Utilities
-      Zilly.Unsugared.Runner
   other-modules:
       Paths_ZillyH
   autogen-modules:

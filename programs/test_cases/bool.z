@@ -1,0 +1,11 @@
+::zilly+
+B x := True;
+B y := False;
+x = x
+~(x = y)
+x <> y
+x && y
+x || y
+Z => B mal := fn(Z x) -> 1/0 = x;
+False && mal(1)
+True || mal(1)

@@ -1,0 +1,13 @@
+::zilly+
+R pi := 3.141592653589793
+log(e)
+e^2
+sin(pi)
+sin(-pi)
+cos(pi)
+cos(-pi)
+tan(pi/4)
+tan(-pi/4)
+asin(1)
+acos(1)
+atan(0)

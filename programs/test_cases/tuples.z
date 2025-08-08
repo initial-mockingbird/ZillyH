@@ -1,0 +1,34 @@
+::zilly+
+(1,2)
+Z x := 9;
+Z y := 0;
+(Z,Z) zs := (2,3);
+(Z,lazy<Z>) zlx := (2+1+x,'x');
+(lazy<Z>,Z) lzx := ('y',3*9);
+(lazy<Z>,lazy<Z>) llx := ('y+100','x');
+Z llx1 := fst(llx);
+Z llx2 := snd(llx);
+zs
+zlx
+lzx
+llx
+llx1
+llx2
+x := x + 1;
+y := y + 500;
+llx1 := fst(llx);
+llx2 := snd(llx);
+zs
+zlx
+lzx
+llx
+llx1
+llx2
+fst(llx)
+formula(llx)
+(Z,lazy<Z>) non_error1 := (2,'fst(non_error1)');
+(lazy<Z>,Z) non_error2 := ('snd(non_error2)',2);
+non_error1
+non_error2
+(lazy<Z>,lazy<Z>) error := ('snd(error)','fst(error)');
+error
