@@ -35,7 +35,7 @@ dependencies:
   - ghc-experimental
   - template-haskell
   - fgl
-  - mono-traversable
+  - orthotope
   # - random
 
 flags:

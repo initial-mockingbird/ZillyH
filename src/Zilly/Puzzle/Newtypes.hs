@@ -21,8 +21,10 @@
 {-# LANGUAGE TypeAbstractions         #-}
 {-# Language PatternSynonyms          #-}
 {-# LANGUAGE OverloadedStrings        #-}
-{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE ViewPatterns             #-}
+{-# LANGUAGE ImportQualifiedPost      #-}
 {-# LANGUAGE TemplateHaskell          #-}
+{-# LANGUAGE TupleSections #-}
 
 module Zilly.Puzzle.Newtypes where
 
@@ -30,6 +32,7 @@ import Data.String
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Unsafe.Coerce
+import Text.Read (readMaybe)
 
 type Name  = Text
 
@@ -58,6 +61,15 @@ pattern ZDouble   = TCon "R"      []
 pattern ZInfer    = TCon "Infer"  []
 pattern ZArray a  = TCon "Array" [a]
 
+pattern NDArray :: Int -> Types -> Types
+pattern NDArray n a <- ((\t@(TCon _ [a]) -> (,a) <$> getArrDimType t) -> Just (n,a))
+  where NDArray n a = TCon ("array" <> Text.pack (show n)) [a]
+
+getArrDimType :: Types -> Maybe Int
+getArrDimType (TCon name [a])
+  | Text.isPrefixOf "array" name = readMaybe $ Text.unpack $ Text.drop 5 name
+getArrDimType _ = Nothing
+
 
 rtype :: Types -> Types
 rtype (Lazy a) = a
@@ -68,6 +80,7 @@ rtype (TVar _) = error "cannot rtype a type variable at the moment."
 
 isSuperTypeOf :: Types -> Types -> Bool
 isSuperTypeOf F Z = True
+isSuperTypeOf (NDArray n a) (NDArray m b) = n == m && isSuperTypeOf a b
 isSuperTypeOf (Lazy a) (Lazy b) = isSuperTypeOf a b
 isSuperTypeOf (Lazy a) b = isSuperTypeOf a b
 isSuperTypeOf (NTuple a b xs) (NTuple c d ys) = length xs <= length ys
@@ -80,6 +93,7 @@ isSuperTypeOf a b = a == b
 
 isSubtypeOf :: Types -> Types -> Bool
 isSubtypeOf Z F = True
+isSubtypeOf (NDArray n a) (NDArray m b) = n == m && isSubtypeOf a b
 isSubtypeOf (Lazy a) (Lazy b) = isSubtypeOf a b
 isSubtypeOf (NTuple a b xs) (NTuple c d ys) = length xs >= length ys
   && isSubtypeOf a c && isSubtypeOf b d
@@ -92,6 +106,12 @@ isSubtypeOf a b = a == b
 instance Show Types where
   showsPrec p = \case
     TCon a [] -> showString $ Text.unpack a
+    NDArray n a
+      -> showString "array["
+      . showString (replicate (n-1) ',')
+      . showString "]<"
+      . shows a
+      . showString ">"
     TCon "Tuple" [a,b] -> showString "(" . shows a . showString ", " . shows b . showString ")"
     a :-> b -> showParen (p > 0) $ showsPrec 1 a . showString " => " . showsPrec 0 b
     TCon a (x:xs)

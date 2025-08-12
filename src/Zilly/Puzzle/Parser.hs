@@ -85,6 +85,7 @@ keywords = stdLib ++
   , "String"
   , "fn"
   , "λ"
+  , "array"
   ]
 
 -- | standard library for Lilly
@@ -99,6 +100,7 @@ reservedOperators =
   [ ":="
   , "->"
   , "=>"
+  , ":-"
   ]
 
 ----------------------------
@@ -204,10 +206,18 @@ mkTNormal :: forall n . (SingI n, (n < Atom) ~ True)
     => Parser (String -> [TPrec ParsingStage n] -> TPrec ParsingStage Atom)
 mkTNormal = TNormal @n @ParsingStage <$> mkBookeepInfo
 
+
+pArrayT :: Parser String
+pArrayT
+  = "array" *>
+  ( mappend "array" . show . (+1) . length
+  <$> between ("[") ("]") (Text.Parsec.many ",")
+  )
+
 pNormal :: Parser (TPrec ParsingStage Atom)
 pNormal
   = mkTNormal
-  <*> ident
+  <*> (pArrayT <|> ident)
   <*> option [] (bracketed $  pTypes `sepBy` "," )
 
 
@@ -354,6 +364,9 @@ data instance EPrec ctx Atom where
   -- | parenthesis: @(expr)@
   PParen   :: forall n ctx. (SingI n,(n < Atom) ~ True)
     => EPX ctx -> EPrec ctx n    -> EPrec ctx Atom
+  -- | Arrays: @[expr,expr,expr,...]@
+  PArray :: forall n ctx. (SingI n,(n < Atom) ~ True)
+    => EAX ctx -> [EPrec ctx n] -> EPrec ctx Atom
   -- | Quoted expressions: @'expr'@
   PDefer   :: forall n ctx. (SingI n,(n < Atom) ~ True)
     => EDefX ctx -> EPrec ctx n    -> EPrec ctx Atom
@@ -379,6 +392,7 @@ type family ETX (ctx :: Type) :: Type
 type family EPX (ctx :: Type) :: Type
 type family EDefX (ctx :: Type) :: Type
 type family EIfX (ctx :: Type) :: Type
+type family EAX (ctx :: Type) :: Type
 
 
 type instance EIX ParsingStage = BookeepInfo
@@ -390,7 +404,7 @@ type instance ETX ParsingStage = BookeepInfo
 type instance EPX ParsingStage = BookeepInfo
 type instance EDefX ParsingStage = BookeepInfo
 type instance EIfX ParsingStage = BookeepInfo
-
+type instance EAX ParsingStage = BookeepInfo
 
 
 mkIf :: forall {n} n0 n1 n2.
@@ -433,6 +447,10 @@ mkParen :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True)
   =>  Parser (EPrec ParsingStage n) -> Parser (EPrec ParsingStage n0)
 mkParen p = parens $ PParen <$> mkBookeepInfo <*> p
 
+mkArray :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True)
+  =>  Parser ([EPrec ParsingStage n] -> EPrec ParsingStage n0)
+mkArray = between "[" "]" $ PArray <$> mkBookeepInfo
+
 
 mkParenOrTupleP :: forall {n0} n. (SingI n, n0 ~ Inf, (n < n0) ~ True)
   => Parser (EPrec ParsingStage n -> [EPrec ParsingStage n] -> EPrec ParsingStage n0)
@@ -446,6 +464,9 @@ mkParenOrTupleP = f <$> mkBookeepInfo
 pParenOrTupleP :: Parser (EPrec ParsingStage Atom)
 pParenOrTupleP
   = parens (mkParenOrTupleP <*> expr <*> option [] ("," *> sepBy expr ",") )
+
+pArray :: Parser (EPrec ParsingStage Atom)
+pArray = mkArray <*> (expr `sepBy` ",")
 
 pNumber :: Parser (EPrec ParsingStage Atom)
 pNumber = pNumber' <* spaces
@@ -495,11 +516,11 @@ atom
   = pNumber
   <|> pString
   <|> pDefer
+  <|> pArray
   <|> pIf
   <|> pParenOrTupleP
   <|> pBool
   <|> mkVar    <*> ident
-  where
 
 
 -----------------------------------

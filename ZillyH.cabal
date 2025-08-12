@@ -69,8 +69,8 @@ library
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
-    , mono-traversable
     , mtl
+    , orthotope
     , parsec
     , pretty
     , singletons
@@ -100,8 +100,8 @@ executable Haskell-exe
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
-    , mono-traversable
     , mtl
+    , orthotope
     , parsec
     , pretty
     , singletons
@@ -134,8 +134,8 @@ executable WASM
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
-    , mono-traversable
     , mtl
+    , orthotope
     , parsec
     , pretty
     , singletons
@@ -172,8 +172,8 @@ test-suite Haskell-test
     , ghc-experimental
     , jsaddle
     , jsaddle-wasm
-    , mono-traversable
     , mtl
+    , orthotope
     , parsec
     , pretty
     , singletons
