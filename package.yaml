@@ -19,24 +19,48 @@ extra-source-files:
 # common to point users to the README.md file.
 description:         Please see the README on GitHub at <https://github.com/githubuser/ICFP2024#readme>
 
-dependencies:
-  - base >= 4.7 && < 5
-  - containers
-  - mtl
-  - transformers
-  - parsec
-  - pretty
-  - text >= 1.2
-  - jsaddle
-  - jsaddle-wasm
-  - singletons
-  - singletons-base
-  - singletons-th == 3.4
-  - ghc-experimental
-  - template-haskell
-  - fgl
-  - orthotope
-  # - random
+when:
+  - condition: flag(WASM)
+    then:
+      dependencies:
+        - base >= 4.7 && < 5
+        - containers
+        - mtl
+        - transformers
+        - parsec
+        - pretty
+        - text >= 1.2
+        - jsaddle
+        - jsaddle-wasm
+        - singletons
+        - singletons-base
+        - singletons-th == 3.4
+        - ghc-experimental
+        - template-haskell
+        - fgl
+        - orthotope
+        - time >= 1.14
+        - random
+    else:
+      dependencies:
+        - base >= 4.7 && < 5
+        - containers
+        - mtl
+        - transformers
+        - parsec
+        - pretty
+        - text >= 1.2
+        - jsaddle
+        - singletons
+        - singletons-base
+        - singletons-th == 3.4
+        - ghc-experimental
+        - template-haskell
+        - fgl
+        - orthotope
+        - time >= 1.14
+        - random
+
 
 flags:
   WASM:
@@ -61,8 +85,8 @@ library:
     - src
 
   when:
-    condition: flag(WASM)
-    cpp-options: -DWASM
+    - condition: flag(WASM)
+      cpp-options: -DWASM
 
 
 executables:
@@ -70,7 +94,7 @@ executables:
     main:                Main.hs
     source-dirs:         app
     when:
-        condition: flag(WASM)
+      - condition: flag(WASM)
         then:
           ghc-options:
             - -no-hs-main
@@ -93,7 +117,7 @@ executables:
     main:                WASM.hs
     source-dirs:         wasm
     when:
-        condition: flag(WASM)
+      - condition: flag(WASM)
         then:
           ghc-options:
             - -no-hs-main

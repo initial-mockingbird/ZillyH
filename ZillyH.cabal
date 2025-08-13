@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.36.1.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -62,24 +62,46 @@ library
   hs-source-dirs:
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
-  build-depends:
-      base >=4.7 && <5
-    , containers
-    , fgl
-    , ghc-experimental
-    , jsaddle
-    , jsaddle-wasm
-    , mtl
-    , orthotope
-    , parsec
-    , pretty
-    , singletons
-    , singletons-base
-    , singletons-th ==3.4
-    , template-haskell
-    , text >=1.2
-    , transformers
   default-language: Haskell2010
+  if flag(WASM)
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , jsaddle-wasm
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
+  else
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
   if flag(WASM)
     cpp-options: -DWASM
 
@@ -94,23 +116,46 @@ executable Haskell-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       ZillyH
-    , base >=4.7 && <5
-    , containers
-    , fgl
-    , ghc-experimental
-    , jsaddle
-    , jsaddle-wasm
-    , mtl
-    , orthotope
-    , parsec
-    , pretty
-    , singletons
-    , singletons-base
-    , singletons-th ==3.4
-    , template-haskell
-    , text >=1.2
-    , transformers
   default-language: Haskell2010
+  if flag(WASM)
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , jsaddle-wasm
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
+  else
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
   if flag(WASM)
     ghc-options: -no-hs-main -optl-mexec-model=reactor -optl-Wl,--export=cmain -O2
     cpp-options: -DWASM
@@ -128,23 +173,46 @@ executable WASM
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       ZillyH
-    , base >=4.7 && <5
-    , containers
-    , fgl
-    , ghc-experimental
-    , jsaddle
-    , jsaddle-wasm
-    , mtl
-    , orthotope
-    , parsec
-    , pretty
-    , singletons
-    , singletons-base
-    , singletons-th ==3.4
-    , template-haskell
-    , text >=1.2
-    , transformers
   default-language: Haskell2010
+  if flag(WASM)
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , jsaddle-wasm
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
+  else
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
   if flag(WASM)
     ghc-options: -no-hs-main -optl-mexec-model=reactor -optl-Wl,--export=cmain -O2
     cpp-options: -DWASM
@@ -166,20 +234,43 @@ test-suite Haskell-test
   build-depends:
       HTF
     , ZillyH
-    , base >=4.7 && <5
-    , containers
-    , fgl
-    , ghc-experimental
-    , jsaddle
-    , jsaddle-wasm
-    , mtl
-    , orthotope
-    , parsec
-    , pretty
-    , singletons
-    , singletons-base
-    , singletons-th ==3.4
-    , template-haskell
-    , text >=1.2
-    , transformers
   default-language: Haskell2010
+  if flag(WASM)
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , jsaddle-wasm
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
+  else
+    build-depends:
+        base >=4.7 && <5
+      , containers
+      , fgl
+      , ghc-experimental
+      , jsaddle
+      , mtl
+      , orthotope
+      , parsec
+      , pretty
+      , random
+      , singletons
+      , singletons-base
+      , singletons-th ==3.4
+      , template-haskell
+      , text >=1.2
+      , time >=1.14
+      , transformers
