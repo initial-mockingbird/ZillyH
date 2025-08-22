@@ -31,6 +31,7 @@ flag WASM
 library
   exposed-modules:
       Control.Monad.Random
+      Data.Array
       Data.Default
       Data.Matchers
       Data.Ord.Singletons

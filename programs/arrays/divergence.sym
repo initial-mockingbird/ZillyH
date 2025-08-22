@@ -1,0 +1,23 @@
+//
+// divergence.sym
+//
+// File to show divergent behaviours between compiler and interpreter
+//
+
+sys.reset();
+
+var compiler_tp    :=  tjoin(struct {int x; int y;}, struct {int a; int b;});
+var interpreter_tp :=  tjoin(struct {int x; int y;}, struct {int a; int b;});
+
+// tp_join divergence, compiler is wrong in some cases. Interpreter always does a 
+// a conversion from struct to tuple
+
+var compiler_true    := interpreter_tp = struct {int x; int y;};
+var interpreter_true := compiler_tp    = struct {int; int;};
+
+verify (compiler_true && !interpreter_true) || (!compiler_true && interpreter_true)
+
+var if_result := if( false, struct {int x; int y;} (4,3), struct {int a; int b;}(5,5));
+
+verify if_result = struct {int a; int b;}(5,5)
+// verify (dynamic_type(if_result) <> compiler_tp) && (dynamic_type(if_result) <> interpreter_tp)

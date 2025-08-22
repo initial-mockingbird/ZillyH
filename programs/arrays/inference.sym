@@ -1,0 +1,1258 @@
+///
+/// inference.sym
+///
+
+//
+
+sys.reset();
+
+:: ex :=  1 ;
+:: lx := '1';
+
+verify rtype(ex) = int
+verify rtype(lx) = int
+
+verify ltype(ex) = int
+verify ltype(lx) = lazy int
+
+//
+
+:: eaei :=   [  0 ,  1 ,  2 ,  3  ] ;
+:: eali :=   [ '0', '1', '2', '3' ] ;
+:: laei :=  '[  0 ,  1 ,  2 ,  3  ]';
+:: lali :=  '[ '0', '1', '2', '3' ]';
+
+verify rtype(eaei) = array[] => int
+verify rtype(eali) = array[] => int
+verify rtype(laei) = array[] => int
+verify rtype(lali) = array[] => lazy int
+
+verify ltype(eaei) = array[] => int
+verify ltype(eali) = array[] => lazy int
+verify ltype(laei) = lazy array[] => int
+verify ltype(lali) = lazy array[] => lazy int
+
+//
+
+:: eaai :=   [[ 0 ,  1 ], [ 2 ,  3 ]] ;
+:: aali :=   [['0', '1'], ['2', '3']] ;
+:: alai :=   ['[0,   1]', '[2,   3]'] ;
+:: laai := ' [[ 0 ,  1 ], [ 2 ,  3 ]]';
+
+verify rtype(eaai) = array[] => array[] => int
+verify rtype(aali) = array[] => array[] => int
+verify rtype(alai) = array[] => array[] => int
+verify rtype(laai) = array[] => array[] => int
+
+verify ltype(eaai) = array[] => array[] => int
+verify ltype(aali) = array[] => array[] => lazy int
+verify ltype(alai) = array[] => lazy array[] => int
+verify ltype(laai) = lazy array[] => array[] => int
+
+//
+
+sys.reset();
+
+array[] => int a1i    := [ 0, 1, 2, 3   ];
+array[] => double a1d := [ 0, 1, 2, 3.0 ];
+array[] => var a1v    := [ 0, 1, 2, 3   ];
+:: a1a                := [ 0, 1, 2, 3   ];
+:: a1f                := [ 0, 1, 2, 3.0 ];
+array[] => ::  a1b    := [ 0, 1, 2, 3   ];
+array[] => ::  a1x    := [ 0, 1, 2, 3.0 ];
+var va1               := [ 0, 1, 2, 3   ];
+
+verify ltype(a1i) = array[] => int
+verify ltype(a1d) = array[] => double
+verify ltype(a1v) = array[] => var
+verify ltype(a1a) = array[] => int
+verify ltype(a1f) = array[] => double
+verify ltype(a1b) = array[] => int
+verify ltype(a1x) = array[] => double
+verify ltype(va1) = var
+
+//
+
+sys.reset();
+
+:: a := [ 0, 1, 2, 3, 4, 5, 6, 7 ];
+:: y :- sum(a); 
+
+verify rtype(a) = array[] => int
+verify ltype(a) = array[] => int
+verify rtype(y) = double
+verify ltype(y) = lazy double
+
+//
+
+sys.reset();
+
+:: i := 8;
+:: li := '8';
+
+verify rtype(i) = int
+verify rtype(li) = int
+
+verify ltype(i) = int
+verify ltype(li) = lazy int
+
+:: d := 8.0;
+:: ld :- 8.0;
+
+verify rtype(d) = double
+verify rtype(ld) = double
+
+verify ltype(d) = double
+verify ltype(ld) = lazy double
+
+//
+
+sys.reset();
+
+:: uu := uniform;
+
+verify rtype(uniform) = fun() => double
+verify ltype(uniform) = const fun() => double
+
+verify rtype(uu) = fun() => double
+verify ltype(uu) = fun() => double
+
+const :: cu := uniform;
+
+verify rtype(uniform) = fun() => double
+verify ltype(uniform) = const fun() => double
+
+verify rtype(cu) = fun() => double
+verify ltype(cu) = const fun() => double
+
+//
+
+sys.reset();
+
+:: ua := uniform;
+:: ul := /.() -> uniform();
+:: ux := /.() => double -> uniform();
+
+verify rtype(uniform) = (fun() => double)
+verify ltype(uniform) = (const fun() => double)
+
+verify ltype(ua) = (fun() => double)
+verify ltype(ul) = (fun() => var)
+verify ltype(ux) = (fun() => double)
+
+//
+
+sys.reset();
+
+const :: ua := uniform;
+const :: ul := /.() -> uniform();
+const :: ux := /.() => double -> uniform();
+
+verify ltype(ua) = (const fun() => double)
+verify ltype(ul) = (const fun() => var)
+verify ltype(ux) = (const fun() => double)
+
+verify ltype(uniform) = (const fun() => double)
+
+//
+
+sys.reset();
+
+:: size := /.(var seq) => int -> if(empty(seq), 0, 1 + size(tail(seq)));
+
+verify ltype(size) = fun(var seq) => int
+
+//
+
+sys.reset();
+
+:: iebi := false;
+verify rtype(iebi) = bool
+verify ltype(iebi) = bool
+
+:: ilbi :- false;
+verify rtype(ilbi) = bool
+verify ltype(ilbi) = lazy bool
+
+:: ef := sin;
+:: lf :- sin;
+
+verify rtype(ef) = rtype(sin)
+verify rtype(ef) = fun(double ) => double
+verify rtype(lf) = fun(double ) => double
+
+verify ltype(ef) = rtype(sin)
+verify ltype(ef) = fun(double ) => double
+verify ltype(lf) = lazy fun(double ) => double
+
+//
+
+sys.reset();
+
+:: lad := '[ min(0.0, 1.0) ]';
+verify ltype(lad) = lazy array[] => double
+verify rtype(lad) = array[] => double
+
+//
+
+sys.reset();
+
+lazy :: lad := '[ min(0.0, 1.0) ]';
+verify ltype(lad) = lazy array[] => double
+verify rtype(lad) = array[] => double
+
+//
+
+sys.reset();
+
+lazy array[] => :: lad := '[ min(0.0, 1.0) ]';
+verify ltype(lad) = lazy array[] => double
+verify rtype(lad) = array[] => double
+
+//
+
+sys.reset();
+
+lazy array[] => double lad := '[ min(0.0, 1.0) ]';
+verify ltype(lad) = lazy array[] => double
+verify rtype(lad) = array[] => double
+
+//
+
+sys.reset();
+
+:: ald := [ 'min(0.0, 1.0)' ];
+verify ltype(ald) = array[] => lazy double
+verify rtype(ald) = array[] => double
+
+//
+
+sys.reset();
+
+array[] => :: ald := [ 'min(0.0, 1.0)' ];
+verify ltype(ald) = array[] => lazy double
+verify rtype(ald) = array[] => double
+
+//
+
+sys.reset();
+
+array[] => lazy :: ald := [ 'min(0.0, 1.0)' ];
+verify ltype(ald) = array[] => lazy double
+verify rtype(ald) = array[] => double
+
+//
+
+sys.reset();
+
+array[] => lazy double ald := [ 'min(0.0, 1.0)' ];
+verify ltype(ald) = array[] => lazy double
+verify rtype(ald) = array[] => double
+
+//
+
+sys.reset();
+
+:: a0 := [800, 801];
+:: a1 := [810, 811];
+
+array[] => :: p6 := [a0, a1];
+array[] => :: p7 :- [a0, a1];
+
+verify ltype(p6) = array[] => array[] => int
+verify ltype(p7) = array[] => lazy array[] => int
+
+verify rtype(p6) = array[] => array[] => int
+verify rtype(p7) = array[] => array[] => int
+
+//
+
+sys.reset();
+
+:: x := 8;
+:: z :- x;
+
+verify x = 8
+verify z = 8
+verify rtype(x) = int
+verify rtype(z) = int
+
+//
+
+sys.reset();
+
+:: z :- x;
+:: x := 8;
+
+verify x = 8
+verify z = 8
+verify rtype(x) = int
+verify rtype(z) = int
+
+//
+
+sys.reset();
+
+:: z :- x + y;
+:: x :- 6;
+:: y :- 2;
+
+verify x = 6
+verify y = 2
+verify z = 8
+verify rtype(x) = int
+verify rtype(y) = int
+verify rtype(z) = int
+
+//
+
+sys.reset();
+
+:: x :- 6;
+>>
+:: y :- 2;
+>>
+:: z :- x + y;
+>>
+
+verify x = 6
+verify y = 2
+verify z = 8
+
+verify rtype(x) = int
+verify rtype(y) = int
+verify rtype(z) = int
+
+//
+
+sys.reset();
+
+:: z :- x + y;
+:: x := 6;
+:: y := 2;
+
+verify x = 6
+verify y = 2
+verify z = 8
+verify rtype(x) = int
+verify rtype(y) = int
+verify rtype(z) = int
+
+//
+
+sys.reset();
+
+:: b := false;
+verify rtype(b) = bool
+verify ltype(b) = bool
+
+lazy bool lb;
+verify rtype(lb) = bool
+verify ltype(lb) = lazy bool
+
+:: ilb :- false;
+verify rtype(ilb) = bool
+verify ltype(ilb) = lazy bool
+
+lazy array[] => double lad0;
+verify rtype(lad0) = array[] => double
+verify ltype(lad0) = lazy array[] => double
+
+array[] => lazy double lad1 :- [ min(0, 1) ];
+verify rtype(lad1) = array[] => double
+verify ltype(lad1) = array[] => lazy double
+
+array[] => lazy :: lad2 :- [ min(0.0, 1.0) ];
+verify rtype(lad2) = array[] => double
+verify ltype(lad2) = array[] => lazy double
+
+array[] => :: lad3 :- [ min(0.0, 1.0) ];
+verify rtype(lad3) = array[] => double
+verify ltype(lad3) = array[] => lazy double
+
+//
+
+sys.reset();
+
+:: ieead := [0.0, 1.0];
+:: iexad := [min(0.0, 1.0), max(0.0, 1.0)];
+
+array[] => double eeead := [0.0, 1.0];
+array[] => double eexad := [min(0.0, 1.0), max(0.0, 1.0)];
+
+verify rtype(ieead) = array[] => double
+verify rtype(iexad) = array[] => double
+verify rtype(eeead) = array[] => double
+verify rtype(eexad) = array[] => double
+
+:: ilead :- [0.0, 1.0];
+:: ilxad :- [min(0.0, 1.0), max(0.0, 1.0)];
+:: ilxax :- [min(0, 1), max(0, 1)];
+
+verify rtype(ilead) = array[] => double
+verify rtype(ilxad) = array[] => double
+verify rtype(ilxax) = array[] => double
+
+//
+
+sys.reset();
+
+array[] => lazy var MinMaxV := [ 'min(0, 1)', 'max(0, 1)' ];
+array[] => lazy ::  MinMaxI := [ 'min(0, 1)', 'max(0, 1)' ];
+
+verify rtype(MinMaxV) = array[] => var
+verify rtype(MinMaxI) = array[] => double
+
+//
+
+sys.reset();
+
+array[] => double ad0;
+verify ltype(ad0) = array[] => double
+verify rtype(ad0) = array[] => double
+
+array[] => double ad1 := [ min(0, 1) ];
+verify ltype(ad1) = array[] => double
+verify rtype(ad1) = array[] => double
+
+array[] => :: ad2 := [ min(0, 1) ];
+verify ltype(ad2) = array[] => double
+verify rtype(ad2) = array[] => double
+
+:: ad3 := [ min(0, 1) ];
+verify ltype(ad3) = array[] => double
+verify rtype(ad3) = array[] => double
+
+array[] => lazy double ald0;
+verify ltype(ald0) = array[] => lazy double
+verify rtype(ald0) = array[] => double
+
+array[] => lazy double ald1 :- [ min(0, 1) ];
+verify ltype(ald1) = array[] => lazy double
+verify rtype(ald1) = array[] => double
+
+array[] => lazy :: ald2 :- [ min(0, 1) ];
+verify ltype(ald2) = array[] => lazy double
+verify rtype(ald2) = array[] => double
+
+lazy array[] => double lad0;
+verify ltype(lad0) = lazy array[] => double
+verify rtype(lad0) = array[] => double
+
+array[] => lazy double lad1 :- [ min(0, 1) ];
+verify ltype(lad1) = array[] => lazy double
+verify rtype(lad1) = array[] => double
+
+array[] => lazy :: lad2 :- [ min(0, 1) ];
+verify ltype(lad2) = array[] => lazy double
+verify rtype(lad2) = array[] => double
+
+lazy :: lald3 :- [ min(0, 1) ];
+verify ltype(lald3) = lazy array[] => lazy double
+verify rtype(lald3) = array[] => lazy double
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy :: dt :- [
+	[ 42 ]
+];
+
+verify ltype(dt) = array[] => array[] => lazy int
+verify dt[0][0] = 42
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy :: dt :- [
+	[ max(1.0, 3.0) ]
+];
+
+verify ltype(dt) = array[] => array[] => lazy double
+verify dt[0][0] = 3.0
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy :: dt :- [
+	[ max(0.0, 1.0), max(1.0, 2.0) ],
+	[ max(2.0, 3.0), max(3.0, 4.0) ]
+];
+
+verify ltype(dt) = array[] => array[] => lazy double
+
+verify dt[0][0] = 1.0
+verify dt[0][1] = 2.0
+verify dt[1][0] = 3.0
+verify dt[1][1] = 4.0
+
+//
+
+sys.reset();
+
+array[] => lazy :: d1 :- [ log(1), log(2), log(3), log(4) ];
+
+verify rtype(d1) = array[] => double
+
+array[] => array[] => lazy :: d2 :- [
+	[ log(1), log(2) ],
+	[ log(3), log(4) ]
+];
+
+verify rtype(d2) = array[] => array[] => double
+
+array[] => array[] => lazy :: it :- [
+	[ 1, 2 ],
+	[ 3, 4 ]
+];
+
+verify rtype(it) = array[] => array[] => int
+
+array[] => array[] => lazy :: dt :- [
+	[ max(0.0, 1.0), max(1.0, 2.0) ],
+	[ max(2.0, 3.0), max(3.0, 4.0) ]
+];
+
+verify ltype(dt) = array[] => array[] => lazy double
+verify rtype(dt) = array[] => array[] => double
+
+verify rtype(dt) <> rtype(it)
+verify dt = it
+
+//
+
+sys.reset();
+
+double x := 7;
+
+array[] => lazy double a :- [ x, 1, x + 1 ];
+
+verify a[2] = 8
+
+a[2] :- a[0] + a[1] + 1;
+
+verify a[2] = 9
+
+//
+
+sys.reset();
+
+:: x := 7.0;
+
+array[] => lazy double a :- [ x, 1, x + 1 ];
+
+a[2] :- a[0] + a[1] + 1;
+
+verify a[2] = 9
+
+//
+
+sys.reset();
+
+:: x := 7.0;
+
+array[] => lazy double a :- [ x, 1, x + 1 ];
+
+verify a[2] = 8
+
+a[2] :- a[0] + a[1] + 1;
+
+verify a[2] = 9
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy int a :- [
+	[0, 1],
+	[2, 3]
+];
+
+array[] => array[] => lazy :: b :- [
+	[0, 1],
+	[2, 3]
+];
+
+verify rtype(a) = array[] => array[] => int
+verify rtype(b) = array[] => array[] => int
+verify rtype(a) = rtype(b)
+
+//
+
+sys.reset();
+
+:: x := 7.0;
+
+array[] => lazy :: a :- [ x, 1, x + 1 ];
+
+a[2] :- a[0] + a[1] + 1;
+
+verify a[2] = 9
+
+//
+
+sys.reset();
+
+:: x := 7.0;
+
+array[] => lazy :: a :- [ x, 1, x + 1 ];
+
+verify a[2] = 8
+
+a[2] :- a[0] + a[1] + 1;
+
+verify a[2] = 9
+
+//
+
+sys.reset();
+
+:: x := 7.0;
+
+array[] => lazy :: a := [ x, 1, x + 1 ];
+
+a[2] :- a[0] + a[1] + 1;
+
+verify a[2] = 9
+
+//
+
+sys.reset();
+
+:: x := 7.0;
+
+array[] => lazy :: a := [ x, 1, x + 1 ];
+
+verify a[2] = 8
+
+a[2] :- a[0] + a[1] + 1;
+
+verify a[2] = 9
+
+//
+
+// @@ fix
+
+sys.reset();
+
+lazy array[] => double a0 :- [ log(8) ];
+
+array[] => lazy double a1 :- [ log(8) ];
+
+lazy array[] => :: a2 :- [ log(8) ];
+
+array[] => lazy :: a3 :- [ log(8) ];
+
+lazy :: a4 :- [ log(8) ];
+
+array[] => :: a5 :- [ log(8) ];
+
+:: a6 :- [ log(8) ];
+
+// verify ltype(a0) = lazy array[] => double
+verify ltype(a1) = array[] => lazy double
+// verify ltype(a2) = lazy array[] => double
+verify ltype(a3) = array[] => lazy double
+// verify ltype(a4) = lazy array[] => double
+verify ltype(a5) = array[] => lazy double
+verify ltype(a6) = array[] => lazy double
+
+//
+
+sys.reset();
+
+array[] => lazy double It :- [ 4, 2 ];
+
+array[] => lazy double Pt :- [ 4.0, 2.0 ];
+
+array[] => lazy :: Qt :- [ 4.0, 2.0 ];
+
+array[] => lazy double Xt :- [ max(0, Qt[0]), max(1, Qt[1]) ];
+
+array[] => lazy :: Yt :- [ max(0, Qt[0]), max(1, Qt[1]) ];
+
+verify rtype(It) = array[] => double
+verify rtype(Pt) = array[] => double
+verify rtype(Qt) = array[] => double
+verify rtype(Xt) = array[] => double
+verify rtype(Yt) = array[] => double
+
+//
+
+sys.reset();
+
+lazy array[] => double a0 := '[ log(8) ]';
+
+array[] => lazy double a1 :- [ log(8) ];
+
+lazy array[] => :: a2 := '[ log(8) ]';
+
+array[] => lazy :: a3 :- [ log(8) ];
+
+lazy :: a4 := '[ log(8) ]';
+
+array[] => :: a5 :- [ log(8) ];
+
+:: a6 := '[ log(8) ]';
+
+verify a0 = a1
+verify a1 = a2
+verify a2 = a3
+verify a3 = a4
+verify a4 = a5
+verify a5 = a6
+verify a6 = a0
+
+verify rtype(a0) = array[] => double
+verify rtype(a1) = array[] => double
+verify rtype(a2) = array[] => double
+verify rtype(a3) = array[] => double
+verify rtype(a4) = array[] => double
+verify rtype(a5) = array[] => double
+verify rtype(a6) = array[] => double
+
+verify ltype(a0) = lazy array[] => double
+verify ltype(a1) = array[] => lazy double
+verify ltype(a2) = lazy array[] => double
+verify ltype(a3) = array[] => lazy double
+verify ltype(a4) = lazy array[] => double
+verify ltype(a5) = array[] => lazy double
+verify ltype(a6) = lazy array[] => double
+
+//
+
+sys.reset();
+
+:: lb :- true;
+
+:: li :- 0;
+
+:: ld :- 0.0;
+
+:: ls :- "hello";
+
+:: alb :- [ false, true, false, false, true, true, true, false ];
+
+:: ali :- [ 0, 1, 2, 3, 4, 5, 6, 7 ];
+
+:: ald :- [ 0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7 ];
+
+:: als :- ["zero", "one", "two", "three", "four", "five", "six", "seven" ];
+
+verify ltype(lb) = lazy bool
+verify ltype(li) = lazy int
+verify ltype(ld) = lazy double
+verify ltype(ls) = lazy string
+
+verify ltype(alb) = array[] => lazy bool
+verify ltype(ali) = array[] => lazy int
+verify ltype(ald) = array[] => lazy double
+verify ltype(als) = array[] => lazy string
+
+//
+// lazyfication
+//
+
+//
+
+sys.reset();
+
+:: a := [0, 1];
+:: l :- [0, 1];
+
+verify rtype(a) = array[] => int
+verify ltype(a) = array[] => int
+
+verify rtype(l) = array[] => int
+verify ltype(l) = array[] => lazy int
+
+//
+
+sys.reset();
+
+:: a := [[ 0, 1 ], [ 10, 11 ]];
+:: l :- [[ 0, 1 ], [ 10, 11 ]];
+
+verify rtype(a) = array[] => array[] => int
+verify ltype(a) = array[] => array[] => int
+
+verify rtype(l) = array[] => array[] => int
+verify ltype(l) = array[] => array[] => lazy int
+
+//
+
+sys.reset();
+
+:: a := [[1, 2, [0, 0]], [3, 4]];
+:: l :- [[1, 2, [0, 0]], [3, 4]];
+
+verify rtype(a) = array[] => array[] => var
+verify ltype(a) = array[] => array[] => var
+
+verify rtype(l) = array[] => array[] => var
+verify ltype(l) = array[] => array[] => lazy var
+
+//
+
+sys.reset();
+
+array[,] => lazy :: M :- [[0, 1], [2, 3]];
+
+verify ltype(M) = array[,] => lazy int
+verify rtype(M) = array[,] => int
+
+verify M = (array[2,2] => var)(0, 1, 2, 3)
+verify (array[2,2] => var)(0, 1, 2, 3) = M
+
+verify M = (array[2,2] => int)(0, 1, 2, 3)
+verify (array[2,2] => int)(0, 1, 2, 3) = M
+
+//
+
+sys.reset();
+
+:: a1 := '(array[1] => int) ( 42 )';
+:: a2 := '(array[1,1] => int) ( 42 )';
+:: a3 := '(array[1,1,1] => int) ( 42 )';
+
+verify rtype(a1) = array[] => int
+verify ltype(a1) = lazy array[] => int
+
+verify rtype(a2) = array[,] => int
+verify ltype(a2) = lazy array[,] => int
+
+verify rtype(a3) = array[,,] => int
+verify ltype(a3) = lazy array[,,] => int
+
+//
+
+sys.reset();
+
+:: x :- 7;
+
+:: waltz :- [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+verify ltype(waltz) = array[] => array[] => lazy int
+
+verify waltz = [[ 0, 1 ], [ 8, 9 ]]
+x :- 6;
+verify waltz = [[ 0, 1 ], [ 7, 8 ]]
+
+//
+
+sys.reset();
+
+:: x :- 7;
+
+array[] => array[] => lazy :: waltz := [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+verify ltype(waltz) = array[] => array[] => lazy int
+
+verify waltz = [[ 0, 1 ], [ 8, 9 ]]
+x :- 6;
+verify waltz = [[ 0, 1 ], [ 8, 9 ]]
+
+//
+
+sys.reset();
+
+:: x :- 7;
+
+:: waltz := [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+verify ltype(waltz) = array[] => array[] => int
+
+verify waltz = [[ 0, 1 ], [ 8, 9 ]]
+x :- 6;
+verify waltz = [[ 0, 1 ], [ 8, 9 ]]
+
+//
+
+sys.reset();
+
+lazy array[] => :: a1 := '(array[1] => int) ( 42 )';
+lazy array[,] => :: a2 := '(array[1,1] => int) ( 42 )';
+lazy array[,,] => :: a3 := '(array[1,1,1] => int) ( 42 )';
+
+verify rtype(a1) = array[] => int
+verify ltype(a1) = lazy array[] => int
+
+verify rtype(a2) = array[,] => int
+verify ltype(a2) = lazy array[,] => int
+
+verify rtype(a3) = array[,,] => int
+verify ltype(a3) = lazy array[,,] => int
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy var st :- [
+	[ 1, 2 ],
+	[ 3, 4 ]
+];
+
+array[] => array[] => lazy var vt :- [
+	[st[0][0], st[0][1]],
+	[st[1][0], st[1][1]]
+];
+
+array[] => array[] => lazy var xt :- [
+	[exp(double(st[0][0])), exp(double(st[0][1]))],
+	[exp(double(st[1][0])), exp(double(st[1][1]))]
+];
+
+verify rtype(st) = array[] => array[] => var
+
+verify rtype(vt) = array[] => array[] => var
+
+verify rtype(xt) = array[] => array[] => var
+
+//
+
+sys.reset();
+
+:: st := (array[2,2] => lazy int)('0', '1', '10', '11');
+
+verify ltype(st) = array[,] => lazy int
+verify rtype(st) = array[,] => int
+
+//
+
+sys.reset();
+
+array[ ] => lazy :: elead :- [ 0.0, 1.0 ];
+array[ ] => lazy :: elxad :- [  0,   1  ];
+array[,] => lazy :: elzad := (array[2,2] => lazy int)('0', '1', '10', '11');
+
+verify ltype(elead) = array[ ] => lazy double
+verify ltype(elxad) = array[ ] => lazy int
+verify ltype(elzad) = array[,] => lazy int
+
+verify rtype(elead) = array[ ] => double
+verify rtype(elxad) = array[ ] => int
+verify rtype(elzad) = array[,] => int
+
+//
+
+sys.reset();
+
+struct { int; double; } p := (3, 2.0);
+
+struct { :T1:; :T2:; } q := (3, 2.0);
+
+struct { ::; ::; } r := (3, 2.0);
+
+:: s := (3, 2.0);
+
+verify ltype(p) = struct { int; double; }
+verify ltype(q) = struct { int; double; }
+verify ltype(r) = struct { int; double; }
+verify ltype(s) = struct { int; double; }
+
+verify rtype(p) = struct { int; double; }
+verify rtype(q) = struct { int; double; }
+verify rtype(r) = struct { int; double; }
+verify rtype(s) = struct { int; double; }
+
+verify ltype(p) = ltype(q)
+verify ltype(q) = ltype(r)
+verify ltype(r) = ltype(s)
+verify ltype(s) = ltype(p)
+
+verify rtype(p) = rtype(q)
+verify rtype(q) = rtype(r)
+verify rtype(r) = rtype(s)
+verify rtype(s) = rtype(p)
+
+//
+
+sys.reset()
+
+:: A := [ ("00", 0), ("11", 1.1) ];
+
+verify rtype(A) = array[] => struct { string; double; }
+verify ltype(A) = array[] => struct { string; double; }
+
+//
+
+sys.reset()
+
+:: A := [ (0.0, 0), (1, 1.1) ];
+
+verify rtype(A) = array[] => struct { double; double; }
+verify ltype(A) = array[] => struct { double; double; }
+
+//
+
+sys.reset()
+
+:: A := [ ("Z", (0.0, 0)), ("U", (1, 1.1)) ];
+
+verify rtype(A) = array[] => struct { string; struct { double; double; }; }
+verify ltype(A) = array[] => struct { string; struct { double; double; }; }
+
+//
+
+sys.reset()
+
+:: A := [ ("Z", (0.0, 0), false), ("U", (1, 1.1), true) ];
+
+verify rtype(A) = array[] => struct { string; struct { double; double; }; bool; }
+verify ltype(A) = array[] => struct { string; struct { double; double; }; bool; }
+
+:: B :- ( A, 'A' );
+
+verify rtype(B) = struct {      array[] => struct { string; struct { double; double; }; bool; };      lazy array[] => struct { string; struct { double; double; }; bool; }; }
+verify ltype(B) = struct { lazy array[] => struct { string; struct { double; double; }; bool; }; lazy lazy array[] => struct { string; struct { double; double; }; bool; }; }
+
+//
+
+sys.reset();
+
+:: tuple := (0.0, 1.0, uniform(0, 1));
+
+verify rtype(tuple) = struct { double; double; double; }
+verify ltype(tuple) = struct { double; double; double; }
+verify ltype(tuple) = rtype(tuple)
+
+//
+
+sys.reset();
+
+:: tuple :- (0.0, 1.0, uniform(0, 1));
+
+verify rtype(tuple) = struct { double; double; double; }
+verify ltype(tuple) = struct { lazy double; lazy double; lazy double; }
+
+// @@ Check this: what's the proper definition of structural equivalence?
+
+sys.reset();
+
+:: x1 := (1, "one");
+:: x2 := struct { int; string; }(1, "one");
+
+verify rtype(x1) = rtype(x2)
+verify x1 = x2
+
+:: x3 := struct { int first; string second; }(1, "one");
+
+verify rtype(x2) <> rtype(x3)
+verify x2 = x3
+
+:: x4 := struct { int first; string second; }(1, "one");
+
+verify rtype(x3) = rtype(x4)
+verify x3 = x4
+
+//
+
+sys.reset();
+
+:: a := (array[] => struct { int index; lazy double formula; string text; }) ([
+	( 0, '0.0', "zero"  ),
+	( 1, '1.0', "one"   ),
+	( 2, '2.0', "two"   ),
+	( 3, '3.0', "three" )
+]);
+
+verify ltype(a) = array[] => struct { int index; lazy double formula; string text; }
+verify ltype(a[0]) = struct { int index; lazy double formula; string text; }
+verify ltype(a[0].index) = int
+verify ltype(a[0].formula) = lazy double
+verify ltype(a[0].text) = string
+verify ltype(a[0][0]) = int
+verify ltype(a[0][1]) = lazy double
+verify ltype(a[0][2]) = string
+
+verify rtype(a) = array[] => struct { int index; double formula; string text; }
+verify rtype(a[0]) = struct { int index; double formula; string text; }
+verify rtype(a[0].index) = int
+verify rtype(a[0].formula) = double
+verify rtype(a[0].text) = string
+verify rtype(a[0][0]) = int
+verify rtype(a[0][1]) = double
+verify rtype(a[0][2]) = string
+
+//
+
+sys.reset();
+
+array[] => :: a := (array[] => struct { int index; lazy double formula; string text; }) ([
+	( 0, '0.0', "zero"  ),
+	( 1, '1.0', "one"   ),
+	( 2, '2.0', "two"   ),
+	( 3, '3.0', "three" )
+]);
+
+verify ltype(a) = array[] => struct { int index; lazy double formula; string text; }
+verify ltype(a[0]) = struct { int index; lazy double formula; string text; }
+verify ltype(a[0].index) = int
+verify ltype(a[0].formula) = lazy double
+verify ltype(a[0].text) = string
+verify ltype(a[0][0]) = int
+verify ltype(a[0][1]) = lazy double
+verify ltype(a[0][2]) = string
+
+verify rtype(a) = array[] => struct { int index; double formula; string text; }
+verify rtype(a[0]) = struct { int index; double formula; string text; }
+verify rtype(a[0].index) = int
+verify rtype(a[0].formula) = double
+verify rtype(a[0].text) = string
+verify rtype(a[0][0]) = int
+verify rtype(a[0][1]) = double
+verify rtype(a[0][2]) = string
+
+//
+// conform
+//
+
+// sys.reset();
+
+// @@ TBH, we should not allow inference on the rhs
+
+verify conform(array[] => bool, array[] => ::) = array[] => bool
+verify conform(array[] => ::, array[] => bool) = array[] => bool
+verify conform(array[] => bool, rtype([])) = array[] => bool
+verify conform(rtype([]), array[] => bool) = array[] => bool
+
+verify conform(array[] => int, array[] => ::) = array[] => int
+verify conform(array[] => ::, array[] => int) = array[] => int
+verify conform(array[] => int, rtype([])) = array[] => int
+verify conform(rtype([]), array[] => int) = array[] => int
+
+verify conform(array[] => double, array[] => ::) = array[] => double
+verify conform(array[] => ::, array[] => double) = array[] => double
+verify conform(array[] => double, rtype([])) = array[] => double
+verify conform(rtype([]), array[] => double) = array[] => double
+
+verify conform(array[] => string, array[] => ::) = array[] => string
+verify conform(array[] => ::, array[] => string) = array[] => string
+verify conform(array[] => string, rtype([])) = array[] => string
+verify conform(rtype([]), array[] => string) = array[] => string
+
+verify conform(array[] => ::, array[] => var) = array[] => var
+verify conform(array[] => var, array[] => ::) = array[] => var
+verify conform(array[] => var, rtype([])) = array[] => var
+verify conform(rtype([]), array[] => var) = array[] => var
+
+///
+/// Type Inference / Checking Dance Revolution
+///
+
+//
+
+sys.reset();
+
+// type inference + type checking dance I
+
+:: x :- 7;
+
+::                             mambo := [[ 0, 1 ], [ x + 1, x + 2 ]];
+::                             tango :- [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+array[] => ::                  salsa := [[ 0, 1 ], [ x + 1, x + 2 ]];
+array[] => ::                  samba :- [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+array[] => array[] => ::       rumba := [[ 0, 1 ], [ x + 1, x + 2 ]];
+array[] => array[] => ::       waltz :- [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+array[] => array[] =>      int zumba := [[ 0, 1 ], [ x + 1, x + 2 ]];
+array[] => array[] => lazy int disco :- [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+verify ltype(mambo) = array[] => array[] => int
+verify ltype(salsa) = array[] => array[] => int
+verify ltype(rumba) = array[] => array[] => int
+verify ltype(zumba) = array[] => array[] => int
+
+verify ltype(tango) = array[] => array[] => lazy int
+verify ltype(samba) = array[] => array[] => lazy int
+verify ltype(waltz) = array[] => array[] => lazy int
+verify ltype(disco) = array[] => array[] => lazy int
+
+//
+
+sys.reset();
+
+// type inference + type checking dance II
+
+:: x :- 7;
+
+::                             mambo := '[[ 0, 1 ], [ x + 1, x + 2 ]]';
+lazy ::                        tango := '[[ 0, 1 ], [ x + 1, x + 2 ]]';
+
+array[] => ::                  salsa := ['[ 0, 1 ]', '[ x + 1, x + 2 ]'];
+array[] => lazy ::             samba := ['[ 0, 1 ]', '[ x + 1, x + 2 ]'];
+
+array[] => array[] => lazy ::  rumba := [[ '0', '1' ], [ 'x + 1', 'x + 2' ]];
+array[] => array[] => ::       twist := [[ '0', '1' ], [ 'x + 1', 'x + 2' ]];
+
+array[] => array[] => lazy ::  vogue :- [[  0 ,  1  ], [  x + 1 ,  x + 2  ]];
+array[] => array[] => ::       waltz :- [[  0 ,  1  ], [  x + 1 ,  x + 2  ]];
+
+array[] => array[] => lazy int zumba := [[ '0', '1' ], [ 'x + 1', 'x + 2' ]];
+array[] => array[] => lazy int disco :- [[  0 ,  1  ], [  x + 1 ,  x + 2  ]];
+
+
+verify ltype(mambo) = lazy array[] => array[] => int
+verify ltype(tango) = lazy array[] => array[] => int
+
+verify ltype(salsa) = array[] => lazy array[] => int
+verify ltype(samba) = array[] => lazy array[] => int
+
+verify ltype(rumba) = array[] => array[] => lazy int
+verify ltype(twist) = array[] => array[] => lazy int
+
+verify ltype(vogue) = array[] => array[] => lazy int
+verify ltype(waltz) = array[] => array[] => lazy int
+
+verify ltype(zumba) = array[] => array[] => lazy int
+verify ltype(disco) = array[] => array[] => lazy int
+
+//
+
+sys.reset();
+
+// type inference + type checking dance III (mismatched dance)
+
+:: x :- 7;
+
+lazy ::                        chk00 := ['[ 0, 1 ]', '[ x + 1, x + 2 ]'];
+lazy ::                        chk01 := [[ '0', '1' ], [ 'x + 1', 'x + 2' ]];
+lazy ::                        chk02 :- [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+array[] => lazy ::             chk03 := '[[ 0, 1 ], [ x + 1, x + 2 ]]';
+array[] => lazy ::             chk04 := [[ '0', '1' ], [ 'x + 1', 'x + 2' ]];
+array[] => lazy ::             chk05 :- [[ 0, 1 ], [ x + 1, x + 2 ]];
+
+array[] => array[] => lazy ::  chk06 := '[[ 0, 1 ], [ x + 1, x + 2 ]]';
+array[] => array[] => lazy ::  chk07 := ['[ 0, 1 ]', '[ x + 1, x + 2 ]'];
+
+array[] => array[] => lazy int chk08 := '[[ 0, 1 ], [ x + 1, x + 2 ]]';
+array[] => array[] => lazy int chk09 := ['[ 0, 1 ]', '[ x + 1, x + 2 ]'];
+
+verify ltype(chk00) = lazy array[] => lazy array[] => int
+verify ltype(chk01) = lazy array[] => array[] => lazy int
+verify ltype(chk02) = lazy array[] => array[] => lazy int
+verify ltype(chk03) = #TYPE!
+verify ltype(chk04) = array[] => lazy array[] => lazy int
+verify ltype(chk05) = array[] => lazy array[] => lazy int
+verify ltype(chk06) = #TYPE!
+verify ltype(chk07) = #TYPE!
+verify ltype(chk08) = #TYPE!
+verify ltype(chk09) = #TYPE!
+
+verify chk03 = #REF!
+verify chk06 = #REF!
+verify chk07 = #REF!
+verify chk08 = #REF!
+verify chk09 = #REF!
+
+//
+
+sys.reset();
+
+verify "inference.sym" <> ?

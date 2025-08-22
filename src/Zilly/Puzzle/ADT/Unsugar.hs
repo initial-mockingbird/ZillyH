@@ -46,6 +46,8 @@ unsugarEAtom (PIf bk (a,b,c))
   = PIf bk (unsugarE a, unsugarE b, unsugarE c)
 unsugarEAtom (PDefer bk a)
   = PDefer bk (unsugarE a)
+unsugarEAtom (PArray bk xs)
+  = PArray bk (unsugarE <$> xs)
 
 unsugarEPrefixPrec :: EPrec ctx PrefixPrec -> EPrec ctx PrefixPrec
 unsugarEPrefixPrec (PUMinus bk a) = PUMinus bk (unsugarE a)
@@ -61,9 +63,15 @@ unsugarEPostfixPrec (PApp bk f xs)
 unsugarEPostfixPrec (PAppArr bk f (x1:x2:xs))
   = unsugarEPostfixPrec $ PAppArr bk (PAppArr bk f [x1]) (x2:xs)
 unsugarEPostfixPrec (PAppArr bk f xs)
-  = PAppArr bk (unsugarE f) (unsugarE <$> xs)
+  = PAppArr bk (unsugarE f) (unsugarIndexer <$> xs)
 unsugarEPostfixPrec (OfHigherPostfixPrec a)
   = OfHigherPostfixPrec (unsugarE a)
+
+unsugarIndexer :: PIndexerExpression ctx -> PIndexerExpression ctx
+unsugarIndexer (PIndex a)
+  = PIndex (unsugarE a)
+unsugarIndexer (PRangeIndexer (a,b))
+  = PRangeIndexer (unsugarE a, unsugarE b)
 
 unsugarE8 :: EPrec ctx 8 -> EPrec ctx 8
 unsugarE8 (PPower bk a b)

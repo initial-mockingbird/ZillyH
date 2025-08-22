@@ -448,8 +448,8 @@ mkParen :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True)
 mkParen p = parens $ PParen <$> mkBookeepInfo <*> p
 
 mkArray :: forall {n0} n. (SingI n,n0 ~ Atom, (n < n0) ~ True)
-  =>  Parser ([EPrec ParsingStage n] -> EPrec ParsingStage n0)
-mkArray = between "[" "]" $ PArray <$> mkBookeepInfo
+  =>  Parser ([EPrec ParsingStage n]) -> Parser (EPrec ParsingStage n0)
+mkArray p = between "[" "]" $ PArray <$> mkBookeepInfo <*> p
 
 
 mkParenOrTupleP :: forall {n0} n. (SingI n, n0 ~ Inf, (n < n0) ~ True)
@@ -466,7 +466,7 @@ pParenOrTupleP
   = parens (mkParenOrTupleP <*> expr <*> option [] ("," *> sepBy expr ",") )
 
 pArray :: Parser (EPrec ParsingStage Atom)
-pArray = mkArray <*> (expr `sepBy` ",")
+pArray = mkArray (expr `sepBy` ",")
 
 pNumber :: Parser (EPrec ParsingStage Atom)
 pNumber = pNumber' <* spaces
@@ -547,7 +547,7 @@ mkNegate = PNegate <$> mkBookeepInfo
 data instance EPrec ctx PostfixPrec where
   -- Function applications: @expr(expr00,expr01,....)(expr10,expr11,...)...@
   PApp    :: EAppX ctx -> EPrec ctx PostfixPrec -> [EPrec ctx 0] -> EPrec ctx PostfixPrec
-  PAppArr :: EAAppX ctx -> EPrec ctx PostfixPrec -> [EPrec ctx 0] -> EPrec ctx PostfixPrec
+  PAppArr :: EAAppX ctx -> EPrec ctx PostfixPrec -> [PIndexerExpression ctx] -> EPrec ctx PostfixPrec
   OfHigherPostfixPrec :: forall n ctx. (SingI n,(n > PostfixPrec) ~ True)
     => EPrec ctx n -> EPrec ctx PostfixPrec
 
@@ -560,9 +560,24 @@ type instance EAAppX ParsingStage = BookeepInfo
 mkApp :: Parser (EPrec ParsingStage 0) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
 mkApp p =  (\p' x y -> PApp p' y x ) <$> mkBookeepInfo <*> parens (p `sepBy` ",")
 
-mkAppArr :: Parser (EPrec ParsingStage 0) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
+mkAppArr :: Parser (PIndexerExpression ParsingStage) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
 mkAppArr p =  (\p' x y -> PAppArr p' y x ) <$> mkBookeepInfo <*> bracketed' (p `sepBy` ",")
 
+data PIndexerExpression ctx
+  = PRangeIndexer (EPrec ctx 0, EPrec ctx 0)
+  | PIndex (EPrec ctx 0)
+
+foldPIndexerExpression :: (EPrec ctx 0 -> EPrec ctx 0 -> r) -> (EPrec ctx 0 -> r) -> PIndexerExpression ctx -> r
+foldPIndexerExpression f g = \case
+  PRangeIndexer (a,b) -> f a b
+  PIndex a            -> g a
+
+pIndexerExpression :: Parser (PIndexerExpression ParsingStage)
+pIndexerExpression = f <$> expr <*> optionMaybe (".." *> expr)
+  where
+    f :: EPrec ParsingStage 0 -> Maybe (EPrec ParsingStage 0) -> PIndexerExpression ParsingStage
+    f a (Just b) = PRangeIndexer (a,b)
+    f a Nothing  = PIndex a
 
 ------------------------------
 -- Precedence 8 Expressions
@@ -574,7 +589,7 @@ data instance EPrec ctx 8 where
   PPower    :: forall n ctx. (SingI n,(n > 8) ~ True)
     => EPowX ctx -> EPrec ctx n -> EPrec ctx 8 -> EPrec ctx 8
   OfHigher8 :: forall n ctx. (SingI n,(n > 8) ~ True)
-    =>              EPrec ctx n                -> EPrec ctx 8
+    =>EPrec ctx n                -> EPrec ctx 8
 
 type family EPowX (ctx :: Type) :: Type
 type instance EPowX ParsingStage = BookeepInfo
@@ -807,7 +822,7 @@ expr = fmap OfHigher0 . precedence $
   sops Prefix  [ mkUMinus <* "-", mkNegate <* "~"] |-<
   sops Postfix
     [ mkApp    expr
-    , mkAppArr expr
+    , mkAppArr pIndexerExpression
     ] |-<
 
   Atom atom
@@ -922,8 +937,8 @@ a0 :: Parser (A0 ParsingStage)
 a0
   =   mkSysCommand
   <|> flip Print <$> mkBookeepInfo <*> try (fully expr)
-  <|> try (mkDecl (t2NT <$> pTypes) expr expr)
-  <|> mkAssign expr expr
+  <|> try (mkAssign expr expr)
+  <|> (mkDecl (t2NT <$> pTypes) expr expr)
 
 a0' :: Parser (A0 ParsingStage)
 a0' = a0
@@ -972,6 +987,39 @@ parseAction' s = case runParser (spaces *> fully action') initialPST "" s of
   Right a -> Right $ OfA0 a
 
 
+yieldArrAssign :: forall n ctx. SingI n => EPrec ctx n -> Maybe (String, [[PIndexerExpression ctx]])
+yieldArrAssign x | Just Refl <- matches @0 (sing @n) = case x of
+  OfHigher0 x' -> yieldArrAssign x'
+yieldArrAssign x | Just Refl <- matches @1 (sing @n) = case x of
+  OfHigher1 x' -> yieldArrAssign x'
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @3 (sing @n) = case x of
+  OfHigher3 x' -> yieldArrAssign x'
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @4 (sing @n) = case x of
+  OfHigher4 x' -> yieldArrAssign x'
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @6 (sing @n) = case x of
+  OfHigher6 x' -> yieldArrAssign x'
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @7 (sing @n) = case x of
+  OfHigher7 x' -> yieldArrAssign x'
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @8 (sing @n) = case x of
+  OfHigher8 x' -> yieldArrAssign x'
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @PostfixPrec (sing @n) = case x of
+  OfHigherPostfixPrec x' -> yieldArrAssign x'
+  PAppArr _ e xs -> fmap (<> [xs]) <$> yieldArrAssign e
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @PrefixPrec (sing @n) = case x of
+  OfHigherPrefixPrec x' -> yieldArrAssign x'
+  _ -> Nothing
+yieldArrAssign x | Just Refl <- matches @Atom (sing @n) = case x of
+  PVar _ s -> Just (s, [])
+  _        -> Nothing
+yieldArrAssign _ = error "Error. yieldArrAssign Expression Precedences must be one of: 0,1,4,6,7,8,Postfix,Prefix."
+
 yieldVarName :: forall n ctx. SingI n => EPrec ctx n -> Maybe String
 yieldVarName x | Just Refl <- matches @0 (sing @n) = case x of
   OfHigher0 x' -> yieldVarName x'
@@ -1002,7 +1050,7 @@ yieldVarName x | Just Refl <- matches @PrefixPrec (sing @n) = case x of
 yieldVarName x | Just Refl <- matches @Atom (sing @n) = case x of
   PVar _ s -> Just s
   _        -> Nothing
-yieldVarName _ = error "Error. Upcast Expression Precedences must be one of: 0,1,4,6,7,8,Postfix,Prefix."
+yieldVarName _ = error "Error. yieldVar Expression Precedences must be one of: 0,1,4,6,7,8,Postfix,Prefix."
 
 instance SingI n => Show (TPrec ctx n) where
   showsPrec p  = withKnownNat (sing @n) $ case (sameNat (sing @n) (SNat @Atom), sameNat (sing @n) (SNat @0)) of
@@ -1041,6 +1089,7 @@ instance SingI n => Show (EPrec ctx n) where
           . shows x . (maybe (showString "") $ \s -> showString " => " . shows s) mt
           . showString " -> "
           . showsPrec 1 (PLambda ctx xs mt e)
+        PLambda _ [] _ e -> showParen (p > 1) $ showString "fn() -> " . shows e
         OfHigher1 x -> showsPrec p x
       () | Just Refl <- matches @3 (sing @n) -> \case
         PAnd _ a b -> showParen (p > 3) $ showsPrec 3 a . showString " && " . showsPrec 4 b
@@ -1080,6 +1129,8 @@ instance SingI n => Show (EPrec ctx n) where
           . showString "["
           . (foldr (\arg acc -> shows arg . showString ", " . acc) (shows x) xs)
           . showString "]"
+        PApp _ f [] -> showParen (p > 10) $ showsPrec 11 f
+        PAppArr _ f [] -> showParen (p > 10) $ showsPrec 11 f
         OfHigherPostfixPrec a  -> showsPrec p a
       () | Just Refl <- matches @Atom (sing @n) -> \case
         PInt _ n -> shows n
@@ -1096,8 +1147,16 @@ instance SingI n => Show (EPrec ctx n) where
         PIf _ (a, b, c)
           -> showString "if(" . shows a . showString ", " . shows b
           . showString ", " . shows c . showString ")"
+        PArray _ (x:xs)
+          -> showString "["
+          . foldr (\x acc -> shows x . showString ", " . acc) (shows x) xs
+          . showString "]"
+        PArray _ [] -> showString "[]"
       _ -> const $ showString "Precedence not defined"
 
+instance Show (PIndexerExpression ctx) where
+  show (PIndex e) = show e
+  show (PRangeIndexer (e,e')) = show e <> " .. " <> show e'
 
 instance Show (A0 ctx) where
   show (Decl t e e' _) = show t <> " " <> show e <> " := " <> show e' <> ";"

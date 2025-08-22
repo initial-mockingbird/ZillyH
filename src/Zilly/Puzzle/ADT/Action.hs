@@ -16,6 +16,8 @@
 {-# LANGUAGE TypeAbstractions #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ImportQualifiedPost #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Zilly.Puzzle.ADT.Action where
 
@@ -29,7 +31,8 @@ import Debug.Trace (trace)
 import Data.Default
 import Control.Monad.Error.Class
 import Zilly.Puzzle.Effects.Block (CCActions(..))
-
+import Data.Traversable
+import Data.Array qualified as A
 
 type AEffects m =
   ( Effects m
@@ -47,7 +50,7 @@ type ACtxConstraint ctx m =
 
 data A (ctx :: Type) where
   Assign   :: Types -> LensM (E ctx) -> E ctx -> A ctx
-  Reassign :: LensM (E ctx) -> E ctx -> A ctx
+  Reassign :: LensM (E ctx) -> [[(E ctx, Maybe (E ctx))]] -> E ctx -> A ctx
   Print    :: E ctx -> A ctx
   SysCommand :: String -> A ctx
   ABottom  :: A ctx
@@ -88,7 +91,6 @@ evalA' a = fmap (a,) getQ >>= \case
     cycleCC
     putQ 0
     pure res
-
   (Assign {}, _) -> do
     (env, a') <- evalA a
     putQ 1
@@ -109,10 +111,55 @@ evalA a@(Assign ltype x y) = do
       env <- getEnv
       (\env' -> (env',a)) <$> setM x a' ltype env
 
-evalA a@(Reassign x y) = evalE y >>= \a' -> do
+evalA a@(Reassign x [] y) = evalE y >>= \a' -> do
   env <- getEnv
   md <- varMetadata x env
   (\env' -> (env',a)) <$> setM x a' md env
+evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
+  y0 ->  do
+    let y = A.scalar y0
+    ixs <- for (eis:eiss) $ \eixs -> for eixs $ \(l,u) -> (,) <$> evalE @ctx l <*> traverse (evalE @ctx) u >>= \case
+      (ValZ l', Just (ValZ u')) -> pure (l', Just u')
+      (ValZ l', Nothing) -> pure (l', Nothing)
+      (a',b') -> throwError
+        $ "Error on evaling 'arraySlice' expression. Unsupported index: "
+        <> show a' <> " and " <> show b'
+
+    env <- getEnv
+    md <- varMetadata x env
+    xv <- getL x env
+    case xv of
+      MkArray arr -> do
+        let unravel (MkArray arr) = arr
+            unravel e = A.fromList [] [e]
+        let
+            sliceUnravel :: [(Int, Maybe Int)] -> A.Array (E ctx) -> A.Array (E ctx)
+            sliceUnravel ixs arr =
+              let new = A.slice' ixs arr
+              in if null (A.shapeL new)
+                then unravel (A.unScalar new)
+                else new
+        let
+            update :: [[(Int, Maybe Int)]] -> A.Array (E ctx) -> A.Array (E ctx)
+            -- update [ixs] current = A.updateSlice current ixs $ A.scalar y
+            update (ixs:ixss) current = case update ixss (sliceUnravel ixs current) of
+              updated | null (A.shapeL updated)
+                -> A.updateSlice (current) ixs $ updated
+              updated
+                -> A.updateSlice current ixs $ A.scalar $ MkArray updated
+            update [] _ = y
+
+
+
+        -- [ixs0,ixs1,ixs2]
+        -- slice' ixs0 arr0 & \arr1 ->
+        -- slice' ixs1 arr1 & \arr2 ->
+        -- slice' ixs2 arr2 &
+        let arr' =  update ixs arr
+        (\env' -> (env',a)) <$> setM x (MkArray arr') md env
+      v -> throwError $ "reassigning non-array variable: " <> show v
+
+
 
 evalA a@(SysCommand "reset") = do
   env <- def @(m (TypeRepMap (E ctx)))
@@ -140,8 +187,22 @@ instance
       . showString " := "
       . shows e
       . showString ";"
-    (Reassign  x e)
+    (Reassign  x [] e)
       -> shows (UT $ varNameM x)
+      . showString " := "
+      . shows e
+      . showString ";"
+    (Reassign x eiss e)
+      -> shows (UT $ varNameM x)
+      . foldl (\acc eis
+        -> acc
+        . showString " ["
+        . foldl (\acc' (l,mu) ->
+            acc' . shows l . maybe id (\u -> showString ".." . shows u) mu
+          ) (showString "" )
+          eis
+        . showString " ]"
+        ) id eiss
       . showString " := "
       . shows e
       . showString ";"

@@ -52,7 +52,9 @@ import Control.Monad.Random
 import Zilly.Puzzle.Effects.CC
 import Zilly.Puzzle.Effects.Memoize
 import Control.Monad.Error.Class
+import Data.Array
 import Debug.Trace (trace)
+import Data.Traversable
 
 type Effects m =
   ( Functor m
@@ -101,7 +103,9 @@ data  E  (ctx :: Type) where
   LambdaC  :: (Types, Maybe Types) -> TypeRepMap (E ctx) -> LensM (E ctx) -> E ctx  -> E ctx
   LazyC    :: TypeRepMap (E ctx) -> E ctx ->  Memoized (EvalMonad (E ctx)) (E ctx) -> E ctx
   MkTuple  :: E ctx -> E ctx -> [E ctx] -> E ctx
+  MkArray  :: Array (E ctx) -> E ctx
   Bottom   :: EvalError -> [EvalError] -> E ctx
+  ArraySlice :: E ctx -> [(E ctx,Maybe (E ctx))] -> E ctx
 
 type family LambdaCtx  (ctx :: Type) :: Type
 type family LambdaCCtx (ctx :: Type) :: Type
@@ -117,6 +121,11 @@ class HasRetType ctx tag where
   type RetType ctx tag :: Type
   retType :: RetType ctx tag -> Maybe Types
 
+fetchExpression :: forall {m} ctx.
+  ( CtxConstraint ctx m
+  ) => E ctx -> m (E ctx)
+fetchExpression (Var l) = getEnv >>= getL l >>= fetchExpression
+fetchExpression e       = pure e
 
 
 pattern VarS :: forall {m} ctx. (EvalMonad (E ctx) ~ m, MonadIO m, MonadError String m) => String -> E ctx
@@ -484,7 +493,35 @@ pattern ATan :: forall {m} ctx.
 pattern ATan a <- App (Var (varNameM -> "atan")) a where
   ATan a = App (Var (mkVar @(E ctx) "atan")) a
 
+pattern Dim :: forall {m} ctx.
+  (EvalMonad (E ctx) ~ m, MonadIO m, MonadError String m
+  ) => E ctx -> E ctx
+pattern Dim a <- App (Var (varNameM -> "dim")) a where
+  Dim a = App (Var (mkVar @(E ctx) "dim")) a
 
+pattern MatrixSat :: forall {m} ctx.
+  (EvalMonad (E ctx) ~ m, MonadIO m, MonadError String m
+  ) => E ctx -> E ctx -> E ctx -> E ctx
+pattern MatrixSat r c f <- App (App (App (Var (varNameM -> "matrix")) r) c) f where
+  MatrixSat r c f = App (App (App (Var (mkVar @(E ctx) "matrix")) r) c) f
+
+pattern VectorSat :: forall {m} ctx.
+  (EvalMonad (E ctx) ~ m, MonadIO m, MonadError String m
+  ) => E ctx -> E ctx -> E ctx
+pattern VectorSat r f <- App (App (Var (varNameM -> "vector")) r) f where
+  VectorSat r f = App (App (Var (mkVar @(E ctx) "vector")) r) f
+
+pattern ConsSat :: forall {m} ctx.
+  (EvalMonad (E ctx) ~ m, MonadIO m, MonadError String m
+  ) => E ctx -> E ctx -> E ctx
+pattern ConsSat h t <- App (App (Var (varNameM -> "cons")) h) t where
+  ConsSat h t = App (App (Var (mkVar @(E ctx) "cons")) h) t
+
+pattern Length :: forall {m} ctx.
+  (EvalMonad (E ctx) ~ m, MonadIO m, MonadError String m
+  ) => E ctx -> E ctx
+pattern Length a <- App (Var (varNameM -> "length")) a where
+  Length a = App (Var (mkVar @(E ctx) "length")) a
 
 data EvalError
   = FromGammaError GammaErrors
@@ -523,21 +560,102 @@ evalE (If c a b) = do
     _ -> throwError
       $ "Error on evaling 'if'-expression. Invalid condition: "
       <> show mc'
+evalE (MkArray es) = MkArray <$> traverse evalE es
 evalE (Lambda lctx arg body)
   = (\env -> LambdaC lctx env arg body) <$> getEnv
 evalE (Defer a)   = do
   env <- getEnv
   ma <- memoizeWithCC $ withEnv env $ evalE a
   pure $ LazyC env a ma
+evalE (ArraySlice earr eixs) = do
+  ixs <- for eixs $ \(l,u) -> (,) <$> evalE @ctx l <*> traverse (evalE @ctx) u >>= \case
+    (ValZ l', Just (ValZ u')) -> pure (l', Just u')
+    (ValZ l', Nothing) -> pure (l', Nothing)
+    (a',b') -> throwError
+      $ "Error on evaling 'arraySlice' expression. Unsupported index: "
+      <> show a' <> " and " <> show b'
+  arr <- fetchExpression earr >>= \case
+    MkArray es' -> pure  es'
+    e' -> evalE e' >>= \case
+      MkArray es'' -> pure es''
+      e'' -> throwError
+        $ "Error on evaling 'arraySlice' expression. Unsupported array: "
+        <> show e''
+  farr <- traverse (evalE @ctx) (slice' ixs arr)
+  case shapeL farr of
+    [] -> pure $ unScalar farr
+    _  -> pure $ MkArray farr
 evalE (App Formula (Var x)) = getEnv >>= viewM x
+evalE (App Formula (ArraySlice earr eixs)) = do
+  ixs <- for eixs $ \(l,u) -> (,) <$> evalE @ctx l <*> traverse (evalE @ctx) u >>= \case
+    (ValZ l', Just (ValZ u')) -> pure (l', Just u')
+    (ValZ l', Nothing) -> pure (l', Nothing)
+    (a',b') -> throwError
+      $ "Error on evaling 'arraySlice' expression. Unsupported index: "
+      <> show a' <> " and " <> show b'
+  fetchExpression earr >>= evalE . App Formula >>=  \case
+    MkArray arr -> do
+      let farr = slice' ixs arr
+      case shapeL farr of
+        [] -> pure $ unScalar farr
+        _  -> pure $ MkArray farr
+    e' -> pure $ ArraySlice e' $ (\(a,b) -> (ValZ a, ValZ <$> b)) <$> ixs
+evalE (App Formula e) = pure e
 evalE (App Random x) = evalE x >>= \case
   Bottom e0 es   -> pure $ Bottom e0 es
   ValZ e' | e' < 1 -> pure $ ValZ 0
-  ValZ e' -> randInt e' >>= pure . ValZ
+  ValZ e' -> ValZ <$> randInt e'
   ValF e' | e' < 0 -> pure $ ValF 0.0
-  ValF e' -> randFloat e' >>= pure . ValF
+  ValF e' -> ValF <$> randFloat e'
   e' -> throwError
     $ "Error on evaling 'random' expression. Unsupported argument: "
+    <> show e'
+evalE (Dim e) = evalE e >>= \case
+  MkArray es -> pure . MkArray . (\xs -> Data.Array.fromList [length xs] xs)  . fmap ValZ . shapeL $ es
+  Bottom e0 es -> pure $ Bottom e0 es
+  e' -> throwError
+    $ "Error on evaling 'dim' expression. Unsupported argument: "
+    <> show e'
+evalE (Length e) = evalE e >>= \case
+  MkArray es -> pure . ValZ . size $  es
+  Bottom e0 es -> pure $ Bottom e0 es
+  e' -> throwError
+    $ "Error on evaling 'length' expression. Unsupported argument: "
+    <> show e'
+evalE (MatrixSat r c f) = (,) <$> evalE r <*> evalE c >>= \case
+  (ValZ r', ValZ c') | r' > 0 && c' > 0 -> do
+    f' <- evalE f
+    xs <- traverse evalE
+      [ (f' $$ ValZ x) $$ ValZ y | x <- [0..r'-1], y <- [0..c'-1]]
+    pure $ MkArray $ Data.Array.fromList [r', c'] xs
+  (ValZ r', ValZ c') -> throwError
+    $ "Error on evaling 'matrix' expression. Invalid dimensions: "
+    <> show r' <> " and " <> show c'
+  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
+  (Bottom e0 es, _)             -> pure $ Bottom e0 es
+  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
+  (a',b') -> throwError
+    $ "Error on evaling 'matrix' expression. Unsupported arguments: "
+    <> show a' <> " and " <> show b'
+evalE (VectorSat r f) = evalE r >>= \case
+  ValZ r' | r' > 0 -> do
+    f' <- evalE f
+    xs <- traverse evalE [App f' (ValZ x) | x <- [0..r'-1]]
+    pure $ MkArray $ Data.Array.fromList [r'] xs
+  ValZ r' -> throwError
+    $ "Error on evaling 'vector' expression. Invalid dimension: "
+    <> show r'
+  Bottom e0 es -> pure $ Bottom e0 es
+  e' -> throwError
+    $ "Error on evaling 'vector' expression. Unsupported argument: "
+    <> show e'
+evalE (ConsSat h t) = (,) <$> evalE h <*> evalE t >>= \case
+  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
+  (Bottom e0 es, _)             -> pure $ Bottom e0 es
+  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
+  (h', MkArray t')              -> pure $ MkArray $ append (Data.Array.fromList [1] [h']) t'
+  (_,e') -> throwError
+    $ "Error on evaling 'cons' expression. Unsupported tail: "
     <> show e'
 evalE (LTInfix a b) = (,) <$> evalE a <*> evalE b >>= \case
   (ValZ a', ValZ b') -> pure . ValB $ a' < b'
@@ -584,31 +702,9 @@ evalE (GEInfix a b) = (,) <$> evalE a <*> evalE b >>= \case
     $ "Error on evaling 'ge'-expression. Unsupported arguments: "
     <> show a' <> " and " <> show b'
 evalE (EQInfix a b) = (,) <$> evalE a <*> evalE b >>= \case
-  (ValZ a', ValZ b') -> pure . ValB $ a' == b'
-  (ValF a', ValF b') -> pure . ValB $ a' == b'
-  (ValZ a', ValF b') -> pure . ValB $ fromIntegral a' == b'
-  (ValF a', ValZ b') -> pure . ValB $ a' == fromIntegral b'
-  (ValB a', ValB b') -> pure . ValB $ a' == b'
-  (ValS a', ValS b') -> pure . ValB $ a' == b'
-  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
-  (Bottom e0 es, _)             -> pure $ Bottom e0 es
-  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
-  (a',b') -> throwError
-    $ "Error on evaling 'eq'-expression. Unsupported arguments: "
-    <> show a' <> " and " <> show b'
+  (a,b) -> pure . ValB $ a == b
 evalE (NEInfix a b) = (,) <$> evalE a <*> evalE b >>= \case
-  (ValZ a', ValZ b') -> pure . ValB $ a' /= b'
-  (ValF a', ValF b') -> pure . ValB $ a' /= b'
-  (ValZ a', ValF b') -> pure . ValB $ fromIntegral a' /= b'
-  (ValF a', ValZ b') -> pure . ValB $ a' /= fromIntegral b'
-  (ValB a', ValB b') -> pure . ValB $ a' /= b'
-  (ValS a', ValS b') -> pure . ValB $ a' /= b'
-  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
-  (Bottom e0 es, _)             -> pure $ Bottom e0 es
-  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
-  (a',b') -> throwError
-    $ "Error on evaling 'ne'-expression. Unsupported arguments: "
-    <> show a' <> " and " <> show b'
+  (a,b) -> pure . ValB $ a /= b
 evalE (LTSat a b) = evalE $ LTInfix a b
 evalE (LESat a b) = evalE $ LEInfix a b
 evalE (GTSat a b) = evalE $ GTInfix a b
@@ -864,19 +960,6 @@ evalE (GEInfix a b) = (,) <$> evalE a <*> evalE b >>= \case
   (_, Bottom e1 es')            -> pure $ Bottom e1 es'
   (a',b') -> throwError
     $ "Error on evaling '>='-expression. Unsupported arguments: "
-    <> show a' <> " and " <> show b'
-evalE (EQInfix a b) = (,) <$> evalE a <*> evalE b >>= \case
-  (ValZ a', ValZ b') -> pure . ValB $ a' == b'
-  (ValF a', ValF b') -> pure . ValB $ a' == b'
-  (ValZ a', ValF b') -> pure . ValB $ fromIntegral a' == b'
-  (ValF a', ValZ b') -> pure . ValB $ a' == fromIntegral b'
-  (ValB a', ValB b') -> pure . ValB $ a' == b'
-  (ValS a', ValS b') -> pure . ValB $ a' == b'
-  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
-  (Bottom e0 es, _)             -> pure $ Bottom e0 es
-  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
-  (a',b') -> throwError
-    $ "Error on evaling '='-expression. Unsupported arguments: "
     <> show a' <> " and " <> show b'
 evalE (NEInfix a b) = (,) <$> evalE a <*> evalE b >>= \case
   (ValZ a', ValZ b') -> pure . ValB $ a' /= b'
@@ -1178,7 +1261,43 @@ newtype UT = UT String
 
 instance Show UT where
   show (UT s) = s
---
+
+-- --------------------------
+-- EQ instance
+-- --------------------------
+
+instance
+ (  CtxPureConstraint ctx
+  , MonadIO (EvalMonad (E ctx))
+  , MonadError String (EvalMonad (E ctx))
+ )
+ => Eq (E ctx) where
+  ValZ a == ValZ b = a == b
+  ValF a == ValF b = a == b
+  ValB a == ValB b = a == b
+  ValS a == ValS b = a == b
+  ValZ a == ValF b = fromIntegral a == b
+  ValF a == ValZ b = a == fromIntegral b
+  Var x == Var y = varNameM x == varNameM y
+  MkArray xs == MkArray ys = xs == ys
+  Defer a == Defer b = a == b
+  Defer a == LazyC _ b _ = a == b
+  LazyC _ a _ == Defer b = a == b
+  LazyC _ a _ == LazyC _ b _ = a == b
+  Lambda (t,_) x body == Lambda (t',_) x' body'
+    = t == t' && varNameM x == varNameM x' && body == body'
+  LambdaC (t,_) _ x body == LambdaC (t',_) _ x' body'
+    = t == t' && varNameM x == varNameM x' && body == body'
+  If c t f == If c' t' f'
+    = c == c' && t == t' && f == f'
+  ArraySlice a b == ArraySlice a' b'
+    = a == a' && b == b'
+  App f x == App f' x'
+    = f == f' && x == x'
+  a == b = False
+
+
+
 -- --------------------------
 -- -- Show instance
 -- --------------------------
@@ -1196,7 +1315,12 @@ instance Show UT where
 -- showRuntimeError ((VariableNotInitialized s))
 --   = "Trying to use a variable that hasnt been initialized: " <> show s
 --
---
+
+
+showRange :: Show a => (a,Maybe a) -> String
+showRange (a, Nothing) = show a
+showRange (a, Just b) = show a <> " .. " <> show b
+
 instance
   ( CtxPureConstraint ctx
   , MonadIO (EvalMonad (E ctx))
@@ -1208,6 +1332,8 @@ instance
     ValB s -> showString (show s)
     ValS s -> showString (show s)
     Var  x -> showsPrec p . UT . varNameM $ x
+    MkArray xs ->  showString (prettyArray xs)
+    ArraySlice a b -> shows a . showList ([ UT $ showRange r | r <- b])
     If  c t f -> showParen (p > 10) $ showString "if( " . shows c . showString ", " . shows t . showString ", " . shows f . showString ")"
     Lambda (at,mt)  x t ->  showParen (p > 9)
       $ showString "λ("
@@ -1258,10 +1384,8 @@ instance
     Negate a -> showParen (p > 11) $ showString "~" . showsPrec 11 a
     MinusU a -> showParen (p > 11) $ showString "-" . showsPrec 11 a
 
-
-
     App  f a -> showParen (p > 10) $ showsPrec 10 f . showChar '(' . shows a . showChar ')'
-    Defer  v -> showString "'" . showsPrec 11 v . showString "'"
+    Defer  v -> showString "'" . shows v . showString "'"
     LazyC _ e _ -> showsPrec p e -- showChar '<' . showsPrec 10 e . showString  ", " . showsPrec 10 env . showChar '>'
     -- Formula  e -> showString "formula(" . (shows . UT . varNameM) e . showChar ')'
     -- Subtyped  e ->  showsPrec p e --showString "@@" . showsPrec p e

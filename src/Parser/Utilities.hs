@@ -20,7 +20,7 @@ Maintainer  : daniel.andres.pinto@gmail.com
 Stability   : experimental
 Portability : POSIX
 
-Based on 
+Based on
 
 Design Patterns for ParsecT String u m Combinators (Functional Pearl)
 
@@ -80,25 +80,25 @@ prefix wrap op p = op <*> prefix wrap op p <|> wrap <$> p
 
 parens :: Monad m => ParsecT String u m a -> ParsecT String u m a
 parens = lexeme . between (token $ char '(') (token $ char ')')
-    
+
 quoted :: Monad m => ParsecT String u m a -> ParsecT String u m a
 quoted = lexeme . between (token $ char '\'') (token $ char '\'')
 
 bracketed :: Monad m => ParsecT String u m a -> ParsecT String u m a
-bracketed = lexeme . between (char '<') (char '>')
+bracketed = lexeme . between (token $ char '<') (token $ char '>')
 
 bracketed' :: Monad m => ParsecT String u m a -> ParsecT String u m a
-bracketed' = lexeme . between (char '[') (char ']')
+bracketed' = lexeme . between (token $ char '[') (token $ char ']')
 
 ---------------------------------------------
 -- Fixity, Associativity and Precedence
 ---------------------------------------------
 
 data Fixity a b sig where
-  InfixL  :: Fixity a b (b -> a -> b) 
-  InfixR  :: Fixity a b (a -> b -> b) 
-  InfixN  :: Fixity a b (a -> a -> b) 
-  Prefix  :: Fixity a b (b -> b) 
+  InfixL  :: Fixity a b (b -> a -> b)
+  InfixR  :: Fixity a b (a -> b -> b)
+  InfixN  :: Fixity a b (a -> a -> b)
+  Prefix  :: Fixity a b (b -> b)
   Postfix :: Fixity a b (b -> b)
 
 data Op u m a b where
@@ -111,7 +111,7 @@ data Prec u m a where
 infixl 5 >-|
 infixr 5 |-<
 (>-|) :: Prec u m a -> Op u m a b -> Prec u m b
-(>-|) = Level 
+(>-|) = Level
 
 (|-<) :: Op u m a b -> Prec u m a -> Prec u m b
 (|-<) = flip (>-|)
@@ -130,7 +130,7 @@ transUpcast = upcast . upcast @a @b
 precedence :: Prec u m a -> ParsecT String u m a
 precedence (Atom atom') = atom'
 precedence (Level lvls ops') = con (precedence lvls) ops'
-  where 
+  where
     con :: ParsecT String u m a -> Op u m a b -> ParsecT String u m b
     con p (Op InfixL wrap op)  = infixl1 wrap p op
     con p (Op InfixR wrap op)  = infixr1 wrap p op

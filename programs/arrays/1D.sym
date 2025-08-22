@@ -1,0 +1,1011 @@
+///
+/// 1D.sym
+///
+
+//
+
+sys.reset();
+
+var a := [ 0, 1, 2, 3 ];
+
+verify a[0] = 0
+verify a[1] = 1
+verify a[2] = 2
+verify a[3] = 3
+
+//
+
+sys.reset();
+
+lazy var a := [ 0, 1, 2, 3 ];
+
+verify a[0] = 0
+verify a[1] = 1
+verify a[2] = 2
+verify a[3] = 3
+
+//
+
+sys.reset();
+
+var a := [[0, 1], [2, 3]];
+
+verify a[0][0] = 0
+verify a[0][1] = 1
+verify a[1][0] = 2
+verify a[1][1] = 3
+
+//
+
+sys.reset();
+
+lazy var a := [[0, 1], [2, 3]];
+
+verify a[0][0] = 0
+verify a[0][1] = 1
+verify a[1][0] = 2
+verify a[1][1] = 3
+
+//
+
+sys.reset();
+
+lazy var a := '[ 0, 1, 2, 3 ]';
+
+verify a[0] = 0
+verify a[1] = 1
+verify a[2] = 2
+verify a[3] = 3
+
+//
+
+sys.reset();
+
+lazy var a := '[ 0, 1, 2, 3 ]';
+
+verify a[0] = 0
+verify a[1] = 1
+verify a[2] = 2
+verify a[3] = 3
+
+//
+
+sys.reset();
+
+lazy var a := '[[0, 1], [2, 3]]';
+
+verify a[0][0] = 0
+verify a[0][1] = 1
+verify a[1][0] = 2
+verify a[1][1] = 3
+
+//
+
+sys.reset();
+
+lazy var a := '[[0, 1], [2, 3]]';
+
+verify a[0][0] = 0
+verify a[0][1] = 1
+verify a[1][0] = 2
+verify a[1][1] = 3
+
+//
+
+sys.reset();
+
+array[2] => int a;
+
+verify rtype(a) = array[] => int
+verify rtype(a[0]) = int
+verify rtype(a[1]) = int
+
+a[0] := 0;
+a[1] := 1;
+
+verify a[0] = 0
+verify a[1] = 1
+
+verify dim(a) = [2]
+
+//
+
+sys.reset();
+
+array[3] => var w;
+
+verify w[0] = ?
+verify w[1] = ?
+verify w[2] = ?
+
+var i := ?;
+
+i := 0;
+w[i] := 40 + i;
+
+i := 1;
+w[i] := 40 + i;
+
+i :=2;
+w[i] := 40 + i;
+
+verify w[0] = 40
+verify w[1] = 41
+verify w[2] = 42
+
+//
+
+sys.reset();
+
+var          l0 := [ 0,  1,  2,  3 ];
+
+array[ ] => int l1 := [ 0,  1,  2,  3 ];
+array[ ] => int l2 := [ 0,  1,  2,  3 ];
+
+array[ ] => var l3 := [ 0,  1,  2,  3 ];
+array[ ] => var l4 := [ 0,  1,  2,  3 ];
+
+verify l0 = l1
+verify l1 = l2
+verify l2 = l3
+verify l3 = l4
+verify l4 = l0
+
+//
+
+sys.reset();
+
+var               l0 :- [ 0,  1,  2,  3 ];
+
+array[ ] => lazy int l1 :- [ 0,  1,  2,  3 ];
+array[ ] => lazy int l2 :- [ 0,  1,  2,  3 ];
+
+array[ ] => lazy var l3 :- [ 0,  1,  2,  3 ];
+array[ ] => lazy var l4 :- [ 0,  1,  2,  3 ];
+
+verify l0 = l1
+verify l1 = l2
+verify l2 = l3
+verify l3 = l4
+verify l4 = l0
+
+//
+
+sys.reset();
+
+:: l0 :- [0];
+verify l0[0] = 0
+
+sys.reset();
+
+array[] => lazy var l0 :- [0];
+verify l0[0] = 0
+
+sys.reset();
+
+array[] => :: l0 :- [0];
+verify l0[0] = 0
+
+sys.reset();
+
+array[] => lazy int l0 :- [0];
+verify l0[0] = 0
+
+//
+
+sys.reset();
+
+:: l0 := [0];
+l0[0] := 42;
+verify l0[0] = 42
+
+sys.reset();
+
+array[] => var l0 := [0];
+l0[0] := 42;
+verify l0[0] = 42
+
+sys.reset();
+
+array[] => :: l0 := [0];
+l0[0] := 42;
+verify l0[0] = 42
+
+sys.reset();
+
+array[] => int l0 := [0];
+l0[0] := 42;
+verify l0[0] = 42
+
+//
+
+sys.reset();
+
+var I2 :- [[1, 0], [0, 1]];
+verify I2[0] = [1, 0]
+verify I2[1] = [0, 1]
+verify sum(I2) = 2
+
+//
+
+sys.reset();
+
+array[] => var I2 :- [[1, 0], [0, 1]];
+verify I2[0] = [1, 0]
+verify I2[1] = [0, 1]
+verify sum(I2) = 2
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy int I2 :- [[1, 0], [0, 1]];
+verify I2[0] = [1, 0]
+verify I2[1] = [0, 1]
+verify sum(I2) = 2
+
+//
+
+sys.reset();
+
+:: I2 :- [[1, 0], [0, 1]];
+verify I2[0] = [1, 0]
+verify I2[1] = [0, 1]
+verify sum(I2) = 2
+
+//
+
+sys.reset();
+
+array[] => var         a0 := [800];
+
+array[] => array[] => var l9 := [a0];
+
+verify l9 = [[800]]
+
+//
+
+sys.reset();
+
+var                 l1 :- [[800, 801], [810, 811]];
+
+array[] => var         l2 :- [[800, 801], [810, 811]];
+
+array[] => array[] => var l6 :- [[800, 801], [810, 811]];
+
+verify l1 = l2
+verify l2 = l6
+verify l6 = l1
+
+verify dim(l1)    = []
+verify dim(l2)    = [2]
+verify dim(l6)    = [2]
+
+//
+
+sys.reset();
+
+var                 l1 := [[800, 801], [810, 811]];
+
+array[] => var         l2 := [[800, 801], [810, 811]];
+
+array[] => array[] => var l6 := [[800, 801], [810, 811]];
+
+verify l1 = l2
+verify l2 = l6
+verify l6 = l1
+
+verify dim(l1)    = []
+verify dim(l2)    = [2]
+verify dim(l6)    = [2]
+
+//
+
+sys.reset();
+
+:: L0 := [ 0,  1,  2,  3];
+:: L1 := [10, 11, 12, 13];
+:: L2 := [20, 21, 22, 23];
+:: L3 := [30, 31, 32, 33];
+
+:: AL := [L0, L1, L2, L3];
+
+L0[3] := 38808;
+verify L0[3] = 38808
+verify AL[0][3] = 3
+
+L0[3] := 3;
+verify L0[3] = 3
+verify AL[0][3] = 3
+
+//
+
+sys.reset();
+
+array[] => int         a0 := [800, 801];
+array[] => int         a1 := [810, 811];
+
+var                 l1 := [[800, 801], [810, 811]];
+
+array[] => var         l2 := [[800, 801], [810, 811]];
+
+array[] => array[] => var l6 := [[800, 801], [810, 811]];
+
+var                 l7 := [a0, a1];
+
+array[] => var         l8 := [a0, a1];
+
+array[] => array[] => var l9 := [a0, a1];
+
+verify l1 = l2
+verify l2 = l6
+verify l6 = l7
+verify l7 = l8
+verify l8 = l9
+verify l9 = l1
+
+//
+
+sys.reset();
+
+array[] => int              a0 := [800, 801];
+array[] => int              a1 := [810, 811];
+
+var                      l1 :- [[800, 801], [810, 811]];
+
+array[] => lazy var         l2 :- [[800, 801], [810, 811]];
+
+array[] => array[] => lazy var l6 :- [[800, 801], [810, 811]];
+
+var                      l7 :- [a0, a1];
+
+array[] => lazy var         l8 :- [a0, a1];
+
+array[] => lazy array[] => var l9 :- [a0, a1];
+
+verify l1 = l2
+verify l2 = l6
+verify l6 = l7
+verify l7 = l8
+verify l8 = l9
+verify l9 = l1
+
+//
+
+sys.reset();
+
+array[] => var         a0 := [800, 801];
+array[] => var         a1 := [810, 811];
+
+array[] => array[] => var l9 := [a0, a1];
+
+verify ltype(l9) = array[] => array[] => var
+
+l9[0][0] := a0[0] + 10;
+l9[0][1] := a0[1] + 10;
+l9[1][0] := a1[0] + 10;
+l9[1][1] := a1[1] + 10;
+
+verify l9[0][0] = 810
+verify l9[0][1] = 811
+verify l9[1][0] = 820
+verify l9[1][1] = 821
+verify l9[0]    = [810, 811]
+verify l9[1]    = [820, 821]
+verify l9       = [[810, 811], [820, 821]]
+
+//
+
+sys.reset();
+
+array[] => int         a0 := [800, 801];
+array[] => int         a1 := [810, 811];
+
+array[] => array[] => int l9 := [a0, a1];
+
+verify ltype(l9) = array[] => array[] => int
+
+l9[0][0] := a0[0] + 10;
+l9[0][1] := a0[1] + 10;
+l9[1][0] := a1[0] + 10;
+l9[1][1] := a1[1] + 10;
+
+verify l9[0][0] = 810
+verify l9[0][1] = 811
+verify l9[1][0] = 820
+verify l9[1][1] = 821
+verify l9[0]    = [810, 811]
+verify l9[1]    = [820, 821]
+verify l9       = [[810, 811], [820, 821]]
+
+//
+
+sys.reset();
+
+:: a0 := [800, 801];
+:: a1 := [810, 811];
+
+:: l9 := [a0, a1];
+
+verify ltype(l9) = array[] => array[] => int
+
+l9[0][0] := a0[0] + 10;
+l9[0][1] := a0[1] + 10;
+l9[1][0] := a1[0] + 10;
+l9[1][1] := a1[1] + 10;
+
+verify l9[0][0] = 810
+verify l9[0][1] = 811
+verify l9[1][0] = 820
+verify l9[1][1] = 821
+verify l9[0]    = [810, 811]
+verify l9[1]    = [820, 821]
+verify l9       = [[810, 811], [820, 821]]
+
+//
+
+sys.reset();
+
+var                 a1 := [800];
+array[] => var         a2 := [800];
+array[] => int         a3 := [800];
+
+var                 l1 := [[800]];
+array[] => var         l2 := [[800]];
+array[] => array[] => var l3 := [[800]];
+array[] => array[] => int l4 := [[800]];
+
+var                 x1 := [a1];
+array[] => var         x2 := [a1];
+array[] => array[] => var x3 := [a1];
+array[] => array[] => int x4 := [a1];
+
+var                 y1 := [a2];
+array[] => var         y2 := [a2];
+array[] => array[] => var y3 := [a2];
+array[] => array[] => int y4 := [a2];
+
+var                 z1 := [a3];
+array[] => var         z2 := [a3];
+array[] => array[] => var z3 := [a3];
+array[] => array[] => int z4 := [a3];
+
+verify a1 = [800]
+verify a2 = a1
+verify a3 = a2
+
+verify l1 = [[800]]
+verify l2 = l1
+verify l3 = l2
+verify l4 = l3
+
+verify x1 = [[800]]
+verify x2 = x1
+verify x3 = x2
+verify x4 = x3
+
+verify y1 = [[800]]
+verify y2 = y1
+verify y3 = y2
+verify y4 = y3
+
+verify z1 = [[800]]
+verify z2 = z1
+verify z3 = z2
+verify z4 = z3
+
+verify l1 = x1
+verify l1 = x2
+verify l1 = x3
+verify l1 = x4
+
+verify l1 = y1
+verify l1 = y2
+verify l1 = y3
+verify l1 = y4
+
+verify l1 = z1
+verify l1 = z2
+verify l1 = z3
+verify l1 = z4
+
+verify l2 = x1
+verify l2 = x2
+verify l2 = x3
+verify l2 = x4
+
+verify l2 = y1
+verify l2 = y2
+verify l2 = y3
+verify l2 = y4
+
+verify l2 = z1
+verify l2 = z2
+verify l2 = z3
+verify l2 = z4
+
+verify l3 = x1
+verify l3 = x2
+verify l3 = x3
+verify l3 = x4
+
+verify l3 = y1
+verify l3 = y2
+verify l3 = y3
+verify l3 = y4
+
+verify l3 = z1
+verify l3 = z2
+verify l3 = z3
+verify l3 = z4
+
+//
+
+sys.reset();
+
+var                 v0 := [800, 801];
+var                 v1 := [810, 811];
+
+array[] => var         x0 := [800, 801];
+array[] => var         x1 := [810, 811];
+
+array[] => int         a0 := [800, 801];
+array[] => int         a1 := [810, 811];
+
+var                 l0 := [[800, 801], [810, 811]];
+var                 l1 := [v0, v1];
+var                 l2 := [x0, x1];
+var                 l3 := [a0, a1];
+
+array[] => var         r0 := [[800, 801], [810, 811]];
+array[] => var         r1 := [v0, v1];
+array[] => var         r2 := [x0, x1];
+array[] => var         r3 := [a0, a1];
+
+array[] => array[] => var q0 := [[800, 801], [810, 811]];
+array[] => array[] => var q1 := [v0, v1];
+array[] => array[] => var q2 := [x0, x1];
+array[] => array[] => var q3 := [a0, a1];
+
+array[] => array[] => int w0 := [[800, 801], [810, 811]];
+array[] => array[] => int w1 := [v0, v1];
+array[] => array[] => int w2 := [x0, x1];
+array[] => array[] => int w3 := [a0, a1];
+
+verify v0 = x0
+verify x0 = a0
+
+verify l0 = l1
+verify l1 = l2
+verify l2 = l3
+verify l3 = r0
+verify r0 = r1
+verify r1 = r2
+verify r2 = r3
+verify r3 = q0
+verify q0 = q1
+verify q1 = q2
+verify q2 = q3
+verify q3 = w0
+verify w0 = w1
+verify w1 = w2
+verify w2 = w3
+
+verify w2 = [ q3[0], r1[1]]
+
+//
+// Generalized array definition/re-definition
+//
+
+sys.reset();
+
+lazy int x :- 6;
+lazy int y :- 2;
+
+array[] => lazy int v :- [ x, y ];
+
+verify v = [ 6, 2 ]
+
+v[1] :- x + y;
+
+verify v[0] = 6
+verify v[1] = 8
+
+//
+
+sys.reset();
+
+int x := 6;
+int y := 2;
+
+array[] => lazy int v :- [ x, y ];
+
+verify v = [ 6, 2 ]
+
+v[1] :- x + y;
+
+verify v[0] = 6
+verify v[1] = 8
+
+//
+
+sys.reset();
+
+:: a := [ 0, 1, 2, 3 ];
+
+:: i := 0;
+:: x := a[i];
+verify x = 0
+
+i := 1;
+x := a[i];
+verify x = 1
+
+i := 2;
+x := a[i];
+verify x = 2
+
+i := 3;
+x := a[i];
+verify x = 3
+
+//
+
+sys.reset();
+
+:: a := [ 0, 1, 2, 3 ];
+
+:: i := 0;
+:: x :- a[i];
+verify x = 0
+
+i := 1;
+verify x = 1
+
+i := 2;
+verify x = 2
+
+i := 3;
+verify x = 3
+
+//
+
+sys.reset();
+
+array[] => lazy double a :- [ x - 1, x + 1 ];
+
+double x := 7;
+
+verify a[0] = 6
+verify a[1] = 8
+
+a :- [ x + 1, x - 1 ];
+
+verify a[0] = 8
+verify a[1] = 6
+
+a :- [ x + 1, a[0] - 1 ];
+
+verify a[0] = 8
+verify a[1] = 7
+
+a :- [ a[1] + 1, x - 1 ];
+
+verify a[0] = 7
+verify a[1] = 6
+
+a[0] :- x - 1;
+a[1] :- x + 1;
+
+verify a[0] = 6
+verify a[1] = 8
+
+//
+
+sys.reset();
+
+array[] => lazy double a :- [ 0, 1, 2, 3 ];
+:: b :- (array[] => lazy double)( 0, 1, 2, 3 );
+
+verify a = b
+
+a :- [ 0, 1 ];
+
+verify a <> b
+
+verify | a | = 2
+
+verify a[0] = 0
+verify a[1] = 1
+
+b := a;
+
+verify a = b
+
+//
+
+sys.reset();
+
+:: x :- uniform();
+:: y :- 1 - x;
+
+verify (array[] => lazy double) ('x - y',  'x + y') = (array[2] => lazy double) ('x - y',  'x + y')
+
+///
+/// Ranges
+///
+
+//
+
+sys.reset();
+
+array[] => var A := [ 0 ];
+
+verify A[0..0] = [0]
+
+//
+
+sys.reset();
+
+array[] => lazy var A :- [ 0 ];
+
+verify A[0..0] = [0]
+
+//
+
+sys.reset();
+
+array[] => int a := [ 0, 1, 2, 3 ];
+
+verify rtype(a[0]) = int
+verify rtype(a[0..3]) = array[] => int
+
+verify dim(a) = [4]
+
+//
+
+sys.reset();
+
+verify (array[4] => int) (0, 1, 2, 3) = [0, 1, 2, 3]
+
+verify (array[2] => lazy var) ('abs',  'abs') = ['abs',  'abs']
+
+:: x :- uniform();
+:: y :- 1 - x;
+
+verify (array[2] => lazy double) ('x - y',  'x + y') = ['x - y',  'x + y']
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+:: randnar := /.(n) -> if(n = 0, [], cons(uniform(), randnar(n-1)));
+
+:: a := randnar(4);
+
+verify ltype(a) = var
+
+verify check(0, a[0], 1)
+verify check(0, a[1], 1)
+verify check(0, a[2], 1)
+verify check(0, a[3], 1)
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+:: randnar := /.(n) -> if(n = 0, [], cons('uniform()', randnar(n-1)));
+
+:: a := randnar(4);
+
+verify ltype(a) = var
+
+verify check(0, a[0], 1)
+verify check(0, a[1], 1)
+verify check(0, a[2], 1)
+verify check(0, a[3], 1)
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+:: randnar := /.(n) => array[] => lazy double -> if(n = 0, [], cons('uniform()', randnar(n-1)));
+
+:: de_lazy := /. (lazy double n) => double -> n;
+
+verify check(0, de_lazy(randnar(4)[0]), 1)
+verify check(0, de_lazy(randnar(4)[1]), 1)
+verify check(0, de_lazy(randnar(4)[2]), 1)
+verify check(0, de_lazy(randnar(4)[3]), 1)
+
+:: a := randnar(4);
+
+verify ltype(a) = array[] => lazy double
+
+verify check(0, a[0], 1)
+verify check(0, a[1], 1)
+verify check(0, a[2], 1)
+verify check(0, a[3], 1)
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+:: randnar := /.(n) => array[] => lazy double -> if(n = 0, [], cons('n + uniform()', randnar(n-1)));
+
+:: de_lazy := /. (lazy double n) => double -> n;
+
+verify check(4, de_lazy(randnar(4)[0]), 5)
+verify check(3, de_lazy(randnar(4)[1]), 4)
+verify check(2, de_lazy(randnar(4)[2]), 3)
+verify check(1, de_lazy(randnar(4)[3]), 2)
+
+:: a := randnar(4);
+
+verify ltype(a) = array[] => lazy double
+
+verify check(4, a[0], 5)
+verify check(3, a[1], 4)
+verify check(2, a[2], 3)
+verify check(1, a[3], 2)
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+:: randnar := /.(int n) => array[] => lazy double -> if(n = 0, [], cons('n + uniform()', randnar(n-1)));
+
+:: n := 2;
+:: a := randnar(n);
+
+verify ltype(a) = array[] => lazy double
+
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+>>
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+>>
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+
+n := 4;
+a := randnar(n);
+
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+>>
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+>>
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+
+n := 8;
+a := randnar(n);
+
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+>>
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+>>
+verify check((n * (n+1))/2, sum(a), ((n+1) * (n+2))/2)
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+:: randnar := /.(int n) => array[] => lazy double -> if(n = 0, [], cons('1 + uniform()', randnar(n-1)));
+
+:: n := 2;
+:: a := randnar(n);
+
+verify ltype(a) = array[] => lazy double
+
+verify check(n, sum(a), 2 * n)
+>>
+verify check(n, sum(a), 2 * n)
+>>
+verify check(n, sum(a), 2 * n)
+
+n := 4;
+a := randnar(n);
+
+verify check(n, sum(a), 2 * n)
+>>
+verify check(n, sum(a), 2 * n)
+>>
+verify check(n, sum(a), 2 * n)
+
+n := 8;
+a := randnar(n);
+
+verify check(n, sum(a), 2 * n)
+>>
+verify check(n, sum(a), 2 * n)
+>>
+verify check(n, sum(a), 2 * n)
+
+:: lb := 0;
+:: ub := n-1;
+
+:: k  :- ub - lb + 1;
+
+verify check(k, sum(a[lb..ub]), 2 * k)
+>>
+verify check(k, sum(a[lb..ub]), 2 * k)
+>>
+verify check(k, sum(a[lb..ub]), 2 * k)
+
+lb := 3;
+ub := 5;
+
+verify check(k, sum(a[lb..ub]), 2 * k)
+>>
+verify check(k, sum(a[lb..ub]), 2 * k)
+>>
+verify check(k, sum(a[lb..ub]), 2 * k)
+
+lb := 4;
+ub := 4;
+
+verify check(k, sum(a[lb..ub]), 2 * k)
+>>
+verify check(k, sum(a[lb..ub]), 2 * k)
+>>
+verify check(k, sum(a[lb..ub]), 2 * k)
+
+//
+
+sys.reset();
+
+:: a := [ 0, 1, 2, 3, 4, 5, 6, 7 ];
+
+verify a = a[0..length(a) - 1]
+
+verify a[0..6] = [ 0, 1, 2, 3, 4, 5, 6 ]
+verify a[1..6] = [ 1, 2, 3, 4, 5, 6 ]
+
+verify a[1..6][0..5] = a[1..6]
+verify a[1..6][0..5] = [ 1, 2, 3, 4, 5, 6 ]
+
+verify a[1..6][1..4] = a[0..7][2..5]
+verify a[1..6][1..4] = a[2..5]
+verify a[0..7][2..5] = [2, 3, 4, 5]
+verify a[1..6][1..4] = [2, 3, 4, 5]
+
+verify a[1..6][1..4][1..2] = a[0..7][2..5][1..2]
+verify a[1..6][1..4][1..2] = a[2..5][1..2]
+verify a[1..6][1..4][1..2] = a[3..4]
+verify a[1..6][1..4][1..2] = [3, 4]
+
+verify a[1..6][1..4][1..2][0] = 3
+verify a[0..7][2..5][1..2][1] = 4
+verify a[1..6][1..4][1..2][0] = 3
+verify a[2..5][1..2][1] = 4
+verify a[1..6][1..4][1..2][0] = 3
+verify a[3..4][1] = 4
+
+verify a[1..6][1..4][1..2][0..1] = [3, 4]
+
+//
+
+sys.reset();
+
+:: a := [ 0, 1, 2, 3 ];
+
+verify (0 <= a[int(length(a) * uniform())])
+verify (a[int(length(a) * uniform())] <= a[length(a) - 1])
+verify (0 <= a[int(length(a) * uniform())])
+verify (a[int(length(a) * uniform())] <= a[length(a) - 1])
+
+//
+
+sys.reset();
+
+verify "1D.sym" <> ?

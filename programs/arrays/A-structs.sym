@@ -1,0 +1,1170 @@
+///
+/// A-structs.sym
+///
+/// large array of structs
+///
+
+//
+
+sys.reset();
+
+:: x :- 8 + uniform();
+
+:: f :- g;
+:: g := /.(x) -> ln(1 + x);
+:: h := /.(double x) => double -> ln(1 + x);
+
+array[1024] => struct { lazy var g; lazy var y; lazy var result; } as;
+
+// 0 .. 99
+
+as[0000] := ('f', 'uniform()', 'as[0000].g(as[0000].y + x)' );
+as[0001] := ('f', 'uniform()', 'as[0001].g(as[0001].y + x)' );
+as[0002] := ('f', 'uniform()', 'as[0002].g(as[0002].y + x)' );
+as[0003] := ('f', 'uniform()', 'as[0003].g(as[0003].y + x)' );
+as[0004] := ('f', 'uniform()', 'as[0004].g(as[0004].y + x)' );
+as[0005] := ('f', 'uniform()', 'as[0005].g(as[0005].y + x)' );
+as[0006] := ('f', 'uniform()', 'as[0006].g(as[0006].y + x)' );
+as[0007] := ('f', 'uniform()', 'as[0007].g(as[0007].y + x)' );
+as[0008] := ('f', 'uniform()', 'as[0008].g(as[0008].y + x)' );
+as[0009] := ('f', 'uniform()', 'as[0009].g(as[0009].y + x)' );
+
+as[0010] := ('f', 'uniform()', 'as[0010].g(as[0010].y + x)' );
+as[0011] := ('f', 'uniform()', 'as[0011].g(as[0011].y + x)' );
+as[0012] := ('f', 'uniform()', 'as[0012].g(as[0012].y + x)' );
+as[0013] := ('f', 'uniform()', 'as[0013].g(as[0013].y + x)' );
+as[0014] := ('f', 'uniform()', 'as[0014].g(as[0014].y + x)' );
+as[0015] := ('f', 'uniform()', 'as[0015].g(as[0015].y + x)' );
+as[0016] := ('f', 'uniform()', 'as[0016].g(as[0016].y + x)' );
+as[0017] := ('f', 'uniform()', 'as[0017].g(as[0017].y + x)' );
+as[0018] := ('f', 'uniform()', 'as[0018].g(as[0018].y + x)' );
+as[0019] := ('f', 'uniform()', 'as[0019].g(as[0019].y + x)' );
+
+as[0020] := ('f', 'uniform()', 'as[0020].g(as[0020].y + x)' );
+as[0021] := ('f', 'uniform()', 'as[0021].g(as[0021].y + x)' );
+as[0022] := ('f', 'uniform()', 'as[0022].g(as[0022].y + x)' );
+as[0023] := ('f', 'uniform()', 'as[0023].g(as[0023].y + x)' );
+as[0024] := ('f', 'uniform()', 'as[0024].g(as[0024].y + x)' );
+as[0025] := ('f', 'uniform()', 'as[0025].g(as[0025].y + x)' );
+as[0026] := ('f', 'uniform()', 'as[0026].g(as[0026].y + x)' );
+as[0027] := ('f', 'uniform()', 'as[0027].g(as[0027].y + x)' );
+as[0028] := ('f', 'uniform()', 'as[0028].g(as[0028].y + x)' );
+as[0029] := ('f', 'uniform()', 'as[0029].g(as[0029].y + x)' );
+
+as[0030] := ('f', 'uniform()', 'as[0030].g(as[0030].y + x)' );
+as[0031] := ('f', 'uniform()', 'as[0031].g(as[0031].y + x)' );
+as[0032] := ('f', 'uniform()', 'as[0032].g(as[0032].y + x)' );
+as[0033] := ('f', 'uniform()', 'as[0033].g(as[0033].y + x)' );
+as[0034] := ('f', 'uniform()', 'as[0034].g(as[0034].y + x)' );
+as[0035] := ('f', 'uniform()', 'as[0035].g(as[0035].y + x)' );
+as[0036] := ('f', 'uniform()', 'as[0036].g(as[0036].y + x)' );
+as[0037] := ('f', 'uniform()', 'as[0037].g(as[0037].y + x)' );
+as[0038] := ('f', 'uniform()', 'as[0038].g(as[0038].y + x)' );
+as[0039] := ('f', 'uniform()', 'as[0039].g(as[0039].y + x)' );
+
+as[0040] := ('f', 'uniform()', 'as[0040].g(as[0040].y + x)' );
+as[0041] := ('f', 'uniform()', 'as[0041].g(as[0041].y + x)' );
+as[0042] := ('f', 'uniform()', 'as[0042].g(as[0042].y + x)' );
+as[0043] := ('f', 'uniform()', 'as[0043].g(as[0043].y + x)' );
+as[0044] := ('f', 'uniform()', 'as[0044].g(as[0044].y + x)' );
+as[0045] := ('f', 'uniform()', 'as[0045].g(as[0045].y + x)' );
+as[0046] := ('f', 'uniform()', 'as[0046].g(as[0046].y + x)' );
+as[0047] := ('f', 'uniform()', 'as[0047].g(as[0047].y + x)' );
+as[0048] := ('f', 'uniform()', 'as[0048].g(as[0048].y + x)' );
+as[0049] := ('f', 'uniform()', 'as[0049].g(as[0049].y + x)' );
+
+as[0050] := ('f', 'uniform()', 'as[0050].g(as[0050].y + x)' );
+as[0051] := ('f', 'uniform()', 'as[0051].g(as[0051].y + x)' );
+as[0052] := ('f', 'uniform()', 'as[0052].g(as[0052].y + x)' );
+as[0053] := ('f', 'uniform()', 'as[0053].g(as[0053].y + x)' );
+as[0054] := ('f', 'uniform()', 'as[0054].g(as[0054].y + x)' );
+as[0055] := ('f', 'uniform()', 'as[0055].g(as[0055].y + x)' );
+as[0056] := ('f', 'uniform()', 'as[0056].g(as[0056].y + x)' );
+as[0057] := ('f', 'uniform()', 'as[0057].g(as[0057].y + x)' );
+as[0058] := ('f', 'uniform()', 'as[0058].g(as[0058].y + x)' );
+as[0059] := ('f', 'uniform()', 'as[0059].g(as[0059].y + x)' );
+
+as[0060] := ('f', 'uniform()', 'as[0060].g(as[0060].y + x)' );
+as[0061] := ('f', 'uniform()', 'as[0061].g(as[0061].y + x)' );
+as[0062] := ('f', 'uniform()', 'as[0062].g(as[0062].y + x)' );
+as[0063] := ('f', 'uniform()', 'as[0063].g(as[0063].y + x)' );
+as[0064] := ('f', 'uniform()', 'as[0064].g(as[0064].y + x)' );
+as[0065] := ('f', 'uniform()', 'as[0065].g(as[0065].y + x)' );
+as[0066] := ('f', 'uniform()', 'as[0066].g(as[0066].y + x)' );
+as[0067] := ('f', 'uniform()', 'as[0067].g(as[0067].y + x)' );
+as[0068] := ('f', 'uniform()', 'as[0068].g(as[0068].y + x)' );
+as[0069] := ('f', 'uniform()', 'as[0069].g(as[0069].y + x)' );
+
+as[0070] := ('f', 'uniform()', 'as[0070].g(as[0070].y + x)' );
+as[0071] := ('f', 'uniform()', 'as[0071].g(as[0071].y + x)' );
+as[0072] := ('f', 'uniform()', 'as[0072].g(as[0072].y + x)' );
+as[0073] := ('f', 'uniform()', 'as[0073].g(as[0073].y + x)' );
+as[0074] := ('f', 'uniform()', 'as[0074].g(as[0074].y + x)' );
+as[0075] := ('f', 'uniform()', 'as[0075].g(as[0075].y + x)' );
+as[0076] := ('f', 'uniform()', 'as[0076].g(as[0076].y + x)' );
+as[0077] := ('f', 'uniform()', 'as[0077].g(as[0077].y + x)' );
+as[0078] := ('f', 'uniform()', 'as[0078].g(as[0078].y + x)' );
+as[0079] := ('f', 'uniform()', 'as[0079].g(as[0079].y + x)' );
+
+as[0080] := ('f', 'uniform()', 'as[0080].g(as[0080].y + x)' );
+as[0081] := ('f', 'uniform()', 'as[0081].g(as[0081].y + x)' );
+as[0082] := ('f', 'uniform()', 'as[0082].g(as[0082].y + x)' );
+as[0083] := ('f', 'uniform()', 'as[0083].g(as[0083].y + x)' );
+as[0084] := ('f', 'uniform()', 'as[0084].g(as[0084].y + x)' );
+as[0085] := ('f', 'uniform()', 'as[0085].g(as[0085].y + x)' );
+as[0086] := ('f', 'uniform()', 'as[0086].g(as[0086].y + x)' );
+as[0087] := ('f', 'uniform()', 'as[0087].g(as[0087].y + x)' );
+as[0088] := ('f', 'uniform()', 'as[0088].g(as[0088].y + x)' );
+as[0089] := ('f', 'uniform()', 'as[0089].g(as[0089].y + x)' );
+
+as[0090] := ('f', 'uniform()', 'as[0090].g(as[0090].y + x)' );
+as[0091] := ('f', 'uniform()', 'as[0091].g(as[0091].y + x)' );
+as[0092] := ('f', 'uniform()', 'as[0092].g(as[0092].y + x)' );
+as[0093] := ('f', 'uniform()', 'as[0093].g(as[0093].y + x)' );
+as[0094] := ('f', 'uniform()', 'as[0094].g(as[0094].y + x)' );
+as[0095] := ('f', 'uniform()', 'as[0095].g(as[0095].y + x)' );
+as[0096] := ('f', 'uniform()', 'as[0096].g(as[0096].y + x)' );
+as[0097] := ('f', 'uniform()', 'as[0097].g(as[0097].y + x)' );
+as[0098] := ('f', 'uniform()', 'as[0098].g(as[0098].y + x)' );
+as[0099] := ('f', 'uniform()', 'as[0099].g(as[0099].y + x)' );
+
+// 99 .. 199
+
+as[0100] := ('f', 'uniform()', 'as[0100].g(as[0100].y + x)' );
+as[0101] := ('f', 'uniform()', 'as[0101].g(as[0101].y + x)' );
+as[0102] := ('f', 'uniform()', 'as[0102].g(as[0102].y + x)' );
+as[0103] := ('f', 'uniform()', 'as[0103].g(as[0103].y + x)' );
+as[0104] := ('f', 'uniform()', 'as[0104].g(as[0104].y + x)' );
+as[0105] := ('f', 'uniform()', 'as[0105].g(as[0105].y + x)' );
+as[0106] := ('f', 'uniform()', 'as[0106].g(as[0106].y + x)' );
+as[0107] := ('f', 'uniform()', 'as[0107].g(as[0107].y + x)' );
+as[0108] := ('f', 'uniform()', 'as[0108].g(as[0108].y + x)' );
+as[0109] := ('f', 'uniform()', 'as[0109].g(as[0109].y + x)' );
+
+as[0110] := ('f', 'uniform()', 'as[0110].g(as[0110].y + x)' );
+as[0111] := ('f', 'uniform()', 'as[0111].g(as[0111].y + x)' );
+as[0112] := ('f', 'uniform()', 'as[0112].g(as[0112].y + x)' );
+as[0113] := ('f', 'uniform()', 'as[0113].g(as[0113].y + x)' );
+as[0114] := ('f', 'uniform()', 'as[0114].g(as[0114].y + x)' );
+as[0115] := ('f', 'uniform()', 'as[0115].g(as[0115].y + x)' );
+as[0116] := ('f', 'uniform()', 'as[0116].g(as[0116].y + x)' );
+as[0117] := ('f', 'uniform()', 'as[0117].g(as[0117].y + x)' );
+as[0118] := ('f', 'uniform()', 'as[0118].g(as[0118].y + x)' );
+as[0119] := ('f', 'uniform()', 'as[0119].g(as[0119].y + x)' );
+
+as[0120] := ('f', 'uniform()', 'as[0120].g(as[0120].y + x)' );
+as[0121] := ('f', 'uniform()', 'as[0121].g(as[0121].y + x)' );
+as[0122] := ('f', 'uniform()', 'as[0122].g(as[0122].y + x)' );
+as[0123] := ('f', 'uniform()', 'as[0123].g(as[0123].y + x)' );
+as[0124] := ('f', 'uniform()', 'as[0124].g(as[0124].y + x)' );
+as[0125] := ('f', 'uniform()', 'as[0125].g(as[0125].y + x)' );
+as[0126] := ('f', 'uniform()', 'as[0126].g(as[0126].y + x)' );
+as[0127] := ('f', 'uniform()', 'as[0127].g(as[0127].y + x)' );
+as[0128] := ('f', 'uniform()', 'as[0128].g(as[0128].y + x)' );
+as[0129] := ('f', 'uniform()', 'as[0129].g(as[0129].y + x)' );
+
+as[0130] := ('f', 'uniform()', 'as[0130].g(as[0130].y + x)' );
+as[0131] := ('f', 'uniform()', 'as[0131].g(as[0131].y + x)' );
+as[0132] := ('f', 'uniform()', 'as[0132].g(as[0132].y + x)' );
+as[0133] := ('f', 'uniform()', 'as[0133].g(as[0133].y + x)' );
+as[0134] := ('f', 'uniform()', 'as[0134].g(as[0134].y + x)' );
+as[0135] := ('f', 'uniform()', 'as[0135].g(as[0135].y + x)' );
+as[0136] := ('f', 'uniform()', 'as[0136].g(as[0136].y + x)' );
+as[0137] := ('f', 'uniform()', 'as[0137].g(as[0137].y + x)' );
+as[0138] := ('f', 'uniform()', 'as[0138].g(as[0138].y + x)' );
+as[0139] := ('f', 'uniform()', 'as[0139].g(as[0139].y + x)' );
+
+as[0140] := ('f', 'uniform()', 'as[0140].g(as[0140].y + x)' );
+as[0141] := ('f', 'uniform()', 'as[0141].g(as[0141].y + x)' );
+as[0142] := ('f', 'uniform()', 'as[0142].g(as[0142].y + x)' );
+as[0143] := ('f', 'uniform()', 'as[0143].g(as[0143].y + x)' );
+as[0144] := ('f', 'uniform()', 'as[0144].g(as[0144].y + x)' );
+as[0145] := ('f', 'uniform()', 'as[0145].g(as[0145].y + x)' );
+as[0146] := ('f', 'uniform()', 'as[0146].g(as[0146].y + x)' );
+as[0147] := ('f', 'uniform()', 'as[0147].g(as[0147].y + x)' );
+as[0148] := ('f', 'uniform()', 'as[0148].g(as[0148].y + x)' );
+as[0149] := ('f', 'uniform()', 'as[0149].g(as[0149].y + x)' );
+
+as[0150] := ('f', 'uniform()', 'as[0150].g(as[0150].y + x)' );
+as[0151] := ('f', 'uniform()', 'as[0151].g(as[0151].y + x)' );
+as[0152] := ('f', 'uniform()', 'as[0152].g(as[0152].y + x)' );
+as[0153] := ('f', 'uniform()', 'as[0153].g(as[0153].y + x)' );
+as[0154] := ('f', 'uniform()', 'as[0154].g(as[0154].y + x)' );
+as[0155] := ('f', 'uniform()', 'as[0155].g(as[0155].y + x)' );
+as[0156] := ('f', 'uniform()', 'as[0156].g(as[0156].y + x)' );
+as[0157] := ('f', 'uniform()', 'as[0157].g(as[0157].y + x)' );
+as[0158] := ('f', 'uniform()', 'as[0158].g(as[0158].y + x)' );
+as[0159] := ('f', 'uniform()', 'as[0159].g(as[0159].y + x)' );
+
+as[0160] := ('f', 'uniform()', 'as[0160].g(as[0160].y + x)' );
+as[0161] := ('f', 'uniform()', 'as[0161].g(as[0161].y + x)' );
+as[0162] := ('f', 'uniform()', 'as[0162].g(as[0162].y + x)' );
+as[0163] := ('f', 'uniform()', 'as[0163].g(as[0163].y + x)' );
+as[0164] := ('f', 'uniform()', 'as[0164].g(as[0164].y + x)' );
+as[0165] := ('f', 'uniform()', 'as[0165].g(as[0165].y + x)' );
+as[0166] := ('f', 'uniform()', 'as[0166].g(as[0166].y + x)' );
+as[0167] := ('f', 'uniform()', 'as[0167].g(as[0167].y + x)' );
+as[0168] := ('f', 'uniform()', 'as[0168].g(as[0168].y + x)' );
+as[0169] := ('f', 'uniform()', 'as[0169].g(as[0169].y + x)' );
+
+as[0170] := ('f', 'uniform()', 'as[0170].g(as[0170].y + x)' );
+as[0171] := ('f', 'uniform()', 'as[0171].g(as[0171].y + x)' );
+as[0172] := ('f', 'uniform()', 'as[0172].g(as[0172].y + x)' );
+as[0173] := ('f', 'uniform()', 'as[0173].g(as[0173].y + x)' );
+as[0174] := ('f', 'uniform()', 'as[0174].g(as[0174].y + x)' );
+as[0175] := ('f', 'uniform()', 'as[0175].g(as[0175].y + x)' );
+as[0176] := ('f', 'uniform()', 'as[0176].g(as[0176].y + x)' );
+as[0177] := ('f', 'uniform()', 'as[0177].g(as[0177].y + x)' );
+as[0178] := ('f', 'uniform()', 'as[0178].g(as[0178].y + x)' );
+as[0179] := ('f', 'uniform()', 'as[0179].g(as[0179].y + x)' );
+
+as[0180] := ('f', 'uniform()', 'as[0180].g(as[0180].y + x)' );
+as[0181] := ('f', 'uniform()', 'as[0181].g(as[0181].y + x)' );
+as[0182] := ('f', 'uniform()', 'as[0182].g(as[0182].y + x)' );
+as[0183] := ('f', 'uniform()', 'as[0183].g(as[0183].y + x)' );
+as[0184] := ('f', 'uniform()', 'as[0184].g(as[0184].y + x)' );
+as[0185] := ('f', 'uniform()', 'as[0185].g(as[0185].y + x)' );
+as[0186] := ('f', 'uniform()', 'as[0186].g(as[0186].y + x)' );
+as[0187] := ('f', 'uniform()', 'as[0187].g(as[0187].y + x)' );
+as[0188] := ('f', 'uniform()', 'as[0188].g(as[0188].y + x)' );
+as[0189] := ('f', 'uniform()', 'as[0189].g(as[0189].y + x)' );
+
+as[0190] := ('f', 'uniform()', 'as[0190].g(as[0190].y + x)' );
+as[0191] := ('f', 'uniform()', 'as[0191].g(as[0191].y + x)' );
+as[0192] := ('f', 'uniform()', 'as[0192].g(as[0192].y + x)' );
+as[0193] := ('f', 'uniform()', 'as[0193].g(as[0193].y + x)' );
+as[0194] := ('f', 'uniform()', 'as[0194].g(as[0194].y + x)' );
+as[0195] := ('f', 'uniform()', 'as[0195].g(as[0195].y + x)' );
+as[0196] := ('f', 'uniform()', 'as[0196].g(as[0196].y + x)' );
+as[0197] := ('f', 'uniform()', 'as[0197].g(as[0197].y + x)' );
+as[0198] := ('f', 'uniform()', 'as[0198].g(as[0198].y + x)' );
+as[0199] := ('f', 'uniform()', 'as[0199].g(as[0199].y + x)' );
+
+// 200 .. 299
+
+as[0200] := ('f', 'uniform()', 'as[0200].g(as[0200].y + x)' );
+as[0201] := ('f', 'uniform()', 'as[0201].g(as[0201].y + x)' );
+as[0202] := ('f', 'uniform()', 'as[0202].g(as[0202].y + x)' );
+as[0203] := ('f', 'uniform()', 'as[0203].g(as[0203].y + x)' );
+as[0204] := ('f', 'uniform()', 'as[0204].g(as[0204].y + x)' );
+as[0205] := ('f', 'uniform()', 'as[0205].g(as[0205].y + x)' );
+as[0206] := ('f', 'uniform()', 'as[0206].g(as[0206].y + x)' );
+as[0207] := ('f', 'uniform()', 'as[0207].g(as[0207].y + x)' );
+as[0208] := ('f', 'uniform()', 'as[0208].g(as[0208].y + x)' );
+as[0209] := ('f', 'uniform()', 'as[0209].g(as[0209].y + x)' );
+
+as[0210] := ('f', 'uniform()', 'as[0210].g(as[0210].y + x)' );
+as[0211] := ('f', 'uniform()', 'as[0211].g(as[0211].y + x)' );
+as[0212] := ('f', 'uniform()', 'as[0212].g(as[0212].y + x)' );
+as[0213] := ('f', 'uniform()', 'as[0213].g(as[0213].y + x)' );
+as[0214] := ('f', 'uniform()', 'as[0214].g(as[0214].y + x)' );
+as[0215] := ('f', 'uniform()', 'as[0215].g(as[0215].y + x)' );
+as[0216] := ('f', 'uniform()', 'as[0216].g(as[0216].y + x)' );
+as[0217] := ('f', 'uniform()', 'as[0217].g(as[0217].y + x)' );
+as[0218] := ('f', 'uniform()', 'as[0218].g(as[0218].y + x)' );
+as[0219] := ('f', 'uniform()', 'as[0219].g(as[0219].y + x)' );
+
+as[0220] := ('f', 'uniform()', 'as[0220].g(as[0220].y + x)' );
+as[0221] := ('f', 'uniform()', 'as[0221].g(as[0221].y + x)' );
+as[0222] := ('f', 'uniform()', 'as[0222].g(as[0222].y + x)' );
+as[0223] := ('f', 'uniform()', 'as[0223].g(as[0223].y + x)' );
+as[0224] := ('f', 'uniform()', 'as[0224].g(as[0224].y + x)' );
+as[0225] := ('f', 'uniform()', 'as[0225].g(as[0225].y + x)' );
+as[0226] := ('f', 'uniform()', 'as[0226].g(as[0226].y + x)' );
+as[0227] := ('f', 'uniform()', 'as[0227].g(as[0227].y + x)' );
+as[0228] := ('f', 'uniform()', 'as[0228].g(as[0228].y + x)' );
+as[0229] := ('f', 'uniform()', 'as[0229].g(as[0229].y + x)' );
+
+as[0230] := ('f', 'uniform()', 'as[0230].g(as[0230].y + x)' );
+as[0231] := ('f', 'uniform()', 'as[0231].g(as[0231].y + x)' );
+as[0232] := ('f', 'uniform()', 'as[0232].g(as[0232].y + x)' );
+as[0233] := ('f', 'uniform()', 'as[0233].g(as[0233].y + x)' );
+as[0234] := ('f', 'uniform()', 'as[0234].g(as[0234].y + x)' );
+as[0235] := ('f', 'uniform()', 'as[0235].g(as[0235].y + x)' );
+as[0236] := ('f', 'uniform()', 'as[0236].g(as[0236].y + x)' );
+as[0237] := ('f', 'uniform()', 'as[0237].g(as[0237].y + x)' );
+as[0238] := ('f', 'uniform()', 'as[0238].g(as[0238].y + x)' );
+as[0239] := ('f', 'uniform()', 'as[0239].g(as[0239].y + x)' );
+
+as[0240] := ('f', 'uniform()', 'as[0240].g(as[0240].y + x)' );
+as[0241] := ('f', 'uniform()', 'as[0241].g(as[0241].y + x)' );
+as[0242] := ('f', 'uniform()', 'as[0242].g(as[0242].y + x)' );
+as[0243] := ('f', 'uniform()', 'as[0243].g(as[0243].y + x)' );
+as[0244] := ('f', 'uniform()', 'as[0244].g(as[0244].y + x)' );
+as[0245] := ('f', 'uniform()', 'as[0245].g(as[0245].y + x)' );
+as[0246] := ('f', 'uniform()', 'as[0246].g(as[0246].y + x)' );
+as[0247] := ('f', 'uniform()', 'as[0247].g(as[0247].y + x)' );
+as[0248] := ('f', 'uniform()', 'as[0248].g(as[0248].y + x)' );
+as[0249] := ('f', 'uniform()', 'as[0249].g(as[0249].y + x)' );
+
+as[0250] := ('f', 'uniform()', 'as[0250].g(as[0250].y + x)' );
+as[0251] := ('f', 'uniform()', 'as[0251].g(as[0251].y + x)' );
+as[0252] := ('f', 'uniform()', 'as[0252].g(as[0252].y + x)' );
+as[0253] := ('f', 'uniform()', 'as[0253].g(as[0253].y + x)' );
+as[0254] := ('f', 'uniform()', 'as[0254].g(as[0254].y + x)' );
+as[0255] := ('f', 'uniform()', 'as[0255].g(as[0255].y + x)' );
+as[0256] := ('f', 'uniform()', 'as[0256].g(as[0256].y + x)' );
+as[0257] := ('f', 'uniform()', 'as[0257].g(as[0257].y + x)' );
+as[0258] := ('f', 'uniform()', 'as[0258].g(as[0258].y + x)' );
+as[0259] := ('f', 'uniform()', 'as[0259].g(as[0259].y + x)' );
+
+as[0260] := ('f', 'uniform()', 'as[0260].g(as[0260].y + x)' );
+as[0261] := ('f', 'uniform()', 'as[0261].g(as[0261].y + x)' );
+as[0262] := ('f', 'uniform()', 'as[0262].g(as[0262].y + x)' );
+as[0263] := ('f', 'uniform()', 'as[0263].g(as[0263].y + x)' );
+as[0264] := ('f', 'uniform()', 'as[0264].g(as[0264].y + x)' );
+as[0265] := ('f', 'uniform()', 'as[0265].g(as[0265].y + x)' );
+as[0266] := ('f', 'uniform()', 'as[0266].g(as[0266].y + x)' );
+as[0267] := ('f', 'uniform()', 'as[0267].g(as[0267].y + x)' );
+as[0268] := ('f', 'uniform()', 'as[0268].g(as[0268].y + x)' );
+as[0269] := ('f', 'uniform()', 'as[0269].g(as[0269].y + x)' );
+
+as[0270] := ('f', 'uniform()', 'as[0270].g(as[0270].y + x)' );
+as[0271] := ('f', 'uniform()', 'as[0271].g(as[0271].y + x)' );
+as[0272] := ('f', 'uniform()', 'as[0272].g(as[0272].y + x)' );
+as[0273] := ('f', 'uniform()', 'as[0273].g(as[0273].y + x)' );
+as[0274] := ('f', 'uniform()', 'as[0274].g(as[0274].y + x)' );
+as[0275] := ('f', 'uniform()', 'as[0275].g(as[0275].y + x)' );
+as[0276] := ('f', 'uniform()', 'as[0276].g(as[0276].y + x)' );
+as[0277] := ('f', 'uniform()', 'as[0277].g(as[0277].y + x)' );
+as[0278] := ('f', 'uniform()', 'as[0278].g(as[0278].y + x)' );
+as[0279] := ('f', 'uniform()', 'as[0279].g(as[0279].y + x)' );
+
+as[0280] := ('f', 'uniform()', 'as[0280].g(as[0280].y + x)' );
+as[0281] := ('f', 'uniform()', 'as[0281].g(as[0281].y + x)' );
+as[0282] := ('f', 'uniform()', 'as[0282].g(as[0282].y + x)' );
+as[0283] := ('f', 'uniform()', 'as[0283].g(as[0283].y + x)' );
+as[0284] := ('f', 'uniform()', 'as[0284].g(as[0284].y + x)' );
+as[0285] := ('f', 'uniform()', 'as[0285].g(as[0285].y + x)' );
+as[0286] := ('f', 'uniform()', 'as[0286].g(as[0286].y + x)' );
+as[0287] := ('f', 'uniform()', 'as[0287].g(as[0287].y + x)' );
+as[0288] := ('f', 'uniform()', 'as[0288].g(as[0288].y + x)' );
+as[0289] := ('f', 'uniform()', 'as[0289].g(as[0289].y + x)' );
+
+as[0290] := ('f', 'uniform()', 'as[0290].g(as[0290].y + x)' );
+as[0291] := ('f', 'uniform()', 'as[0291].g(as[0291].y + x)' );
+as[0292] := ('f', 'uniform()', 'as[0292].g(as[0292].y + x)' );
+as[0293] := ('f', 'uniform()', 'as[0293].g(as[0293].y + x)' );
+as[0294] := ('f', 'uniform()', 'as[0294].g(as[0294].y + x)' );
+as[0295] := ('f', 'uniform()', 'as[0295].g(as[0295].y + x)' );
+as[0296] := ('f', 'uniform()', 'as[0296].g(as[0296].y + x)' );
+as[0297] := ('f', 'uniform()', 'as[0297].g(as[0297].y + x)' );
+as[0298] := ('f', 'uniform()', 'as[0298].g(as[0298].y + x)' );
+as[0299] := ('f', 'uniform()', 'as[0299].g(as[0299].y + x)' );
+
+// 300 .. 399
+
+as[0300] := ('f', 'uniform()', 'as[0300].g(as[0300].y + x)' );
+as[0301] := ('f', 'uniform()', 'as[0301].g(as[0301].y + x)' );
+as[0302] := ('f', 'uniform()', 'as[0302].g(as[0302].y + x)' );
+as[0303] := ('f', 'uniform()', 'as[0303].g(as[0303].y + x)' );
+as[0304] := ('f', 'uniform()', 'as[0304].g(as[0304].y + x)' );
+as[0305] := ('f', 'uniform()', 'as[0305].g(as[0305].y + x)' );
+as[0306] := ('f', 'uniform()', 'as[0306].g(as[0306].y + x)' );
+as[0307] := ('f', 'uniform()', 'as[0307].g(as[0307].y + x)' );
+as[0308] := ('f', 'uniform()', 'as[0308].g(as[0308].y + x)' );
+as[0309] := ('f', 'uniform()', 'as[0309].g(as[0309].y + x)' );
+
+as[0310] := ('f', 'uniform()', 'as[0310].g(as[0310].y + x)' );
+as[0311] := ('f', 'uniform()', 'as[0311].g(as[0311].y + x)' );
+as[0312] := ('f', 'uniform()', 'as[0312].g(as[0312].y + x)' );
+as[0313] := ('f', 'uniform()', 'as[0313].g(as[0313].y + x)' );
+as[0314] := ('f', 'uniform()', 'as[0314].g(as[0314].y + x)' );
+as[0315] := ('f', 'uniform()', 'as[0315].g(as[0315].y + x)' );
+as[0316] := ('f', 'uniform()', 'as[0316].g(as[0316].y + x)' );
+as[0317] := ('f', 'uniform()', 'as[0317].g(as[0317].y + x)' );
+as[0318] := ('f', 'uniform()', 'as[0318].g(as[0318].y + x)' );
+as[0319] := ('f', 'uniform()', 'as[0319].g(as[0319].y + x)' );
+
+as[0320] := ('f', 'uniform()', 'as[0320].g(as[0320].y + x)' );
+as[0321] := ('f', 'uniform()', 'as[0321].g(as[0321].y + x)' );
+as[0322] := ('f', 'uniform()', 'as[0322].g(as[0322].y + x)' );
+as[0323] := ('f', 'uniform()', 'as[0323].g(as[0323].y + x)' );
+as[0324] := ('f', 'uniform()', 'as[0324].g(as[0324].y + x)' );
+as[0325] := ('f', 'uniform()', 'as[0325].g(as[0325].y + x)' );
+as[0326] := ('f', 'uniform()', 'as[0326].g(as[0326].y + x)' );
+as[0327] := ('f', 'uniform()', 'as[0327].g(as[0327].y + x)' );
+as[0328] := ('f', 'uniform()', 'as[0328].g(as[0328].y + x)' );
+as[0329] := ('f', 'uniform()', 'as[0329].g(as[0329].y + x)' );
+
+as[0330] := ('f', 'uniform()', 'as[0330].g(as[0330].y + x)' );
+as[0331] := ('f', 'uniform()', 'as[0331].g(as[0331].y + x)' );
+as[0332] := ('f', 'uniform()', 'as[0332].g(as[0332].y + x)' );
+as[0333] := ('f', 'uniform()', 'as[0333].g(as[0333].y + x)' );
+as[0334] := ('f', 'uniform()', 'as[0334].g(as[0334].y + x)' );
+as[0335] := ('f', 'uniform()', 'as[0335].g(as[0335].y + x)' );
+as[0336] := ('f', 'uniform()', 'as[0336].g(as[0336].y + x)' );
+as[0337] := ('f', 'uniform()', 'as[0337].g(as[0337].y + x)' );
+as[0338] := ('f', 'uniform()', 'as[0338].g(as[0338].y + x)' );
+as[0339] := ('f', 'uniform()', 'as[0339].g(as[0339].y + x)' );
+
+as[0340] := ('f', 'uniform()', 'as[0340].g(as[0340].y + x)' );
+as[0341] := ('f', 'uniform()', 'as[0341].g(as[0341].y + x)' );
+as[0342] := ('f', 'uniform()', 'as[0342].g(as[0342].y + x)' );
+as[0343] := ('f', 'uniform()', 'as[0343].g(as[0343].y + x)' );
+as[0344] := ('f', 'uniform()', 'as[0344].g(as[0344].y + x)' );
+as[0345] := ('f', 'uniform()', 'as[0345].g(as[0345].y + x)' );
+as[0346] := ('f', 'uniform()', 'as[0346].g(as[0346].y + x)' );
+as[0347] := ('f', 'uniform()', 'as[0347].g(as[0347].y + x)' );
+as[0348] := ('f', 'uniform()', 'as[0348].g(as[0348].y + x)' );
+as[0349] := ('f', 'uniform()', 'as[0349].g(as[0349].y + x)' );
+
+as[0350] := ('f', 'uniform()', 'as[0350].g(as[0350].y + x)' );
+as[0351] := ('f', 'uniform()', 'as[0351].g(as[0351].y + x)' );
+as[0352] := ('f', 'uniform()', 'as[0352].g(as[0352].y + x)' );
+as[0353] := ('f', 'uniform()', 'as[0353].g(as[0353].y + x)' );
+as[0354] := ('f', 'uniform()', 'as[0354].g(as[0354].y + x)' );
+as[0355] := ('f', 'uniform()', 'as[0355].g(as[0355].y + x)' );
+as[0356] := ('f', 'uniform()', 'as[0356].g(as[0356].y + x)' );
+as[0357] := ('f', 'uniform()', 'as[0357].g(as[0357].y + x)' );
+as[0358] := ('f', 'uniform()', 'as[0358].g(as[0358].y + x)' );
+as[0359] := ('f', 'uniform()', 'as[0359].g(as[0359].y + x)' );
+
+as[0360] := ('f', 'uniform()', 'as[0360].g(as[0360].y + x)' );
+as[0361] := ('f', 'uniform()', 'as[0361].g(as[0361].y + x)' );
+as[0362] := ('f', 'uniform()', 'as[0362].g(as[0362].y + x)' );
+as[0363] := ('f', 'uniform()', 'as[0363].g(as[0363].y + x)' );
+as[0364] := ('f', 'uniform()', 'as[0364].g(as[0364].y + x)' );
+as[0365] := ('f', 'uniform()', 'as[0365].g(as[0365].y + x)' );
+as[0366] := ('f', 'uniform()', 'as[0366].g(as[0366].y + x)' );
+as[0367] := ('f', 'uniform()', 'as[0367].g(as[0367].y + x)' );
+as[0368] := ('f', 'uniform()', 'as[0368].g(as[0368].y + x)' );
+as[0369] := ('f', 'uniform()', 'as[0369].g(as[0369].y + x)' );
+
+as[0370] := ('f', 'uniform()', 'as[0370].g(as[0370].y + x)' );
+as[0371] := ('f', 'uniform()', 'as[0371].g(as[0371].y + x)' );
+as[0372] := ('f', 'uniform()', 'as[0372].g(as[0372].y + x)' );
+as[0373] := ('f', 'uniform()', 'as[0373].g(as[0373].y + x)' );
+as[0374] := ('f', 'uniform()', 'as[0374].g(as[0374].y + x)' );
+as[0375] := ('f', 'uniform()', 'as[0375].g(as[0375].y + x)' );
+as[0376] := ('f', 'uniform()', 'as[0376].g(as[0376].y + x)' );
+as[0377] := ('f', 'uniform()', 'as[0377].g(as[0377].y + x)' );
+as[0378] := ('f', 'uniform()', 'as[0378].g(as[0378].y + x)' );
+as[0379] := ('f', 'uniform()', 'as[0379].g(as[0379].y + x)' );
+
+as[0380] := ('f', 'uniform()', 'as[0380].g(as[0380].y + x)' );
+as[0381] := ('f', 'uniform()', 'as[0381].g(as[0381].y + x)' );
+as[0382] := ('f', 'uniform()', 'as[0382].g(as[0382].y + x)' );
+as[0383] := ('f', 'uniform()', 'as[0383].g(as[0383].y + x)' );
+as[0384] := ('f', 'uniform()', 'as[0384].g(as[0384].y + x)' );
+as[0385] := ('f', 'uniform()', 'as[0385].g(as[0385].y + x)' );
+as[0386] := ('f', 'uniform()', 'as[0386].g(as[0386].y + x)' );
+as[0387] := ('f', 'uniform()', 'as[0387].g(as[0387].y + x)' );
+as[0388] := ('f', 'uniform()', 'as[0388].g(as[0388].y + x)' );
+as[0389] := ('f', 'uniform()', 'as[0389].g(as[0389].y + x)' );
+
+as[0390] := ('f', 'uniform()', 'as[0390].g(as[0390].y + x)' );
+as[0391] := ('f', 'uniform()', 'as[0391].g(as[0391].y + x)' );
+as[0392] := ('f', 'uniform()', 'as[0392].g(as[0392].y + x)' );
+as[0393] := ('f', 'uniform()', 'as[0393].g(as[0393].y + x)' );
+as[0394] := ('f', 'uniform()', 'as[0394].g(as[0394].y + x)' );
+as[0395] := ('f', 'uniform()', 'as[0395].g(as[0395].y + x)' );
+as[0396] := ('f', 'uniform()', 'as[0396].g(as[0396].y + x)' );
+as[0397] := ('f', 'uniform()', 'as[0397].g(as[0397].y + x)' );
+as[0398] := ('f', 'uniform()', 'as[0398].g(as[0398].y + x)' );
+as[0399] := ('f', 'uniform()', 'as[0399].g(as[0399].y + x)' );
+
+// 400 .. 499
+
+as[0400] := ('f', 'uniform()', 'as[0400].g(as[0400].y + x)' );
+as[0401] := ('f', 'uniform()', 'as[0401].g(as[0401].y + x)' );
+as[0402] := ('f', 'uniform()', 'as[0402].g(as[0402].y + x)' );
+as[0403] := ('f', 'uniform()', 'as[0403].g(as[0403].y + x)' );
+as[0404] := ('f', 'uniform()', 'as[0404].g(as[0404].y + x)' );
+as[0405] := ('f', 'uniform()', 'as[0405].g(as[0405].y + x)' );
+as[0406] := ('f', 'uniform()', 'as[0406].g(as[0406].y + x)' );
+as[0407] := ('f', 'uniform()', 'as[0407].g(as[0407].y + x)' );
+as[0408] := ('f', 'uniform()', 'as[0408].g(as[0408].y + x)' );
+as[0409] := ('f', 'uniform()', 'as[0409].g(as[0409].y + x)' );
+
+as[0410] := ('f', 'uniform()', 'as[0410].g(as[0410].y + x)' );
+as[0411] := ('f', 'uniform()', 'as[0411].g(as[0411].y + x)' );
+as[0412] := ('f', 'uniform()', 'as[0412].g(as[0412].y + x)' );
+as[0413] := ('f', 'uniform()', 'as[0413].g(as[0413].y + x)' );
+as[0414] := ('f', 'uniform()', 'as[0414].g(as[0414].y + x)' );
+as[0415] := ('f', 'uniform()', 'as[0415].g(as[0415].y + x)' );
+as[0416] := ('f', 'uniform()', 'as[0416].g(as[0416].y + x)' );
+as[0417] := ('f', 'uniform()', 'as[0417].g(as[0417].y + x)' );
+as[0418] := ('f', 'uniform()', 'as[0418].g(as[0418].y + x)' );
+as[0419] := ('f', 'uniform()', 'as[0419].g(as[0419].y + x)' );
+
+as[0420] := ('f', 'uniform()', 'as[0420].g(as[0420].y + x)' );
+as[0421] := ('f', 'uniform()', 'as[0421].g(as[0421].y + x)' );
+as[0422] := ('f', 'uniform()', 'as[0422].g(as[0422].y + x)' );
+as[0423] := ('f', 'uniform()', 'as[0423].g(as[0423].y + x)' );
+as[0424] := ('f', 'uniform()', 'as[0424].g(as[0424].y + x)' );
+as[0425] := ('f', 'uniform()', 'as[0425].g(as[0425].y + x)' );
+as[0426] := ('f', 'uniform()', 'as[0426].g(as[0426].y + x)' );
+as[0427] := ('f', 'uniform()', 'as[0427].g(as[0427].y + x)' );
+as[0428] := ('f', 'uniform()', 'as[0428].g(as[0428].y + x)' );
+as[0429] := ('f', 'uniform()', 'as[0429].g(as[0429].y + x)' );
+
+as[0430] := ('f', 'uniform()', 'as[0430].g(as[0430].y + x)' );
+as[0431] := ('f', 'uniform()', 'as[0431].g(as[0431].y + x)' );
+as[0432] := ('f', 'uniform()', 'as[0432].g(as[0432].y + x)' );
+as[0433] := ('f', 'uniform()', 'as[0433].g(as[0433].y + x)' );
+as[0434] := ('f', 'uniform()', 'as[0434].g(as[0434].y + x)' );
+as[0435] := ('f', 'uniform()', 'as[0435].g(as[0435].y + x)' );
+as[0436] := ('f', 'uniform()', 'as[0436].g(as[0436].y + x)' );
+as[0437] := ('f', 'uniform()', 'as[0437].g(as[0437].y + x)' );
+as[0438] := ('f', 'uniform()', 'as[0438].g(as[0438].y + x)' );
+as[0439] := ('f', 'uniform()', 'as[0439].g(as[0439].y + x)' );
+
+as[0440] := ('f', 'uniform()', 'as[0440].g(as[0440].y + x)' );
+as[0441] := ('f', 'uniform()', 'as[0441].g(as[0441].y + x)' );
+as[0442] := ('f', 'uniform()', 'as[0442].g(as[0442].y + x)' );
+as[0443] := ('f', 'uniform()', 'as[0443].g(as[0443].y + x)' );
+as[0444] := ('f', 'uniform()', 'as[0444].g(as[0444].y + x)' );
+as[0445] := ('f', 'uniform()', 'as[0445].g(as[0445].y + x)' );
+as[0446] := ('f', 'uniform()', 'as[0446].g(as[0446].y + x)' );
+as[0447] := ('f', 'uniform()', 'as[0447].g(as[0447].y + x)' );
+as[0448] := ('f', 'uniform()', 'as[0448].g(as[0448].y + x)' );
+as[0449] := ('f', 'uniform()', 'as[0449].g(as[0449].y + x)' );
+
+as[0450] := ('f', 'uniform()', 'as[0450].g(as[0450].y + x)' );
+as[0451] := ('f', 'uniform()', 'as[0451].g(as[0451].y + x)' );
+as[0452] := ('f', 'uniform()', 'as[0452].g(as[0452].y + x)' );
+as[0453] := ('f', 'uniform()', 'as[0453].g(as[0453].y + x)' );
+as[0454] := ('f', 'uniform()', 'as[0454].g(as[0454].y + x)' );
+as[0455] := ('f', 'uniform()', 'as[0455].g(as[0455].y + x)' );
+as[0456] := ('f', 'uniform()', 'as[0456].g(as[0456].y + x)' );
+as[0457] := ('f', 'uniform()', 'as[0457].g(as[0457].y + x)' );
+as[0458] := ('f', 'uniform()', 'as[0458].g(as[0458].y + x)' );
+as[0459] := ('f', 'uniform()', 'as[0459].g(as[0459].y + x)' );
+
+as[0460] := ('f', 'uniform()', 'as[0460].g(as[0460].y + x)' );
+as[0461] := ('f', 'uniform()', 'as[0461].g(as[0461].y + x)' );
+as[0462] := ('f', 'uniform()', 'as[0462].g(as[0462].y + x)' );
+as[0463] := ('f', 'uniform()', 'as[0463].g(as[0463].y + x)' );
+as[0464] := ('f', 'uniform()', 'as[0464].g(as[0464].y + x)' );
+as[0465] := ('f', 'uniform()', 'as[0465].g(as[0465].y + x)' );
+as[0466] := ('f', 'uniform()', 'as[0466].g(as[0466].y + x)' );
+as[0467] := ('f', 'uniform()', 'as[0467].g(as[0467].y + x)' );
+as[0468] := ('f', 'uniform()', 'as[0468].g(as[0468].y + x)' );
+as[0469] := ('f', 'uniform()', 'as[0469].g(as[0469].y + x)' );
+
+as[0470] := ('f', 'uniform()', 'as[0470].g(as[0470].y + x)' );
+as[0471] := ('f', 'uniform()', 'as[0471].g(as[0471].y + x)' );
+as[0472] := ('f', 'uniform()', 'as[0472].g(as[0472].y + x)' );
+as[0473] := ('f', 'uniform()', 'as[0473].g(as[0473].y + x)' );
+as[0474] := ('f', 'uniform()', 'as[0474].g(as[0474].y + x)' );
+as[0475] := ('f', 'uniform()', 'as[0475].g(as[0475].y + x)' );
+as[0476] := ('f', 'uniform()', 'as[0476].g(as[0476].y + x)' );
+as[0477] := ('f', 'uniform()', 'as[0477].g(as[0477].y + x)' );
+as[0478] := ('f', 'uniform()', 'as[0478].g(as[0478].y + x)' );
+as[0479] := ('f', 'uniform()', 'as[0479].g(as[0479].y + x)' );
+
+as[0480] := ('f', 'uniform()', 'as[0480].g(as[0480].y + x)' );
+as[0481] := ('f', 'uniform()', 'as[0481].g(as[0481].y + x)' );
+as[0482] := ('f', 'uniform()', 'as[0482].g(as[0482].y + x)' );
+as[0483] := ('f', 'uniform()', 'as[0483].g(as[0483].y + x)' );
+as[0484] := ('f', 'uniform()', 'as[0484].g(as[0484].y + x)' );
+as[0485] := ('f', 'uniform()', 'as[0485].g(as[0485].y + x)' );
+as[0486] := ('f', 'uniform()', 'as[0486].g(as[0486].y + x)' );
+as[0487] := ('f', 'uniform()', 'as[0487].g(as[0487].y + x)' );
+as[0488] := ('f', 'uniform()', 'as[0488].g(as[0488].y + x)' );
+as[0489] := ('f', 'uniform()', 'as[0489].g(as[0489].y + x)' );
+
+as[0490] := ('f', 'uniform()', 'as[0490].g(as[0490].y + x)' );
+as[0491] := ('f', 'uniform()', 'as[0491].g(as[0491].y + x)' );
+as[0492] := ('f', 'uniform()', 'as[0492].g(as[0492].y + x)' );
+as[0493] := ('f', 'uniform()', 'as[0493].g(as[0493].y + x)' );
+as[0494] := ('f', 'uniform()', 'as[0494].g(as[0494].y + x)' );
+as[0495] := ('f', 'uniform()', 'as[0495].g(as[0495].y + x)' );
+as[0496] := ('f', 'uniform()', 'as[0496].g(as[0496].y + x)' );
+as[0497] := ('f', 'uniform()', 'as[0497].g(as[0497].y + x)' );
+as[0498] := ('f', 'uniform()', 'as[0498].g(as[0498].y + x)' );
+as[0499] := ('f', 'uniform()', 'as[0499].g(as[0499].y + x)' );
+
+// 500 .. 599
+
+as[0500] := ('f', 'uniform()', 'as[0500].g(as[0500].y + x)' );
+as[0501] := ('f', 'uniform()', 'as[0501].g(as[0501].y + x)' );
+as[0502] := ('f', 'uniform()', 'as[0502].g(as[0502].y + x)' );
+as[0503] := ('f', 'uniform()', 'as[0503].g(as[0503].y + x)' );
+as[0504] := ('f', 'uniform()', 'as[0504].g(as[0504].y + x)' );
+as[0505] := ('f', 'uniform()', 'as[0505].g(as[0505].y + x)' );
+as[0506] := ('f', 'uniform()', 'as[0506].g(as[0506].y + x)' );
+as[0507] := ('f', 'uniform()', 'as[0507].g(as[0507].y + x)' );
+as[0508] := ('f', 'uniform()', 'as[0508].g(as[0508].y + x)' );
+as[0509] := ('f', 'uniform()', 'as[0509].g(as[0509].y + x)' );
+
+as[0510] := ('f', 'uniform()', 'as[0510].g(as[0510].y + x)' );
+as[0511] := ('f', 'uniform()', 'as[0511].g(as[0511].y + x)' );
+as[0512] := ('f', 'uniform()', 'as[0512].g(as[0512].y + x)' );
+as[0513] := ('f', 'uniform()', 'as[0513].g(as[0513].y + x)' );
+as[0514] := ('f', 'uniform()', 'as[0514].g(as[0514].y + x)' );
+as[0515] := ('f', 'uniform()', 'as[0515].g(as[0515].y + x)' );
+as[0516] := ('f', 'uniform()', 'as[0516].g(as[0516].y + x)' );
+as[0517] := ('f', 'uniform()', 'as[0517].g(as[0517].y + x)' );
+as[0518] := ('f', 'uniform()', 'as[0518].g(as[0518].y + x)' );
+as[0519] := ('f', 'uniform()', 'as[0519].g(as[0519].y + x)' );
+
+as[0520] := ('f', 'uniform()', 'as[0520].g(as[0520].y + x)' );
+as[0521] := ('f', 'uniform()', 'as[0521].g(as[0521].y + x)' );
+as[0522] := ('f', 'uniform()', 'as[0522].g(as[0522].y + x)' );
+as[0523] := ('f', 'uniform()', 'as[0523].g(as[0523].y + x)' );
+as[0524] := ('f', 'uniform()', 'as[0524].g(as[0524].y + x)' );
+as[0525] := ('f', 'uniform()', 'as[0525].g(as[0525].y + x)' );
+as[0526] := ('f', 'uniform()', 'as[0526].g(as[0526].y + x)' );
+as[0527] := ('f', 'uniform()', 'as[0527].g(as[0527].y + x)' );
+as[0528] := ('f', 'uniform()', 'as[0528].g(as[0528].y + x)' );
+as[0529] := ('f', 'uniform()', 'as[0529].g(as[0529].y + x)' );
+
+as[0530] := ('f', 'uniform()', 'as[0530].g(as[0530].y + x)' );
+as[0531] := ('f', 'uniform()', 'as[0531].g(as[0531].y + x)' );
+as[0532] := ('f', 'uniform()', 'as[0532].g(as[0532].y + x)' );
+as[0533] := ('f', 'uniform()', 'as[0533].g(as[0533].y + x)' );
+as[0534] := ('f', 'uniform()', 'as[0534].g(as[0534].y + x)' );
+as[0535] := ('f', 'uniform()', 'as[0535].g(as[0535].y + x)' );
+as[0536] := ('f', 'uniform()', 'as[0536].g(as[0536].y + x)' );
+as[0537] := ('f', 'uniform()', 'as[0537].g(as[0537].y + x)' );
+as[0538] := ('f', 'uniform()', 'as[0538].g(as[0538].y + x)' );
+as[0539] := ('f', 'uniform()', 'as[0539].g(as[0539].y + x)' );
+
+as[0540] := ('f', 'uniform()', 'as[0540].g(as[0540].y + x)' );
+as[0541] := ('f', 'uniform()', 'as[0541].g(as[0541].y + x)' );
+as[0542] := ('f', 'uniform()', 'as[0542].g(as[0542].y + x)' );
+as[0543] := ('f', 'uniform()', 'as[0543].g(as[0543].y + x)' );
+as[0544] := ('f', 'uniform()', 'as[0544].g(as[0544].y + x)' );
+as[0545] := ('f', 'uniform()', 'as[0545].g(as[0545].y + x)' );
+as[0546] := ('f', 'uniform()', 'as[0546].g(as[0546].y + x)' );
+as[0547] := ('f', 'uniform()', 'as[0547].g(as[0547].y + x)' );
+as[0548] := ('f', 'uniform()', 'as[0548].g(as[0548].y + x)' );
+as[0549] := ('f', 'uniform()', 'as[0549].g(as[0549].y + x)' );
+
+as[0550] := ('f', 'uniform()', 'as[0550].g(as[0550].y + x)' );
+as[0551] := ('f', 'uniform()', 'as[0551].g(as[0551].y + x)' );
+as[0552] := ('f', 'uniform()', 'as[0552].g(as[0552].y + x)' );
+as[0553] := ('f', 'uniform()', 'as[0553].g(as[0553].y + x)' );
+as[0554] := ('f', 'uniform()', 'as[0554].g(as[0554].y + x)' );
+as[0555] := ('f', 'uniform()', 'as[0555].g(as[0555].y + x)' );
+as[0556] := ('f', 'uniform()', 'as[0556].g(as[0556].y + x)' );
+as[0557] := ('f', 'uniform()', 'as[0557].g(as[0557].y + x)' );
+as[0558] := ('f', 'uniform()', 'as[0558].g(as[0558].y + x)' );
+as[0559] := ('f', 'uniform()', 'as[0559].g(as[0559].y + x)' );
+
+as[0560] := ('f', 'uniform()', 'as[0560].g(as[0560].y + x)' );
+as[0561] := ('f', 'uniform()', 'as[0561].g(as[0561].y + x)' );
+as[0562] := ('f', 'uniform()', 'as[0562].g(as[0562].y + x)' );
+as[0563] := ('f', 'uniform()', 'as[0563].g(as[0563].y + x)' );
+as[0564] := ('f', 'uniform()', 'as[0564].g(as[0564].y + x)' );
+as[0565] := ('f', 'uniform()', 'as[0565].g(as[0565].y + x)' );
+as[0566] := ('f', 'uniform()', 'as[0566].g(as[0566].y + x)' );
+as[0567] := ('f', 'uniform()', 'as[0567].g(as[0567].y + x)' );
+as[0568] := ('f', 'uniform()', 'as[0568].g(as[0568].y + x)' );
+as[0569] := ('f', 'uniform()', 'as[0569].g(as[0569].y + x)' );
+
+as[0570] := ('f', 'uniform()', 'as[0570].g(as[0570].y + x)' );
+as[0571] := ('f', 'uniform()', 'as[0571].g(as[0571].y + x)' );
+as[0572] := ('f', 'uniform()', 'as[0572].g(as[0572].y + x)' );
+as[0573] := ('f', 'uniform()', 'as[0573].g(as[0573].y + x)' );
+as[0574] := ('f', 'uniform()', 'as[0574].g(as[0574].y + x)' );
+as[0575] := ('f', 'uniform()', 'as[0575].g(as[0575].y + x)' );
+as[0576] := ('f', 'uniform()', 'as[0576].g(as[0576].y + x)' );
+as[0577] := ('f', 'uniform()', 'as[0577].g(as[0577].y + x)' );
+as[0578] := ('f', 'uniform()', 'as[0578].g(as[0578].y + x)' );
+as[0579] := ('f', 'uniform()', 'as[0579].g(as[0579].y + x)' );
+
+as[0580] := ('f', 'uniform()', 'as[0580].g(as[0580].y + x)' );
+as[0581] := ('f', 'uniform()', 'as[0581].g(as[0581].y + x)' );
+as[0582] := ('f', 'uniform()', 'as[0582].g(as[0582].y + x)' );
+as[0583] := ('f', 'uniform()', 'as[0583].g(as[0583].y + x)' );
+as[0584] := ('f', 'uniform()', 'as[0584].g(as[0584].y + x)' );
+as[0585] := ('f', 'uniform()', 'as[0585].g(as[0585].y + x)' );
+as[0586] := ('f', 'uniform()', 'as[0586].g(as[0586].y + x)' );
+as[0587] := ('f', 'uniform()', 'as[0587].g(as[0587].y + x)' );
+as[0588] := ('f', 'uniform()', 'as[0588].g(as[0588].y + x)' );
+as[0589] := ('f', 'uniform()', 'as[0589].g(as[0589].y + x)' );
+
+as[0590] := ('f', 'uniform()', 'as[0590].g(as[0590].y + x)' );
+as[0591] := ('f', 'uniform()', 'as[0591].g(as[0591].y + x)' );
+as[0592] := ('f', 'uniform()', 'as[0592].g(as[0592].y + x)' );
+as[0593] := ('f', 'uniform()', 'as[0593].g(as[0593].y + x)' );
+as[0594] := ('f', 'uniform()', 'as[0594].g(as[0594].y + x)' );
+as[0595] := ('f', 'uniform()', 'as[0595].g(as[0595].y + x)' );
+as[0596] := ('f', 'uniform()', 'as[0596].g(as[0596].y + x)' );
+as[0597] := ('f', 'uniform()', 'as[0597].g(as[0597].y + x)' );
+as[0598] := ('f', 'uniform()', 'as[0598].g(as[0598].y + x)' );
+as[0599] := ('f', 'uniform()', 'as[0599].g(as[0599].y + x)' );
+
+// 600 .. 699
+
+as[0600] := ('f', 'uniform()', 'as[0600].g(as[0600].y + x)' );
+as[0601] := ('f', 'uniform()', 'as[0601].g(as[0601].y + x)' );
+as[0602] := ('f', 'uniform()', 'as[0602].g(as[0602].y + x)' );
+as[0603] := ('f', 'uniform()', 'as[0603].g(as[0603].y + x)' );
+as[0604] := ('f', 'uniform()', 'as[0604].g(as[0604].y + x)' );
+as[0605] := ('f', 'uniform()', 'as[0605].g(as[0605].y + x)' );
+as[0606] := ('f', 'uniform()', 'as[0606].g(as[0606].y + x)' );
+as[0607] := ('f', 'uniform()', 'as[0607].g(as[0607].y + x)' );
+as[0608] := ('f', 'uniform()', 'as[0608].g(as[0608].y + x)' );
+as[0609] := ('f', 'uniform()', 'as[0609].g(as[0609].y + x)' );
+
+as[0610] := ('f', 'uniform()', 'as[0610].g(as[0610].y + x)' );
+as[0611] := ('f', 'uniform()', 'as[0611].g(as[0611].y + x)' );
+as[0612] := ('f', 'uniform()', 'as[0612].g(as[0612].y + x)' );
+as[0613] := ('f', 'uniform()', 'as[0613].g(as[0613].y + x)' );
+as[0614] := ('f', 'uniform()', 'as[0614].g(as[0614].y + x)' );
+as[0615] := ('f', 'uniform()', 'as[0615].g(as[0615].y + x)' );
+as[0616] := ('f', 'uniform()', 'as[0616].g(as[0616].y + x)' );
+as[0617] := ('f', 'uniform()', 'as[0617].g(as[0617].y + x)' );
+as[0618] := ('f', 'uniform()', 'as[0618].g(as[0618].y + x)' );
+as[0619] := ('f', 'uniform()', 'as[0619].g(as[0619].y + x)' );
+
+as[0620] := ('f', 'uniform()', 'as[0620].g(as[0620].y + x)' );
+as[0621] := ('f', 'uniform()', 'as[0621].g(as[0621].y + x)' );
+as[0622] := ('f', 'uniform()', 'as[0622].g(as[0622].y + x)' );
+as[0623] := ('f', 'uniform()', 'as[0623].g(as[0623].y + x)' );
+as[0624] := ('f', 'uniform()', 'as[0624].g(as[0624].y + x)' );
+as[0625] := ('f', 'uniform()', 'as[0625].g(as[0625].y + x)' );
+as[0626] := ('f', 'uniform()', 'as[0626].g(as[0626].y + x)' );
+as[0627] := ('f', 'uniform()', 'as[0627].g(as[0627].y + x)' );
+as[0628] := ('f', 'uniform()', 'as[0628].g(as[0628].y + x)' );
+as[0629] := ('f', 'uniform()', 'as[0629].g(as[0629].y + x)' );
+
+as[0630] := ('f', 'uniform()', 'as[0630].g(as[0630].y + x)' );
+as[0631] := ('f', 'uniform()', 'as[0631].g(as[0631].y + x)' );
+as[0632] := ('f', 'uniform()', 'as[0632].g(as[0632].y + x)' );
+as[0633] := ('f', 'uniform()', 'as[0633].g(as[0633].y + x)' );
+as[0634] := ('f', 'uniform()', 'as[0634].g(as[0634].y + x)' );
+as[0635] := ('f', 'uniform()', 'as[0635].g(as[0635].y + x)' );
+as[0636] := ('f', 'uniform()', 'as[0636].g(as[0636].y + x)' );
+as[0637] := ('f', 'uniform()', 'as[0637].g(as[0637].y + x)' );
+as[0638] := ('f', 'uniform()', 'as[0638].g(as[0638].y + x)' );
+as[0639] := ('f', 'uniform()', 'as[0639].g(as[0639].y + x)' );
+
+as[0640] := ('f', 'uniform()', 'as[0640].g(as[0640].y + x)' );
+as[0641] := ('f', 'uniform()', 'as[0641].g(as[0641].y + x)' );
+as[0642] := ('f', 'uniform()', 'as[0642].g(as[0642].y + x)' );
+as[0643] := ('f', 'uniform()', 'as[0643].g(as[0643].y + x)' );
+as[0644] := ('f', 'uniform()', 'as[0644].g(as[0644].y + x)' );
+as[0645] := ('f', 'uniform()', 'as[0645].g(as[0645].y + x)' );
+as[0646] := ('f', 'uniform()', 'as[0646].g(as[0646].y + x)' );
+as[0647] := ('f', 'uniform()', 'as[0647].g(as[0647].y + x)' );
+as[0648] := ('f', 'uniform()', 'as[0648].g(as[0648].y + x)' );
+as[0649] := ('f', 'uniform()', 'as[0649].g(as[0649].y + x)' );
+
+as[0650] := ('f', 'uniform()', 'as[0650].g(as[0650].y + x)' );
+as[0651] := ('f', 'uniform()', 'as[0651].g(as[0651].y + x)' );
+as[0652] := ('f', 'uniform()', 'as[0652].g(as[0652].y + x)' );
+as[0653] := ('f', 'uniform()', 'as[0653].g(as[0653].y + x)' );
+as[0654] := ('f', 'uniform()', 'as[0654].g(as[0654].y + x)' );
+as[0655] := ('f', 'uniform()', 'as[0655].g(as[0655].y + x)' );
+as[0656] := ('f', 'uniform()', 'as[0656].g(as[0656].y + x)' );
+as[0657] := ('f', 'uniform()', 'as[0657].g(as[0657].y + x)' );
+as[0658] := ('f', 'uniform()', 'as[0658].g(as[0658].y + x)' );
+as[0659] := ('f', 'uniform()', 'as[0659].g(as[0659].y + x)' );
+
+as[0660] := ('f', 'uniform()', 'as[0660].g(as[0660].y + x)' );
+as[0661] := ('f', 'uniform()', 'as[0661].g(as[0661].y + x)' );
+as[0662] := ('f', 'uniform()', 'as[0662].g(as[0662].y + x)' );
+as[0663] := ('f', 'uniform()', 'as[0663].g(as[0663].y + x)' );
+as[0664] := ('f', 'uniform()', 'as[0664].g(as[0664].y + x)' );
+as[0665] := ('f', 'uniform()', 'as[0665].g(as[0665].y + x)' );
+as[0666] := ('f', 'uniform()', 'as[0666].g(as[0666].y + x)' );
+as[0667] := ('f', 'uniform()', 'as[0667].g(as[0667].y + x)' );
+as[0668] := ('f', 'uniform()', 'as[0668].g(as[0668].y + x)' );
+as[0669] := ('f', 'uniform()', 'as[0669].g(as[0669].y + x)' );
+
+as[0670] := ('f', 'uniform()', 'as[0670].g(as[0670].y + x)' );
+as[0671] := ('f', 'uniform()', 'as[0671].g(as[0671].y + x)' );
+as[0672] := ('f', 'uniform()', 'as[0672].g(as[0672].y + x)' );
+as[0673] := ('f', 'uniform()', 'as[0673].g(as[0673].y + x)' );
+as[0674] := ('f', 'uniform()', 'as[0674].g(as[0674].y + x)' );
+as[0675] := ('f', 'uniform()', 'as[0675].g(as[0675].y + x)' );
+as[0676] := ('f', 'uniform()', 'as[0676].g(as[0676].y + x)' );
+as[0677] := ('f', 'uniform()', 'as[0677].g(as[0677].y + x)' );
+as[0678] := ('f', 'uniform()', 'as[0678].g(as[0678].y + x)' );
+as[0679] := ('f', 'uniform()', 'as[0679].g(as[0679].y + x)' );
+
+as[0680] := ('f', 'uniform()', 'as[0680].g(as[0680].y + x)' );
+as[0681] := ('f', 'uniform()', 'as[0681].g(as[0681].y + x)' );
+as[0682] := ('f', 'uniform()', 'as[0682].g(as[0682].y + x)' );
+as[0683] := ('f', 'uniform()', 'as[0683].g(as[0683].y + x)' );
+as[0684] := ('f', 'uniform()', 'as[0684].g(as[0684].y + x)' );
+as[0685] := ('f', 'uniform()', 'as[0685].g(as[0685].y + x)' );
+as[0686] := ('f', 'uniform()', 'as[0686].g(as[0686].y + x)' );
+as[0687] := ('f', 'uniform()', 'as[0687].g(as[0687].y + x)' );
+as[0688] := ('f', 'uniform()', 'as[0688].g(as[0688].y + x)' );
+as[0689] := ('f', 'uniform()', 'as[0689].g(as[0689].y + x)' );
+
+as[0690] := ('f', 'uniform()', 'as[0690].g(as[0690].y + x)' );
+as[0691] := ('f', 'uniform()', 'as[0691].g(as[0691].y + x)' );
+as[0692] := ('f', 'uniform()', 'as[0692].g(as[0692].y + x)' );
+as[0693] := ('f', 'uniform()', 'as[0693].g(as[0693].y + x)' );
+as[0694] := ('f', 'uniform()', 'as[0694].g(as[0694].y + x)' );
+as[0695] := ('f', 'uniform()', 'as[0695].g(as[0695].y + x)' );
+as[0696] := ('f', 'uniform()', 'as[0696].g(as[0696].y + x)' );
+as[0697] := ('f', 'uniform()', 'as[0697].g(as[0697].y + x)' );
+as[0698] := ('f', 'uniform()', 'as[0698].g(as[0698].y + x)' );
+as[0699] := ('f', 'uniform()', 'as[0699].g(as[0699].y + x)' );
+
+// 700 .. 799
+
+as[0700] := ('f', 'uniform()', 'as[0700].g(as[0700].y + x)' );
+as[0701] := ('f', 'uniform()', 'as[0701].g(as[0701].y + x)' );
+as[0702] := ('f', 'uniform()', 'as[0702].g(as[0702].y + x)' );
+as[0703] := ('f', 'uniform()', 'as[0703].g(as[0703].y + x)' );
+as[0704] := ('f', 'uniform()', 'as[0704].g(as[0704].y + x)' );
+as[0705] := ('f', 'uniform()', 'as[0705].g(as[0705].y + x)' );
+as[0706] := ('f', 'uniform()', 'as[0706].g(as[0706].y + x)' );
+as[0707] := ('f', 'uniform()', 'as[0707].g(as[0707].y + x)' );
+as[0708] := ('f', 'uniform()', 'as[0708].g(as[0708].y + x)' );
+as[0709] := ('f', 'uniform()', 'as[0709].g(as[0709].y + x)' );
+
+as[0710] := ('f', 'uniform()', 'as[0710].g(as[0710].y + x)' );
+as[0711] := ('f', 'uniform()', 'as[0711].g(as[0711].y + x)' );
+as[0712] := ('f', 'uniform()', 'as[0712].g(as[0712].y + x)' );
+as[0713] := ('f', 'uniform()', 'as[0713].g(as[0713].y + x)' );
+as[0714] := ('f', 'uniform()', 'as[0714].g(as[0714].y + x)' );
+as[0715] := ('f', 'uniform()', 'as[0715].g(as[0715].y + x)' );
+as[0716] := ('f', 'uniform()', 'as[0716].g(as[0716].y + x)' );
+as[0717] := ('f', 'uniform()', 'as[0717].g(as[0717].y + x)' );
+as[0718] := ('f', 'uniform()', 'as[0718].g(as[0718].y + x)' );
+as[0719] := ('f', 'uniform()', 'as[0719].g(as[0719].y + x)' );
+
+as[0720] := ('f', 'uniform()', 'as[0720].g(as[0720].y + x)' );
+as[0721] := ('f', 'uniform()', 'as[0721].g(as[0721].y + x)' );
+as[0722] := ('f', 'uniform()', 'as[0722].g(as[0722].y + x)' );
+as[0723] := ('f', 'uniform()', 'as[0723].g(as[0723].y + x)' );
+as[0724] := ('f', 'uniform()', 'as[0724].g(as[0724].y + x)' );
+as[0725] := ('f', 'uniform()', 'as[0725].g(as[0725].y + x)' );
+as[0726] := ('f', 'uniform()', 'as[0726].g(as[0726].y + x)' );
+as[0727] := ('f', 'uniform()', 'as[0727].g(as[0727].y + x)' );
+as[0728] := ('f', 'uniform()', 'as[0728].g(as[0728].y + x)' );
+as[0729] := ('f', 'uniform()', 'as[0729].g(as[0729].y + x)' );
+
+as[0730] := ('f', 'uniform()', 'as[0730].g(as[0730].y + x)' );
+as[0731] := ('f', 'uniform()', 'as[0731].g(as[0731].y + x)' );
+as[0732] := ('f', 'uniform()', 'as[0732].g(as[0732].y + x)' );
+as[0733] := ('f', 'uniform()', 'as[0733].g(as[0733].y + x)' );
+as[0734] := ('f', 'uniform()', 'as[0734].g(as[0734].y + x)' );
+as[0735] := ('f', 'uniform()', 'as[0735].g(as[0735].y + x)' );
+as[0736] := ('f', 'uniform()', 'as[0736].g(as[0736].y + x)' );
+as[0737] := ('f', 'uniform()', 'as[0737].g(as[0737].y + x)' );
+as[0738] := ('f', 'uniform()', 'as[0738].g(as[0738].y + x)' );
+as[0739] := ('f', 'uniform()', 'as[0739].g(as[0739].y + x)' );
+
+as[0740] := ('f', 'uniform()', 'as[0740].g(as[0740].y + x)' );
+as[0741] := ('f', 'uniform()', 'as[0741].g(as[0741].y + x)' );
+as[0742] := ('f', 'uniform()', 'as[0742].g(as[0742].y + x)' );
+as[0743] := ('f', 'uniform()', 'as[0743].g(as[0743].y + x)' );
+as[0744] := ('f', 'uniform()', 'as[0744].g(as[0744].y + x)' );
+as[0745] := ('f', 'uniform()', 'as[0745].g(as[0745].y + x)' );
+as[0746] := ('f', 'uniform()', 'as[0746].g(as[0746].y + x)' );
+as[0747] := ('f', 'uniform()', 'as[0747].g(as[0747].y + x)' );
+as[0748] := ('f', 'uniform()', 'as[0748].g(as[0748].y + x)' );
+as[0749] := ('f', 'uniform()', 'as[0749].g(as[0749].y + x)' );
+
+as[0750] := ('f', 'uniform()', 'as[0750].g(as[0750].y + x)' );
+as[0751] := ('f', 'uniform()', 'as[0751].g(as[0751].y + x)' );
+as[0752] := ('f', 'uniform()', 'as[0752].g(as[0752].y + x)' );
+as[0753] := ('f', 'uniform()', 'as[0753].g(as[0753].y + x)' );
+as[0754] := ('f', 'uniform()', 'as[0754].g(as[0754].y + x)' );
+as[0755] := ('f', 'uniform()', 'as[0755].g(as[0755].y + x)' );
+as[0756] := ('f', 'uniform()', 'as[0756].g(as[0756].y + x)' );
+as[0757] := ('f', 'uniform()', 'as[0757].g(as[0757].y + x)' );
+as[0758] := ('f', 'uniform()', 'as[0758].g(as[0758].y + x)' );
+as[0759] := ('f', 'uniform()', 'as[0759].g(as[0759].y + x)' );
+
+as[0760] := ('f', 'uniform()', 'as[0760].g(as[0760].y + x)' );
+as[0761] := ('f', 'uniform()', 'as[0761].g(as[0761].y + x)' );
+as[0762] := ('f', 'uniform()', 'as[0762].g(as[0762].y + x)' );
+as[0763] := ('f', 'uniform()', 'as[0763].g(as[0763].y + x)' );
+as[0764] := ('f', 'uniform()', 'as[0764].g(as[0764].y + x)' );
+as[0765] := ('f', 'uniform()', 'as[0765].g(as[0765].y + x)' );
+as[0766] := ('f', 'uniform()', 'as[0766].g(as[0766].y + x)' );
+as[0767] := ('f', 'uniform()', 'as[0767].g(as[0767].y + x)' );
+as[0768] := ('f', 'uniform()', 'as[0768].g(as[0768].y + x)' );
+as[0769] := ('f', 'uniform()', 'as[0769].g(as[0769].y + x)' );
+
+as[0770] := ('f', 'uniform()', 'as[0770].g(as[0770].y + x)' );
+as[0771] := ('f', 'uniform()', 'as[0771].g(as[0771].y + x)' );
+as[0772] := ('f', 'uniform()', 'as[0772].g(as[0772].y + x)' );
+as[0773] := ('f', 'uniform()', 'as[0773].g(as[0773].y + x)' );
+as[0774] := ('f', 'uniform()', 'as[0774].g(as[0774].y + x)' );
+as[0775] := ('f', 'uniform()', 'as[0775].g(as[0775].y + x)' );
+as[0776] := ('f', 'uniform()', 'as[0776].g(as[0776].y + x)' );
+as[0777] := ('f', 'uniform()', 'as[0777].g(as[0777].y + x)' );
+as[0778] := ('f', 'uniform()', 'as[0778].g(as[0778].y + x)' );
+as[0779] := ('f', 'uniform()', 'as[0779].g(as[0779].y + x)' );
+
+as[0780] := ('f', 'uniform()', 'as[0780].g(as[0780].y + x)' );
+as[0781] := ('f', 'uniform()', 'as[0781].g(as[0781].y + x)' );
+as[0782] := ('f', 'uniform()', 'as[0782].g(as[0782].y + x)' );
+as[0783] := ('f', 'uniform()', 'as[0783].g(as[0783].y + x)' );
+as[0784] := ('f', 'uniform()', 'as[0784].g(as[0784].y + x)' );
+as[0785] := ('f', 'uniform()', 'as[0785].g(as[0785].y + x)' );
+as[0786] := ('f', 'uniform()', 'as[0786].g(as[0786].y + x)' );
+as[0787] := ('f', 'uniform()', 'as[0787].g(as[0787].y + x)' );
+as[0788] := ('f', 'uniform()', 'as[0788].g(as[0788].y + x)' );
+as[0789] := ('f', 'uniform()', 'as[0789].g(as[0789].y + x)' );
+
+as[0790] := ('f', 'uniform()', 'as[0790].g(as[0790].y + x)' );
+as[0791] := ('f', 'uniform()', 'as[0791].g(as[0791].y + x)' );
+as[0792] := ('f', 'uniform()', 'as[0792].g(as[0792].y + x)' );
+as[0793] := ('f', 'uniform()', 'as[0793].g(as[0793].y + x)' );
+as[0794] := ('f', 'uniform()', 'as[0794].g(as[0794].y + x)' );
+as[0795] := ('f', 'uniform()', 'as[0795].g(as[0795].y + x)' );
+as[0796] := ('f', 'uniform()', 'as[0796].g(as[0796].y + x)' );
+as[0797] := ('f', 'uniform()', 'as[0797].g(as[0797].y + x)' );
+as[0798] := ('f', 'uniform()', 'as[0798].g(as[0798].y + x)' );
+as[0799] := ('f', 'uniform()', 'as[0799].g(as[0799].y + x)' );
+
+// 800 .. 899
+
+as[0800] := ('f', 'uniform()', 'as[0800].g(as[0800].y + x)' );
+as[0801] := ('f', 'uniform()', 'as[0801].g(as[0801].y + x)' );
+as[0802] := ('f', 'uniform()', 'as[0802].g(as[0802].y + x)' );
+as[0803] := ('f', 'uniform()', 'as[0803].g(as[0803].y + x)' );
+as[0804] := ('f', 'uniform()', 'as[0804].g(as[0804].y + x)' );
+as[0805] := ('f', 'uniform()', 'as[0805].g(as[0805].y + x)' );
+as[0806] := ('f', 'uniform()', 'as[0806].g(as[0806].y + x)' );
+as[0807] := ('f', 'uniform()', 'as[0807].g(as[0807].y + x)' );
+as[0808] := ('f', 'uniform()', 'as[0808].g(as[0808].y + x)' );
+as[0809] := ('f', 'uniform()', 'as[0809].g(as[0809].y + x)' );
+
+as[0810] := ('f', 'uniform()', 'as[0810].g(as[0810].y + x)' );
+as[0811] := ('f', 'uniform()', 'as[0811].g(as[0811].y + x)' );
+as[0812] := ('f', 'uniform()', 'as[0812].g(as[0812].y + x)' );
+as[0813] := ('f', 'uniform()', 'as[0813].g(as[0813].y + x)' );
+as[0814] := ('f', 'uniform()', 'as[0814].g(as[0814].y + x)' );
+as[0815] := ('f', 'uniform()', 'as[0815].g(as[0815].y + x)' );
+as[0816] := ('f', 'uniform()', 'as[0816].g(as[0816].y + x)' );
+as[0817] := ('f', 'uniform()', 'as[0817].g(as[0817].y + x)' );
+as[0818] := ('f', 'uniform()', 'as[0818].g(as[0818].y + x)' );
+as[0819] := ('f', 'uniform()', 'as[0819].g(as[0819].y + x)' );
+
+as[0820] := ('f', 'uniform()', 'as[0820].g(as[0820].y + x)' );
+as[0821] := ('f', 'uniform()', 'as[0821].g(as[0821].y + x)' );
+as[0822] := ('f', 'uniform()', 'as[0822].g(as[0822].y + x)' );
+as[0823] := ('f', 'uniform()', 'as[0823].g(as[0823].y + x)' );
+as[0824] := ('f', 'uniform()', 'as[0824].g(as[0824].y + x)' );
+as[0825] := ('f', 'uniform()', 'as[0825].g(as[0825].y + x)' );
+as[0826] := ('f', 'uniform()', 'as[0826].g(as[0826].y + x)' );
+as[0827] := ('f', 'uniform()', 'as[0827].g(as[0827].y + x)' );
+as[0828] := ('f', 'uniform()', 'as[0828].g(as[0828].y + x)' );
+as[0829] := ('f', 'uniform()', 'as[0829].g(as[0829].y + x)' );
+
+as[0830] := ('f', 'uniform()', 'as[0830].g(as[0830].y + x)' );
+as[0831] := ('f', 'uniform()', 'as[0831].g(as[0831].y + x)' );
+as[0832] := ('f', 'uniform()', 'as[0832].g(as[0832].y + x)' );
+as[0833] := ('f', 'uniform()', 'as[0833].g(as[0833].y + x)' );
+as[0834] := ('f', 'uniform()', 'as[0834].g(as[0834].y + x)' );
+as[0835] := ('f', 'uniform()', 'as[0835].g(as[0835].y + x)' );
+as[0836] := ('f', 'uniform()', 'as[0836].g(as[0836].y + x)' );
+as[0837] := ('f', 'uniform()', 'as[0837].g(as[0837].y + x)' );
+as[0838] := ('f', 'uniform()', 'as[0838].g(as[0838].y + x)' );
+as[0839] := ('f', 'uniform()', 'as[0839].g(as[0839].y + x)' );
+
+as[0840] := ('f', 'uniform()', 'as[0840].g(as[0840].y + x)' );
+as[0841] := ('f', 'uniform()', 'as[0841].g(as[0841].y + x)' );
+as[0842] := ('f', 'uniform()', 'as[0842].g(as[0842].y + x)' );
+as[0843] := ('f', 'uniform()', 'as[0843].g(as[0843].y + x)' );
+as[0844] := ('f', 'uniform()', 'as[0844].g(as[0844].y + x)' );
+as[0845] := ('f', 'uniform()', 'as[0845].g(as[0845].y + x)' );
+as[0846] := ('f', 'uniform()', 'as[0846].g(as[0846].y + x)' );
+as[0847] := ('f', 'uniform()', 'as[0847].g(as[0847].y + x)' );
+as[0848] := ('f', 'uniform()', 'as[0848].g(as[0848].y + x)' );
+as[0849] := ('f', 'uniform()', 'as[0849].g(as[0849].y + x)' );
+
+as[0850] := ('f', 'uniform()', 'as[0850].g(as[0850].y + x)' );
+as[0851] := ('f', 'uniform()', 'as[0851].g(as[0851].y + x)' );
+as[0852] := ('f', 'uniform()', 'as[0852].g(as[0852].y + x)' );
+as[0853] := ('f', 'uniform()', 'as[0853].g(as[0853].y + x)' );
+as[0854] := ('f', 'uniform()', 'as[0854].g(as[0854].y + x)' );
+as[0855] := ('f', 'uniform()', 'as[0855].g(as[0855].y + x)' );
+as[0856] := ('f', 'uniform()', 'as[0856].g(as[0856].y + x)' );
+as[0857] := ('f', 'uniform()', 'as[0857].g(as[0857].y + x)' );
+as[0858] := ('f', 'uniform()', 'as[0858].g(as[0858].y + x)' );
+as[0859] := ('f', 'uniform()', 'as[0859].g(as[0859].y + x)' );
+
+as[0860] := ('f', 'uniform()', 'as[0860].g(as[0860].y + x)' );
+as[0861] := ('f', 'uniform()', 'as[0861].g(as[0861].y + x)' );
+as[0862] := ('f', 'uniform()', 'as[0862].g(as[0862].y + x)' );
+as[0863] := ('f', 'uniform()', 'as[0863].g(as[0863].y + x)' );
+as[0864] := ('f', 'uniform()', 'as[0864].g(as[0864].y + x)' );
+as[0865] := ('f', 'uniform()', 'as[0865].g(as[0865].y + x)' );
+as[0866] := ('f', 'uniform()', 'as[0866].g(as[0866].y + x)' );
+as[0867] := ('f', 'uniform()', 'as[0867].g(as[0867].y + x)' );
+as[0868] := ('f', 'uniform()', 'as[0868].g(as[0868].y + x)' );
+as[0869] := ('f', 'uniform()', 'as[0869].g(as[0869].y + x)' );
+
+as[0870] := ('f', 'uniform()', 'as[0870].g(as[0870].y + x)' );
+as[0871] := ('f', 'uniform()', 'as[0871].g(as[0871].y + x)' );
+as[0872] := ('f', 'uniform()', 'as[0872].g(as[0872].y + x)' );
+as[0873] := ('f', 'uniform()', 'as[0873].g(as[0873].y + x)' );
+as[0874] := ('f', 'uniform()', 'as[0874].g(as[0874].y + x)' );
+as[0875] := ('f', 'uniform()', 'as[0875].g(as[0875].y + x)' );
+as[0876] := ('f', 'uniform()', 'as[0876].g(as[0876].y + x)' );
+as[0877] := ('f', 'uniform()', 'as[0877].g(as[0877].y + x)' );
+as[0878] := ('f', 'uniform()', 'as[0878].g(as[0878].y + x)' );
+as[0879] := ('f', 'uniform()', 'as[0879].g(as[0879].y + x)' );
+
+as[0880] := ('f', 'uniform()', 'as[0880].g(as[0880].y + x)' );
+as[0881] := ('f', 'uniform()', 'as[0881].g(as[0881].y + x)' );
+as[0882] := ('f', 'uniform()', 'as[0882].g(as[0882].y + x)' );
+as[0883] := ('f', 'uniform()', 'as[0883].g(as[0883].y + x)' );
+as[0884] := ('f', 'uniform()', 'as[0884].g(as[0884].y + x)' );
+as[0885] := ('f', 'uniform()', 'as[0885].g(as[0885].y + x)' );
+as[0886] := ('f', 'uniform()', 'as[0886].g(as[0886].y + x)' );
+as[0887] := ('f', 'uniform()', 'as[0887].g(as[0887].y + x)' );
+as[0888] := ('f', 'uniform()', 'as[0888].g(as[0888].y + x)' );
+as[0889] := ('f', 'uniform()', 'as[0889].g(as[0889].y + x)' );
+
+as[0890] := ('f', 'uniform()', 'as[0890].g(as[0890].y + x)' );
+as[0891] := ('f', 'uniform()', 'as[0891].g(as[0891].y + x)' );
+as[0892] := ('f', 'uniform()', 'as[0892].g(as[0892].y + x)' );
+as[0893] := ('f', 'uniform()', 'as[0893].g(as[0893].y + x)' );
+as[0894] := ('f', 'uniform()', 'as[0894].g(as[0894].y + x)' );
+as[0895] := ('f', 'uniform()', 'as[0895].g(as[0895].y + x)' );
+as[0896] := ('f', 'uniform()', 'as[0896].g(as[0896].y + x)' );
+as[0897] := ('f', 'uniform()', 'as[0897].g(as[0897].y + x)' );
+as[0898] := ('f', 'uniform()', 'as[0898].g(as[0898].y + x)' );
+as[0899] := ('f', 'uniform()', 'as[0899].g(as[0899].y + x)' );
+
+// 900 .. 999
+
+as[0900] := ('f', 'uniform()', 'as[0900].g(as[0900].y + x)' );
+as[0901] := ('f', 'uniform()', 'as[0901].g(as[0901].y + x)' );
+as[0902] := ('f', 'uniform()', 'as[0902].g(as[0902].y + x)' );
+as[0903] := ('f', 'uniform()', 'as[0903].g(as[0903].y + x)' );
+as[0904] := ('f', 'uniform()', 'as[0904].g(as[0904].y + x)' );
+as[0905] := ('f', 'uniform()', 'as[0905].g(as[0905].y + x)' );
+as[0906] := ('f', 'uniform()', 'as[0906].g(as[0906].y + x)' );
+as[0907] := ('f', 'uniform()', 'as[0907].g(as[0907].y + x)' );
+as[0908] := ('f', 'uniform()', 'as[0908].g(as[0908].y + x)' );
+as[0909] := ('f', 'uniform()', 'as[0909].g(as[0909].y + x)' );
+
+as[0910] := ('f', 'uniform()', 'as[0910].g(as[0910].y + x)' );
+as[0911] := ('f', 'uniform()', 'as[0911].g(as[0911].y + x)' );
+as[0912] := ('f', 'uniform()', 'as[0912].g(as[0912].y + x)' );
+as[0913] := ('f', 'uniform()', 'as[0913].g(as[0913].y + x)' );
+as[0914] := ('f', 'uniform()', 'as[0914].g(as[0914].y + x)' );
+as[0915] := ('f', 'uniform()', 'as[0915].g(as[0915].y + x)' );
+as[0916] := ('f', 'uniform()', 'as[0916].g(as[0916].y + x)' );
+as[0917] := ('f', 'uniform()', 'as[0917].g(as[0917].y + x)' );
+as[0918] := ('f', 'uniform()', 'as[0918].g(as[0918].y + x)' );
+as[0919] := ('f', 'uniform()', 'as[0919].g(as[0919].y + x)' );
+
+as[0920] := ('f', 'uniform()', 'as[0920].g(as[0920].y + x)' );
+as[0921] := ('f', 'uniform()', 'as[0921].g(as[0921].y + x)' );
+as[0922] := ('f', 'uniform()', 'as[0922].g(as[0922].y + x)' );
+as[0923] := ('f', 'uniform()', 'as[0923].g(as[0923].y + x)' );
+as[0924] := ('f', 'uniform()', 'as[0924].g(as[0924].y + x)' );
+as[0925] := ('f', 'uniform()', 'as[0925].g(as[0925].y + x)' );
+as[0926] := ('f', 'uniform()', 'as[0926].g(as[0926].y + x)' );
+as[0927] := ('f', 'uniform()', 'as[0927].g(as[0927].y + x)' );
+as[0928] := ('f', 'uniform()', 'as[0928].g(as[0928].y + x)' );
+as[0929] := ('f', 'uniform()', 'as[0929].g(as[0929].y + x)' );
+
+as[0930] := ('f', 'uniform()', 'as[0930].g(as[0930].y + x)' );
+as[0931] := ('f', 'uniform()', 'as[0931].g(as[0931].y + x)' );
+as[0932] := ('f', 'uniform()', 'as[0932].g(as[0932].y + x)' );
+as[0933] := ('f', 'uniform()', 'as[0933].g(as[0933].y + x)' );
+as[0934] := ('f', 'uniform()', 'as[0934].g(as[0934].y + x)' );
+as[0935] := ('f', 'uniform()', 'as[0935].g(as[0935].y + x)' );
+as[0936] := ('f', 'uniform()', 'as[0936].g(as[0936].y + x)' );
+as[0937] := ('f', 'uniform()', 'as[0937].g(as[0937].y + x)' );
+as[0938] := ('f', 'uniform()', 'as[0938].g(as[0938].y + x)' );
+as[0939] := ('f', 'uniform()', 'as[0939].g(as[0939].y + x)' );
+
+as[0940] := ('f', 'uniform()', 'as[0940].g(as[0940].y + x)' );
+as[0941] := ('f', 'uniform()', 'as[0941].g(as[0941].y + x)' );
+as[0942] := ('f', 'uniform()', 'as[0942].g(as[0942].y + x)' );
+as[0943] := ('f', 'uniform()', 'as[0943].g(as[0943].y + x)' );
+as[0944] := ('f', 'uniform()', 'as[0944].g(as[0944].y + x)' );
+as[0945] := ('f', 'uniform()', 'as[0945].g(as[0945].y + x)' );
+as[0946] := ('f', 'uniform()', 'as[0946].g(as[0946].y + x)' );
+as[0947] := ('f', 'uniform()', 'as[0947].g(as[0947].y + x)' );
+as[0948] := ('f', 'uniform()', 'as[0948].g(as[0948].y + x)' );
+as[0949] := ('f', 'uniform()', 'as[0949].g(as[0949].y + x)' );
+
+as[0950] := ('f', 'uniform()', 'as[0950].g(as[0950].y + x)' );
+as[0951] := ('f', 'uniform()', 'as[0951].g(as[0951].y + x)' );
+as[0952] := ('f', 'uniform()', 'as[0952].g(as[0952].y + x)' );
+as[0953] := ('f', 'uniform()', 'as[0953].g(as[0953].y + x)' );
+as[0954] := ('f', 'uniform()', 'as[0954].g(as[0954].y + x)' );
+as[0955] := ('f', 'uniform()', 'as[0955].g(as[0955].y + x)' );
+as[0956] := ('f', 'uniform()', 'as[0956].g(as[0956].y + x)' );
+as[0957] := ('f', 'uniform()', 'as[0957].g(as[0957].y + x)' );
+as[0958] := ('f', 'uniform()', 'as[0958].g(as[0958].y + x)' );
+as[0959] := ('f', 'uniform()', 'as[0959].g(as[0959].y + x)' );
+
+as[0960] := ('f', 'uniform()', 'as[0960].g(as[0960].y + x)' );
+as[0961] := ('f', 'uniform()', 'as[0961].g(as[0961].y + x)' );
+as[0962] := ('f', 'uniform()', 'as[0962].g(as[0962].y + x)' );
+as[0963] := ('f', 'uniform()', 'as[0963].g(as[0963].y + x)' );
+as[0964] := ('f', 'uniform()', 'as[0964].g(as[0964].y + x)' );
+as[0965] := ('f', 'uniform()', 'as[0965].g(as[0965].y + x)' );
+as[0966] := ('f', 'uniform()', 'as[0966].g(as[0966].y + x)' );
+as[0967] := ('f', 'uniform()', 'as[0967].g(as[0967].y + x)' );
+as[0968] := ('f', 'uniform()', 'as[0968].g(as[0968].y + x)' );
+as[0969] := ('f', 'uniform()', 'as[0969].g(as[0969].y + x)' );
+
+as[0970] := ('f', 'uniform()', 'as[0970].g(as[0970].y + x)' );
+as[0971] := ('f', 'uniform()', 'as[0971].g(as[0971].y + x)' );
+as[0972] := ('f', 'uniform()', 'as[0972].g(as[0972].y + x)' );
+as[0973] := ('f', 'uniform()', 'as[0973].g(as[0973].y + x)' );
+as[0974] := ('f', 'uniform()', 'as[0974].g(as[0974].y + x)' );
+as[0975] := ('f', 'uniform()', 'as[0975].g(as[0975].y + x)' );
+as[0976] := ('f', 'uniform()', 'as[0976].g(as[0976].y + x)' );
+as[0977] := ('f', 'uniform()', 'as[0977].g(as[0977].y + x)' );
+as[0978] := ('f', 'uniform()', 'as[0978].g(as[0978].y + x)' );
+as[0979] := ('f', 'uniform()', 'as[0979].g(as[0979].y + x)' );
+
+as[0980] := ('f', 'uniform()', 'as[0980].g(as[0980].y + x)' );
+as[0981] := ('f', 'uniform()', 'as[0981].g(as[0981].y + x)' );
+as[0982] := ('f', 'uniform()', 'as[0982].g(as[0982].y + x)' );
+as[0983] := ('f', 'uniform()', 'as[0983].g(as[0983].y + x)' );
+as[0984] := ('f', 'uniform()', 'as[0984].g(as[0984].y + x)' );
+as[0985] := ('f', 'uniform()', 'as[0985].g(as[0985].y + x)' );
+as[0986] := ('f', 'uniform()', 'as[0986].g(as[0986].y + x)' );
+as[0987] := ('f', 'uniform()', 'as[0987].g(as[0987].y + x)' );
+as[0988] := ('f', 'uniform()', 'as[0988].g(as[0988].y + x)' );
+as[0989] := ('f', 'uniform()', 'as[0989].g(as[0989].y + x)' );
+
+as[0990] := ('f', 'uniform()', 'as[0990].g(as[0990].y + x)' );
+as[0991] := ('f', 'uniform()', 'as[0991].g(as[0991].y + x)' );
+as[0992] := ('f', 'uniform()', 'as[0992].g(as[0992].y + x)' );
+as[0993] := ('f', 'uniform()', 'as[0993].g(as[0993].y + x)' );
+as[0994] := ('f', 'uniform()', 'as[0994].g(as[0994].y + x)' );
+as[0995] := ('f', 'uniform()', 'as[0995].g(as[0995].y + x)' );
+as[0996] := ('f', 'uniform()', 'as[0996].g(as[0996].y + x)' );
+as[0997] := ('f', 'uniform()', 'as[0997].g(as[0997].y + x)' );
+as[0998] := ('f', 'uniform()', 'as[0998].g(as[0998].y + x)' );
+as[0999] := ('f', 'uniform()', 'as[0999].g(as[0999].y + x)' );
+
+// 1000 .. 1023
+
+as[1000] := ('f', 'uniform()', 'as[1000].g(as[1000].y + x)' );
+as[1001] := ('f', 'uniform()', 'as[1001].g(as[1001].y + x)' );
+as[1002] := ('f', 'uniform()', 'as[1002].g(as[1002].y + x)' );
+as[1003] := ('f', 'uniform()', 'as[1003].g(as[1003].y + x)' );
+as[1004] := ('f', 'uniform()', 'as[1004].g(as[1004].y + x)' );
+as[1005] := ('f', 'uniform()', 'as[1005].g(as[1005].y + x)' );
+as[1006] := ('f', 'uniform()', 'as[1006].g(as[1006].y + x)' );
+as[1007] := ('f', 'uniform()', 'as[1007].g(as[1007].y + x)' );
+as[1008] := ('f', 'uniform()', 'as[1008].g(as[1008].y + x)' );
+as[1009] := ('f', 'uniform()', 'as[1009].g(as[1009].y + x)' );
+
+as[1010] := ('f', 'uniform()', 'as[1010].g(as[1010].y + x)' );
+as[1011] := ('f', 'uniform()', 'as[1011].g(as[1011].y + x)' );
+as[1012] := ('f', 'uniform()', 'as[1012].g(as[1012].y + x)' );
+as[1013] := ('f', 'uniform()', 'as[1013].g(as[1013].y + x)' );
+as[1014] := ('f', 'uniform()', 'as[1014].g(as[1014].y + x)' );
+as[1015] := ('f', 'uniform()', 'as[1015].g(as[1015].y + x)' );
+as[1016] := ('f', 'uniform()', 'as[1016].g(as[1016].y + x)' );
+as[1017] := ('f', 'uniform()', 'as[1017].g(as[1017].y + x)' );
+as[1018] := ('f', 'uniform()', 'as[1018].g(as[1018].y + x)' );
+as[1019] := ('f', 'uniform()', 'as[1019].g(as[1019].y + x)' );
+
+as[1020] := ('f', 'uniform()', 'as[1020].g(as[1020].y + x)' );
+as[1021] := ('f', 'uniform()', 'as[1021].g(as[1021].y + x)' );
+as[1022] := ('f', 'uniform()', 'as[1022].g(as[1022].y + x)' );
+as[1023] := ('f', 'uniform()', 'as[1023].g(as[1023].y + x)' );
+
+//
+
+verify length(as) = 1024

@@ -36,6 +36,8 @@ import Data.String (IsString(..))
 import Data.List (intercalate)
 import Data.Default
 import Data.Foldable
+import Data.Array qualified as A
+import Control.Monad
 
 reportTCError :: MonadError String m
   => BookeepInfo -> Set T.Types -> T.Types -> m a
@@ -44,6 +46,17 @@ reportTCError bk expected actual =
   where
    showExpected :: Set T.Types -> String
    showExpected = intercalate ", "  . fmap show . S.toList
+
+implementsEQ :: T.Types -> Bool
+implementsEQ t = case t of
+  T.F -> True
+  T.Z -> True
+  T.ZString -> True
+  T.ZBool -> True
+  T.NDArray _ t -> implementsEQ t
+  T.Tuple a b -> implementsEQ a && implementsEQ b
+  T.Lazy t -> implementsEQ t
+  _ -> False
 
 class Monad m => TCMonad m where
   withExpectedType :: Set T.Types -> m a -> m a
@@ -79,16 +92,36 @@ tcA0 (Decl ltype (yieldVarName -> Just v) r bk) = do
     $ tcE @_ @ctx r
   env'' <- reassign v r' env'
   pure (Zilly.Puzzle.ADT.Action.Assign ltype var r', env'')
-tcA0 (Zilly.Puzzle.Parser.Assign (yieldVarName -> Just v) r bk) = do
+tcA0 (Zilly.Puzzle.Parser.Assign (yieldArrAssign -> Just (v,ixss)) r bk) = do
   env <- getEnv
+  ixsT <- forM ixss $ \ixs -> forM ixs $ \case
+    PIndex e -> withExpectedType (S.singleton T.Z) $ (,Nothing) . fst <$> tcE @_ @ctx e
+    PRangeIndexer (l,h) -> do
+      (l', _) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx l
+      (h', _) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx h
+      pure (l', Just h')
   let var = Zilly.Puzzle.Environment.TypedMap.mkVar @(E ctx) v
+
   case v `isInScope` env of
     False -> throwError $ showGammaError (VariableNotDefined v)
     True -> do
       ltype <- varMetadata var env
-      (r', rt) <- withExpectedType (S.singleton ltype) $ tcE @_ @ctx r
-      -- env' <- reassign v r' env
-      pure (Reassign var r', env)
+      case mkEt ltype ixss of
+        Just ltype' -> do
+          (r', rt) <- withExpectedType (S.singleton ltype') $ tcE @_ @ctx r
+          -- env' <- reassign v r' env
+          pure (Reassign var ixsT r', env)
+        Nothing -> throwError $ "Indexing error: " ++ show v ++ " with indices " ++ show ixss ++ " exceeds the dimensions of the type: " ++ show ltype
+  where
+  mkEt :: forall ctx. T.Types -> [[PIndexerExpression ctx]] -> Maybe T.Types
+  mkEt t [] = Just t
+  mkEt (T.NDArray n t) (ixs:ixss) = do
+    let projectedDim = sum $ foldPIndexerExpression (\_ -> const 1) (const 0) <$> ixs
+    let dim = length ixs
+    when (dim /= n) $ Nothing
+    let newT = if projectedDim == 0 then t else T.NDArray projectedDim t
+    mkEt newT ixss
+
 tcA0 (Zilly.Puzzle.Parser.Print e bk) = do
   env <- getEnv
   (e', et) <- withExpectedType S.empty $ tcE @_ @ctx e
@@ -99,6 +132,7 @@ tcA0 (Zilly.Puzzle.Parser.SysCommand cmd bk) | cmd `elem` extensions = do
   where
     extensions =
       [ "reset"
+      , "tick"
       , "Einfix"
       , "EB"
       , "ER"
@@ -120,6 +154,7 @@ tcA0 (Zilly.Puzzle.Parser.SysCommand cmd bk) = do
   where
     extensions =
       [ "reset"
+      , "tick"
       , "Einfix"
       , "EB"
       , "ER"
@@ -136,6 +171,8 @@ tcA0 (Zilly.Puzzle.Parser.SysCommand cmd bk) = do
       , "Zilly"
       , "Zilly+"
       ]
+tcA0 dec@(Decl {}) = throwError $ "Unsupported declaration: " ++ show dec
+tcA0 ass@(Zilly.Puzzle.Parser.Assign {}) = throwError $ "Unsupported assignment: " ++ show ass
 
 tcE :: forall {m} n ctx.
   ( TCEffs ctx m
@@ -216,9 +253,10 @@ tcEAtom (PTuple bk a b xs) = do
   pure  (MkTuple a' b' xs', t)
 
 tcEAtom (PParen _ a) = tcE a
-tcEAtom (PDefer _ a) = do
+tcEAtom (PDefer bk a) = do
   eta <- S.map T.rtype <$> getExpectedType
   (a',at') <- withExpectedType eta $ tcE a
+  validateType bk $ T.Lazy at'
   pure (Defer a', T.Lazy at')
 tcEAtom (PIf bk (a, b, c)) = do
   (a',at') <- withExpectedType (S.fromList [T.Z,T.F,T.ZBool]) $ tcE a
@@ -230,6 +268,37 @@ tcEAtom (PIf bk (a, b, c)) = do
     T.F     -> pure ()
     _ -> reportTCError bk (S.singleton T.ZBool) at'
   pure (If a' b' c', bt')
+tcEAtom (PArray bk xs) = do
+  let isArray t = case t of
+        T.NDArray _ _ -> True
+        _ -> False
+      fns t = case t of
+        T.NDArray _ a1 -> a1
+        _ -> t
+  eArrs' <- S.filter isArray <$> getExpectedType
+  (dimensions,bt) <- case null eArrs' of
+    True  -> pure (1, T.TVar (T.TV "x1"))
+    False -> let T.NDArray n a = S.elemAt 0 eArrs' in pure (n, a)
+
+  let et = if dimensions == 1 then bt else T.NDArray (dimensions -1) bt
+  (xs', ets') <- fmap unzip  $ forM xs $ \x -> withExpectedType (S.singleton et) $ tcE @_ @ctx x
+  case dimensions == 1 of
+    True -> pure (MkArray $ A.fromList [length xs'] xs', T.NDArray 1 bt)
+    False -> do
+      xs'' <- for xs' $ \x' ->
+        case x' of
+          MkArray arr -> pure arr
+          _ -> throwError $ "Expected an array literal, but got: " ++ show x'
+      case xs'' of
+        (r:rs) -> when (any (\a  -> A.shapeL a /= A.shapeL r) rs) $ do
+          throwError $ "All array elements must have the same shape, but got: " ++ intercalate ", " (show <$> xs'')
+        _ -> pure ()
+      let shape = case xs'' of
+            (r:_) -> length xs'' : A.shapeL r
+            _     -> [length xs'']
+      let res = A.reshape shape (A.concatOuter xs'')
+      pure (MkArray $ res, T.NDArray dimensions bt)
+
 
 tcEPrefixPrec :: forall {m} ctx.
   ( TCEffs ctx m
@@ -251,17 +320,86 @@ tcEPostfixPrec :: forall {m} ctx.
   ( TCEffs ctx m
   )
   => EPrec ParsingStage PostfixPrec -> m (E ctx, T.Types)
-tcEPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg]) | Just varN <- yieldVarName arg  = do
-  (arg', at) <-  tcE arg
-  let var = Zilly.Puzzle.Environment.TypedMap.mkVar @(E ctx) varN
-  env <- getEnv
-  ltype <- varMetadata var env
-  validateType bk ltype
-  pure (Formula $$ arg', ltype)
+tcEPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg])
+  | Just (v,indexers) <- yieldArrAssign arg = do
+      let var = Zilly.Puzzle.Environment.TypedMap.mkVar @(E ctx) v
+      env <- getEnv
+      case v `isInScope` env of
+        False -> throwError $ showGammaError (VariableNotDefined v)
+        True -> do
+          ltype <- varMetadata var env
+          let retT = arrType ltype indexers
+          validateType bk retT
+          (arg', at) <-  withExpectedType (S.singleton retT) $ tcE arg
+          pure (Formula $$ arg', retT)
+  where
+    arrType :: T.Types -> [[PIndexerExpression ParsingStage]] -> T.Types
+    arrType (T.NDArray n t) (ixs:ixss) =
+      let projectedDim = sum $ foldPIndexerExpression (\_ -> const 1) (const 0) <$> ixs
+          dim = length ixs
+          newT = if projectedDim == 0 then t else T.NDArray projectedDim t
+      in arrType newT ixss
+    arrType t _ = t
+tcEPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg]) = do
+  (arg',argT) <- tcE arg
+  pure (Formula $$ arg', argT)
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "random") [arg]) = do
   (arg', at) <- withExpectedType (S.fromList [T.Z, T.F]) $  tcE arg
   validateType bk at
   pure (Random $$ arg', at)
+tcEPostfixPrec (PApp bk (yieldVarName -> Just "vector") [cols,fun]) = do
+  let mkFunExpectedType t = T.Z T.:-> t
+  let vunwrapper t = case t of
+        T.NDArray n t' | n > 1 -> [t']
+        T.TCon {} -> []
+        _ -> [t]
+  let etTransform = S.fromList . fmap mkFunExpectedType . concatMap vunwrapper . S.toList
+
+  et <- getExpectedType
+  (cols', bt) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx cols
+  (fun', ft)  <- withExpectedType (etTransform et) $ tcE @_ @ctx fun
+  case ft of
+    T.Z T.:-> t ->pure (VectorSat cols' fun', T.NDArray 1 ft)
+    _ -> error "impossible: function type is not of the form Z -> t"
+tcEPostfixPrec (PApp bk (yieldVarName -> Just "cons") [elem,arr]) = do
+  (arr',arrt) <- tcE @_ @ctx arr
+  case arrt of
+    T.NDArray n t -> do
+      (elem',et') <- withExpectedType (S.singleton t) $ tcE @_ @ctx elem
+      pure (ConsSat elem' arr', arrt)
+    _ -> reportTCError bk (S.singleton $ T.NDArray 1 $ T.TVar (T.TV "x1")) arrt
+tcEPostfixPrec (PApp bk (yieldVarName -> Just "length") [arr]) = do
+  validateType bk T.Z
+  (arr',arrt) <- withExpectedType S.empty $ tcE @_ @ctx arr
+  case arrt of
+    T.NDArray {} -> do
+      pure (Length arr', T.Z)
+    _ -> reportTCError bk (S.singleton $ T.NDArray 1 $ T.TVar (T.TV "x1")) arrt
+tcEPostfixPrec (PApp bk (yieldVarName -> Just "matrix") [rows,cols,fun]) = do
+  let mkFunExpectedType t = T.Z T.:-> (T.Z T.:-> t)
+  let vunwrapper t = case t of
+        T.NDArray n t' | n > 1 -> [t']
+        T.TCon {} -> []
+        _ -> [t]
+  let etTransform = S.fromList . fmap mkFunExpectedType . concatMap vunwrapper . S.toList
+
+
+  et <- getExpectedType
+  (rows', at) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx rows
+  (cols', bt) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx cols
+  (fun', ft)  <- withExpectedType (etTransform et) $ tcE @_ @ctx fun
+  case ft of
+    (T.Z T.:-> (T.Z T.:-> t)) ->pure (MatrixSat rows' cols' fun', T.NDArray 2 t)
+    _ -> error "impossible: function type is not of the form Z -> Z -> t"
+tcEPostfixPrec (PApp bk (yieldVarName -> Just "dim") [arr]) = do
+  (arr',arrT) <- withExpectedType (S.empty) $ tcE @_ @ctx arr
+  case arrT of
+    T.NDArray n t -> do
+      validateType bk (T.NDArray 1 T.Z)
+      pure (Dim arr', T.NDArray 1 T.Z)
+    _ -> reportTCError bk (S.singleton $ T.NDArray 1 $ T.TVar (T.TV "x1")) arrT
+
+
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "_1") [arg]) = do
   (arg', at) <- withExpectedType S.empty $  tcE arg
   case at of
@@ -327,7 +465,26 @@ tcEPostfixPrec (PApp bk f [arg]) = do
     x T.:-> y ->
         reportTCError bk (S.singleton $ x ) at
     _ -> reportTCError bk (S.singleton $ (T.TVar (T.TV "x1") T.:->  T.TVar (T.TV "x2") )) ft
-tcEPostfixPrec (PAppArr bk _ _) = throwError $ "Array application is not supported in type checking."
+tcEPostfixPrec (PApp _ _ _) = throwError $ "Function application must have exactly one argument."
+tcEPostfixPrec (PAppArr bk arr ixs) = do
+  let expectedDim = length ixs
+  let projectedDim = sum $ foldPIndexerExpression (\_ -> const 1) (const 0) <$> ixs
+  let mkProjectedType (T.NDArray n e) = do
+        when (n /= expectedDim) $ throwError $ "Array slice error: expected " ++ show expectedDim ++ " dimensions, but got " ++ show n
+        if projectedDim == 0 then pure e else pure (T.NDArray projectedDim e)
+      mkProjectedType e = throwError $ "Array slice error: expected an array type, but got " ++ show e
+  ixsT <- forM ixs $ \case
+    PIndex e -> withExpectedType (S.singleton T.Z) $ (,Nothing) . fst <$> tcE @_ @ctx e
+    PRangeIndexer (l,h) -> do
+      (l', _) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx l
+      (h', _) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx h
+      pure (l', Just h')
+  (arr', at) <- withExpectedType S.empty $ tcE @_ @ctx arr
+  at' <- mkProjectedType at
+  validateType bk at'
+  pure (ArraySlice arr' ixsT, at')
+
+
 tcEPostfixPrec (OfHigherPostfixPrec a) = tcE a
 
 
@@ -408,9 +565,11 @@ tcE4 (PLTEQ bk l r) = do
   validateType bk T.ZBool
   pure (LEInfix l' r', T.ZBool)
 tcE4 (PEQ bk l r) = do
-  (l', lt) <- withExpectedType (S.fromList [T.F,T.Z,T.ZString,T.ZBool]) $ tcE @_ @ctx l
-  (r', rt) <- withExpectedType (S.fromList [T.F,T.Z,T.ZString,T.ZBool]) $ tcE @_ @ctx r
+  (l', lt) <- withExpectedType S.empty $ tcE @_ @ctx l
+  (r', rt) <- withExpectedType S.empty $ tcE @_ @ctx r
   let ub = if lt `T.isSuperTypeOf` rt then lt else rt
+  unless (lt `T.isSuperTypeOf` rt || lt `T.isSubtypeOf` rt) $ do
+    throwError $ "Type error: " ++ show lt ++ " is not a supertype or subtype of " ++ show rt
   validateType bk T.ZBool
   pure (EQInfix l' r', T.ZBool)
 tcE4 (PGT bk l r) = do
@@ -424,8 +583,11 @@ tcE4 (PGTEQ bk l r) = do
   validateType bk T.ZBool
   pure (GEInfix l' r', T.ZBool)
 tcE4 (PNEQ bk l r) = do
-  (l', lt) <- withExpectedType (S.fromList [T.F,T.Z,T.ZString,T.ZBool]) $ tcE @_ @ctx l
-  (r', rt) <- withExpectedType (S.fromList [T.F,T.Z,T.ZString,T.ZBool]) $ tcE @_ @ctx r
+  (l', lt) <- withExpectedType S.empty $ tcE @_ @ctx l
+  (r', rt) <- withExpectedType S.empty $ tcE @_ @ctx r
+  unless (lt `T.isSuperTypeOf` rt || lt `T.isSubtypeOf` rt) $ do
+    throwError $ "Type error: " ++ show lt ++ " is not a supertype or subtype of " ++ show rt
+
   validateType bk T.ZBool
   pure (NEInfix l' r', T.ZBool)
 tcE4 (OfHigher4 a) = tcE a
@@ -460,6 +622,8 @@ tcE1 (PLambda bk [(yieldVarName -> Just arg, gltype)] mgbody body) = do
   validateType bk (gltype T.:-> bt)
   let var = Zilly.Puzzle.Environment.TypedMap.mkVar @(E ctx) arg
   pure (Lambda (gltype,mgbody) var body' , gltype T.:-> bt)
+tcE1 (PLambda bk _ _ _) = do
+  throwError $ "Lambda expression must have at least one argument."
 tcE1 (OfHigher1 a) = tcE a
 
 tcE0 :: forall {m} ctx.

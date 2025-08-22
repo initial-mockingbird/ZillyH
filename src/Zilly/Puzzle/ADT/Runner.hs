@@ -48,6 +48,8 @@ import Data.Functor ((<$), ($>))
 import Data.Foldable (traverse_)
 import Control.Monad.Except
 import Debug.Trace (trace)
+import System.Random (randomIO)
+
 
 data InterpretMode = ClassicInterpreter |  UnsugaredInterpreter deriving Eq
 
@@ -387,9 +389,20 @@ ex13 = genericEx "./programs/show.z"
 ex14 :: IO ()
 ex14 = genericEx "./programs/commands.z"
 
+_1dSym :: IO ()
+_1dSym = genericEx "./programs/ZillyArrays/1D.sym"
+
+_2dSym :: IO ()
+_2dSym = genericEx "./programs/ZillyArrays/2D.sym"
+
+
+
 
 genericEx :: FilePath -> IO ()
 genericEx fp = do
   i  <- buildInterpreter
   fc <- lines <$> readFile fp
-  traverse_ (putStrLn <=< i) fc
+  traverse_ (putStrLn <=< i) . filter (any (\x -> x /= ' ' && x /= '\n' && x /= '\r') ) $ fc
+
+rio :: IO ()
+rio = randomIO @Int >>= print

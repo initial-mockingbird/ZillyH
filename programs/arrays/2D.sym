@@ -1,0 +1,2191 @@
+///
+/// 2D.sym
+///
+
+//
+
+sys.reset();
+
+array[1,1] => var M0;
+
+verify M0[0,0] = ?
+
+verify isnull(M0[0,0])
+
+verify dim(M0) = [1,1]
+
+//
+
+sys.reset();
+
+array[2,2] => var M0;
+
+verify M0[0,0] = ?
+
+verify isnull(M0[0,0])
+verify isnull(M0[0,1])
+verify isnull(M0[1,0])
+verify isnull(M0[1,1])
+
+verify dim(M0) = [2,2]
+
+//
+
+sys.reset();
+
+array[16,16] => var M0;
+
+verify M0[0,0] = ?
+
+verify isnull(M0[0,0])
+verify isnull(M0[0,1])
+verify isnull(M0[0,16-1])
+verify isnull(M0[1,0])
+verify isnull(M0[1,1])
+verify isnull(M0[1,16-1])
+verify isnull(M0[16-1,0])
+verify isnull(M0[16-1,1])
+verify isnull(M0[16-1,16-1])
+
+verify dim(M0) = [16,16]
+
+//
+
+sys.reset();
+
+lazy double x :- 0.5;
+
+array[,] => lazy double a :- [ [x], [10 + x] ];
+
+verify a[0, 0] =  0.5
+verify a[1, 0] = 10.5
+
+//
+
+sys.reset();
+
+lazy double x :- 0.5;
+
+array[,] => lazy double a :- [ [x, 1 + x], [10 + x, 11 + x] ];
+
+verify a[0, 0] =  0.5
+verify a[0, 1] =  1.5
+verify a[1, 0] = 10.5
+verify a[1, 1] = 11.5
+
+verify formula(a[0, 0]) =  'x'
+verify formula(a[0, 1]) =  '1 + x'
+verify formula(a[1, 0]) = '10 + x'
+verify formula(a[1, 1]) = '11 + x'
+
+x :- uniform();
+
+verify a[0, 0] =  x
+verify a[0, 1] =  1 + x
+verify a[1, 0] = 10 + x
+verify a[1, 1] = 11 + x
+
+>>
+
+verify a[0, 0] =  x
+verify a[0, 1] =  1 + x
+verify a[1, 0] = 10 + x
+verify a[1, 1] = 11 + x
+
+//
+
+sys.reset();
+
+array[1,2] => int a;
+
+verify dim(a) = [1,2]
+verify rtype(a[0, 0]) = int
+verify rtype(a[0, 1]) = int
+
+verify a[0,0] = 0
+verify a[0,1] = 0
+
+a[0,0] := 80;
+a[0,1] := 81;
+
+verify a[0,0] = 80
+verify a[0,1] = 81
+
+//
+
+sys.reset();
+
+array[2,2] => int a;
+
+verify dim(a) = [2,2]
+
+a[0, 0] :=  0;
+a[0, 1] :=  1;
+a[1, 0] := 10;
+a[1, 1] := 11;
+
+verify a[0, 0] =  0
+verify a[0, 1] =  1
+verify a[1, 0] = 10
+verify a[1, 1] = 11
+
+verify rtype(a[0, 0]) = int
+verify rtype(a[1, 1]) = int
+verify rtype(a[0..1, 0]) = array[] => int
+verify rtype(a[0, 0..1]) = array[] => int
+verify rtype(a[0..1, 0..1]) = array[,] => int
+
+//
+
+sys.reset();
+
+array[3,3] => var w;
+
+verify dim(w) = [3,3]
+
+verify w[0, 0] = ?
+verify w[0, 1] = ?
+verify w[0, 2] = ?
+verify w[1, 0] = ?
+verify w[1, 1] = ?
+verify w[1, 2] = ?
+verify w[2, 0] = ?
+verify w[2, 1] = ?
+verify w[2, 2] = ?
+
+var i := ?;
+var j := ?;
+
+i := 0;
+j := 0;
+w[i, j] := 10 * i + j;
+
+i := 0;
+j := 1;
+w[i, j] := 10 * i + j;
+
+i := 0;
+j := 2;
+w[i, j] := 10 * i + j;
+
+i := 1;
+j := 0;
+w[i, j] := 10 * i + j;
+
+i := 1;
+j := 1;
+w[i, j] := 10 * i + j;
+
+i := 1;
+j := 2;
+w[i, j] := 10 * i + j;
+
+i := 2;
+j := 0;
+w[i, j] := 10 * i + j;
+
+i := 2;
+j := 1;
+w[i, j] := 10 * i + j;
+
+i := 2;
+j := 2;
+w[i, j] := 10 * i + j;
+
+verify w[0, 0] = 0
+verify w[0, 1] = 1
+verify w[0, 2] = 2
+verify w[1, 0] = 10
+verify w[1, 1] = 11
+verify w[1, 2] = 12
+verify w[2, 0] = 20
+verify w[2, 1] = 21
+verify w[2, 2] = 22
+
+//
+
+sys.reset();
+
+array[,] => var w := [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+verify dim(w) = [3,3]
+
+verify w[0, 0] = 1
+verify w[0, 1] = 2
+verify w[0, 2] = 3
+verify w[1, 0] = 4
+verify w[1, 1] = 5
+verify w[1, 2] = 6
+verify w[2, 0] = 7
+verify w[2, 1] = 8
+verify w[2, 2] = 9
+
+//
+
+sys.reset();
+
+array[,] => var w;
+
+w := [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+verify dim(w) = [3,3]
+
+verify w[0, 0] = 1
+verify w[0, 1] = 2
+verify w[0, 2] = 3
+verify w[1, 0] = 4
+verify w[1, 1] = 5
+verify w[1, 2] = 6
+verify w[2, 0] = 7
+verify w[2, 1] = 8
+verify w[2, 2] = 9
+
+//
+
+sys.reset();
+
+array[2,2] => var w;
+
+verify dim(w) = [2,2]
+
+w := [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+verify dim(w) = [3,3]
+
+verify w[0, 0] = 1
+verify w[0, 1] = 2
+verify w[0, 2] = 3
+verify w[1, 0] = 4
+verify w[1, 1] = 5
+verify w[1, 2] = 6
+verify w[2, 0] = 7
+verify w[2, 1] = 8
+verify w[2, 2] = 9
+
+//
+
+sys.reset();
+
+array[3,3] => var w;
+
+verify dim(w) = [3,3]
+
+w := [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+verify dim(w) = [3,3]
+
+verify w[0, 0] = 1
+verify w[0, 1] = 2
+verify w[0, 2] = 3
+verify w[1, 0] = 4
+verify w[1, 1] = 5
+verify w[1, 2] = 6
+verify w[2, 0] = 7
+verify w[2, 1] = 8
+verify w[2, 2] = 9
+
+//
+
+sys.reset();
+
+array[5,5] => var w;
+
+verify dim(w) = [5,5]
+
+w := [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+verify dim(w) = [3,3]
+
+verify w[0, 0] = 1
+verify w[0, 1] = 2
+verify w[0, 2] = 3
+verify w[1, 0] = 4
+verify w[1, 1] = 5
+verify w[1, 2] = 6
+verify w[2, 0] = 7
+verify w[2, 1] = 8
+verify w[2, 2] = 9
+
+//
+
+sys.reset();
+
+:: a00 := (array[0,0] => int) (
+);
+
+:: a11 := (array[1,1] => int) (
+	0
+);
+
+:: a22 := (array[2,2] => int) (
+	 0, 1,
+	 2, 3
+);
+
+:: a33 := (array[3,3] => int) (
+	 0, 1, 2,
+	 3, 4, 5,
+	 6, 7, 8
+);
+
+:: a12 := (array[1,2] => int) (
+	0, 1
+);
+
+:: a23 := (array[2,3] => int) (
+	0, 1, 2,
+	3, 4, 5
+);
+
+:: a34 := (array[3,4] => int) (
+	 0,  1,  2,  3,
+	 4,  5,  6,  7,
+	 8,  9, 10, 11
+);
+
+verify a11[0,0] = 0
+
+verify a22[0,0] = 0
+verify a22[0,1] = 1
+verify a22[1,0] = 2
+verify a22[1,1] = 3
+
+verify a33[0,0] = 0
+verify a33[0,1] = 1
+verify a33[0,2] = 2
+verify a33[1,0] = 3
+verify a33[1,1] = 4
+verify a33[1,2] = 5
+verify a33[2,0] = 6
+verify a33[2,1] = 7
+verify a33[2,2] = 8
+
+verify a12[0,0] = 0
+verify a12[0,1] = 1
+
+verify a23[0,0] = 0
+verify a23[0,1] = 1
+verify a23[0,2] = 2
+verify a23[1,0] = 3
+verify a23[1,1] = 4
+verify a23[1,2] = 5
+
+verify a34[0,0] =  0
+verify a34[0,1] =  1
+verify a34[0,2] =  2
+verify a34[0,3] =  3
+verify a34[1,0] =  4
+verify a34[1,1] =  5
+verify a34[1,2] =  6
+verify a34[1,3] =  7
+verify a34[2,0] =  8
+verify a34[2,1] =  9
+verify a34[2,2] = 10
+verify a34[2,3] = 11
+
+verify dim(a11) = [1,1]
+verify dim(a12) = [1,2]
+verify dim(a22) = [2,2]
+verify dim(a23) = [2,3]
+verify dim(a33) = [3,3]
+verify dim(a34) = [3,4]
+
+sys.reset();
+
+array[,] => :: a :- [
+	[x + 1, x + 2, x + 3],
+	[x + 4, x + 5, x + 6],
+	[x + 7, x + 8, x + 9]
+];
+
+:: x :- 0.0;
+
+//
+// type inference + initialization + element access tests
+//
+
+verify rtype(a) = array[,] => double
+verify ltype(a) = array[,] => lazy double
+
+verify a[0, 0] = 1.0
+verify a[0, 1] = 2.0
+verify a[0, 2] = 3.0
+verify a[1, 0] = 4.0
+verify a[1, 1] = 5.0
+verify a[1, 2] = 6.0
+verify a[2, 0] = 7.0
+verify a[2, 1] = 8.0
+verify a[2, 2] = 9.0
+
+verify formula(a[0, 0]) = 'x + 1'
+verify formula(a[0, 1]) = 'x + 2'
+verify formula(a[0, 2]) = 'x + 3'
+verify formula(a[1, 0]) = 'x + 4'
+verify formula(a[1, 1]) = 'x + 5'
+verify formula(a[1, 2]) = 'x + 6'
+verify formula(a[2, 0]) = 'x + 7'
+verify formula(a[2, 1]) = 'x + 8'
+verify formula(a[2, 2]) = 'x + 9'
+
+//
+// mutable state tests
+//
+
+x := 100.0;
+
+// reactive mutable state
+
+verify a[0, 0] = 101.0
+verify a[0, 1] = 102.0
+verify a[0, 2] = 103.0
+verify a[1, 0] = 104.0
+verify a[1, 1] = 105.0
+verify a[1, 2] = 106.0
+verify a[2, 0] = 107.0
+verify a[2, 1] = 108.0
+verify a[2, 2] = 109.0
+
+x := 10.0;
+
+verify a[0, 0] = 11.0
+verify a[0, 1] = 12.0
+verify a[0, 2] = 13.0
+verify a[1, 0] = 14.0
+verify a[1, 1] = 15.0
+verify a[1, 2] = 16.0
+verify a[2, 0] = 17.0
+verify a[2, 1] = 18.0
+verify a[2, 2] = 19.0
+
+// formula change
+
+a[0, 0] :- x + exp(1);
+a[0, 1] :- x + exp(2);
+a[0, 2] :- x + exp(3);
+a[1, 0] :- x + exp(4);
+a[1, 1] :- x + exp(5);
+a[1, 2] :- x + exp(6);
+a[2, 0] :- x + exp(7);
+a[2, 1] :- x + exp(8);
+a[2, 2] :- x + exp(9);
+
+verify formula(a[0, 0]) = 'x + exp(1)'
+verify formula(a[0, 1]) = 'x + exp(2)'
+verify formula(a[0, 2]) = 'x + exp(3)'
+verify formula(a[1, 0]) = 'x + exp(4)'
+verify formula(a[1, 1]) = 'x + exp(5)'
+verify formula(a[1, 2]) = 'x + exp(6)'
+verify formula(a[2, 0]) = 'x + exp(7)'
+verify formula(a[2, 1]) = 'x + exp(8)'
+verify formula(a[2, 2]) = 'x + exp(9)'
+
+verify a[0, 0] = 10 + exp(1)
+verify a[0, 1] = 10 + exp(2)
+verify a[0, 2] = 10 + exp(3)
+verify a[1, 0] = 10 + exp(4)
+verify a[1, 1] = 10 + exp(5)
+verify a[1, 2] = 10 + exp(6)
+verify a[2, 0] = 10 + exp(7)
+verify a[2, 1] = 10 + exp(8)
+verify a[2, 2] = 10 + exp(9)
+
+// reactive-stochastic
+
+x :- 10 + uniform();
+
+array[,] => double b := a;
+
+>>
+
+verify a[0, 0] <> b[0, 0]
+verify a[0, 1] <> b[0, 1]
+verify a[0, 2] <> b[0, 2]
+verify a[1, 0] <> b[1, 0]
+verify a[1, 1] <> b[1, 1]
+verify a[1, 2] <> b[1, 2]
+verify a[2, 0] <> b[2, 0]
+verify a[2, 1] <> b[2, 1]
+verify a[2, 2] <> b[2, 2]
+
+b := a;
+
+verify a[0, 0] <> b[0, 0]
+verify a[0, 1] <> b[0, 1]
+verify a[0, 2] <> b[0, 2]
+verify a[1, 0] <> b[1, 0]
+verify a[1, 1] <> b[1, 1]
+verify a[1, 2] <> b[1, 2]
+verify a[2, 0] <> b[2, 0]
+verify a[2, 1] <> b[2, 1]
+verify a[2, 2] <> b[2, 2]
+
+x :- 10;
+
+>>
+
+b := a;
+
+verify a[0, 0] =  b[0, 0]
+verify a[0, 1] =  b[0, 1]
+verify a[0, 2] =  b[0, 2]
+verify a[1, 0] =  b[1, 0]
+verify a[1, 1] =  b[1, 1]
+verify a[1, 2] =  b[1, 2]
+verify a[2, 0] =  b[2, 0]
+verify a[2, 1] =  b[2, 1]
+verify a[2, 2] =  b[2, 2]
+
+>>
+
+verify a[0, 0] =  b[0, 0]
+verify a[0, 1] =  b[0, 1]
+verify a[0, 2] =  b[0, 2]
+verify a[1, 0] =  b[1, 0]
+verify a[1, 1] =  b[1, 1]
+verify a[1, 2] =  b[1, 2]
+verify a[2, 0] =  b[2, 0]
+verify a[2, 1] =  b[2, 1]
+verify a[2, 2] =  b[2, 2]
+
+// element assignment
+
+x :- uniform();
+
+a[0, 1] :- a[1, 0];
+a[0, 2] :- a[2, 0];
+a[1, 2] :- a[2, 1];
+
+verify a[0, 1] = a[1, 0]
+verify a[0, 2] = a[2, 0]
+verify a[1, 2] = a[2, 1]
+
+>>
+
+verify a[0, 1] = a[1, 0]
+verify a[0, 2] = a[2, 0]
+verify a[1, 2] = a[2, 1]
+
+>>
+
+verify a[0, 1] = a[1, 0]
+verify a[0, 2] = a[2, 0]
+verify a[1, 2] = a[2, 1]
+
+//
+
+sys.reset();
+
+array[,] => :: x :- [ [0 + uniform(), 1 + uniform()], [10 + uniform(), 11 + uniform()] ];
+array[,] => :: a := x;
+
+:: in := /.(x, range) -> range[0] < x  && x < range[1];
+
+verify ltype(x) = array[,] => lazy double
+verify ltype(a) = array[,] => double
+
+// @@ review: excluded because of 'stale' behavior in debug mode
+// verify a = x
+
+// @@ review: First tick below needed to avoid 'stale' behavior in debug mode
+>>
+verify in(x[0,0], [ 0,  1])
+verify in(x[0,1], [ 1,  2])
+verify in(x[1,0], [10, 11])
+verify in(x[1,1], [11, 12])
+>>
+verify in(x[0,0], [ 0,  1])
+verify in(x[0,1], [ 1,  2])
+verify in(x[1,0], [10, 11])
+verify in(x[1,1], [11, 12])
+
+//
+
+sys.reset();
+
+array[,] => lazy var a :- [[0, 1], [2, 3]];
+a :- [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+verify dim(a) = [3, 3]
+
+verify a = (array[3,3] => lazy var)(1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+//
+
+sys.reset();
+
+array[,] => lazy double a :- [[0, 1], [2, 3]];
+a :- [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+
+verify dim(a) = [3, 3]
+
+verify a = (array[3,3] => lazy double)(1, 2, 3, 4, 5, 6, 7, 8, 9)
+
+//
+
+sys.reset();
+
+array[,] => lazy double a :- [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+:: b := (array[3,3] => lazy double)(1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+verify a = b
+
+//
+
+sys.reset();
+
+:: a34 := (array[3,4] => int) (
+	 0,  1,  2,  3,
+	 4,  5,  6,  7,
+	 8,  9, 10, 11
+);
+
+:: tmp := a34;
+
+verify dim(a34) = [3, 4]
+
+a34 := [[0, 1, 2], [3, 4, 5]];
+
+verify dim(a34) = [2, 3]
+
+verify a34[0,0] =  0
+verify a34[0,1] =  1
+verify a34[0,2] =  2
+verify a34[1,0] =  3
+verify a34[1,1] =  4
+verify a34[1,2] =  5
+
+a34 := tmp;
+
+verify dim(a34) = [3, 4]
+
+verify a34[0,0] =  0
+verify a34[0,1] =  1
+verify a34[0,2] =  2
+verify a34[0,3] =  3
+verify a34[1,0] =  4
+verify a34[1,1] =  5
+verify a34[1,2] =  6
+verify a34[1,3] =  7
+verify a34[2,0] =  8
+verify a34[2,1] =  9
+verify a34[2,2] = 10
+verify a34[2,3] = 11
+
+//
+
+sys.reset();
+
+:: zeroes := /.(int i, int j ) => double -> 0.0;
+:: encode := /.(int i, int j ) => double -> 10.0 * i + j;
+
+array[,] => double mz := matrix(2, 2, zeroes);
+array[,] => double me:= matrix(3, 3, encode);
+
+verify dim(mz) = [2,2]
+verify dim(me) = [3,3]
+
+verify mz[0,0] = 0
+verify mz[0,1] = 0
+verify mz[1,0] = 0
+verify mz[1,1] = 0
+
+mz := me;
+
+verify dim(mz) = [3,3]
+
+verify mz[0,0] =  0
+verify mz[0,1] =  1
+verify mz[0,2] =  2
+verify mz[1,0] = 10
+verify mz[1,1] = 11
+verify mz[1,2] = 12
+verify mz[2,0] = 20
+verify mz[2,1] = 21
+verify mz[2,2] = 22
+
+//
+
+sys.reset();
+
+:: zeroes := /.(int i, int j ) => double -> 0.0;
+:: ones   := /.(int i, int j ) => double -> 1.0;
+
+:: rand1   := /.(int i ) => double -> random();
+:: rand2   := /.(int i, int j ) => double -> random();
+
+array[] => double vec := vector(7, /.(int i ) => double -> random());
+
+array[,] => double m0 := matrix(3, 3, zeroes);
+array[,] => double m1 := matrix(3, 3, ones);
+
+:: eye := /.(int n) => array[,] => double -> matrix(n, n, /.(int i, int j ) => double -> if(i = j, 1.0, 0.0));
+
+:: mr := matrix(3, 3, rand2);
+:: ml :- matrix(3, 3, rand2);
+
+:: id3 := eye(3);
+
+//
+
+sys.reset();
+
+array[,] => int a00 := [];
+array[,] => int a11 := [[0]];
+array[,] => int a12 := [[0, 1]];
+array[,] => int a21 := [[0], [1]];
+array[,] => int a22 := [[0, 1], [2, 3]];
+
+verify dim(a00) = [0, 0]
+verify dim(a11) = [1, 1]
+verify dim(a12) = [1, 2]
+verify dim(a21) = [2, 1]
+verify dim(a22) = [2, 2]
+
+//
+
+sys.reset();
+
+var a := (array[2,2] => int) (0, 1, 2, 3);
+verify a[0,0] = 0
+verify a[0,1] = 1
+verify a[1,0] = 2
+verify a[1,1] = 3
+
+//
+
+sys.reset();
+
+array[,] => var a := (array[2,2] => int) (0, 1, 2, 3);
+verify a[0,0] = 0
+verify a[0,1] = 1
+verify a[1,0] = 2
+verify a[1,1] = 3
+
+a[0,0] := a[0,0] + 1;
+a[0,1] := a[0,1] + 1;
+a[1,0] := a[1,0] + 1;
+a[1,1] := a[1,1] + 1;
+
+verify a[0,0] = 1
+verify a[0,1] = 2
+verify a[1,0] = 3
+verify a[1,1] = 4
+
+//
+
+sys.reset();
+
+array[,] => var a := [[0, 1], [2, 3]];
+verify a[0,0] = 0
+verify a[0,1] = 1
+verify a[1,0] = 2
+verify a[1,1] = 3
+
+a[0,0] := a[0,0] + 1;
+a[0,1] := a[0,1] + 1;
+a[1,0] := a[1,0] + 1;
+a[1,1] := a[1,1] + 1;
+
+verify a[0,0] = 1
+verify a[0,1] = 2
+verify a[1,0] = 3
+verify a[1,1] = 4
+
+//
+
+sys.reset();
+
+:: I1 := (array[4] => int) (0, 1, 2, 3);
+:: I2 := (array[2,2] => int) (0, 1, 2, 3);
+
+verify I1[0] = 0
+verify I1[1] = 1
+verify I1[2] = 2
+verify I1[3] = 3
+
+verify I2[0,0] = 0
+verify I2[0,1] = 1
+verify I2[1,0] = 2
+verify I2[1,1] = 3
+
+I1[0] := I1[0] + 1;
+I1[1] := I1[1] + 1;
+I1[2] := I1[2] + 1;
+I1[3] := I1[3] + 1;
+
+verify I1[0] = 1
+verify I1[1] = 2
+verify I1[2] = 3
+verify I1[3] = 4
+
+I2[0,0] := I2[0,0] + 1;
+I2[0,1] := I2[0,1] + 1;
+I2[1,0] := I2[1,0] + 1;
+I2[1,1] := I2[1,1] + 1;
+
+verify I2[0,0] = 1
+verify I2[0,1] = 2
+verify I2[1,0] = 3
+verify I2[1,1] = 4
+
+//
+
+sys.reset();
+
+var I1 := (array[4] => int) (0, 1, 2, 3);
+var I2 := (array[2,2] => int) (0, 1, 2, 3);
+
+verify I1[0] = 0
+verify I1[1] = 1
+verify I1[2] = 2
+verify I1[3] = 3
+
+verify I2[0,0] = 0
+verify I2[0,1] = 1
+verify I2[1,0] = 2
+verify I2[1,1] = 3
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+var a := [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = var
+
+verify check(0.0, a[0][0], 1.0)
+verify check(0.0, a[0][1], 1.0)
+verify check(0.0, a[0][2], 1.0)
+verify check(0.0, a[1][0], 1.0)
+verify check(0.0, a[1][1], 1.0)
+verify check(0.0, a[1][2], 1.0)
+verify check(0.0, a[2][0], 1.0)
+verify check(0.0, a[2][1], 1.0)
+
+verify a[0][0] <> a[0][1]
+verify a[0][1] <> a[0][2]
+verify a[0][2] <> a[1][0]
+verify a[1][0] <> a[1][1]
+verify a[1][1] <> a[1][2]
+verify a[1][2] <> a[2][0]
+verify a[2][0] <> a[2][1]
+verify a[2][1] <> a[2][2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a = snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+lazy var a :- [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = lazy var
+
+verify check(0.0, a[0][0], 1.0)
+verify check(0.0, a[0][1], 1.0)
+verify check(0.0, a[0][2], 1.0)
+verify check(0.0, a[1][0], 1.0)
+verify check(0.0, a[1][1], 1.0)
+verify check(0.0, a[1][2], 1.0)
+verify check(0.0, a[2][0], 1.0)
+verify check(0.0, a[2][1], 1.0)
+
+verify a[0][0] <> a[0][1]
+verify a[0][1] <> a[0][2]
+verify a[0][2] <> a[1][0]
+verify a[1][0] <> a[1][1]
+verify a[1][1] <> a[1][2]
+verify a[1][2] <> a[2][0]
+verify a[2][0] <> a[2][1]
+verify a[2][1] <> a[2][2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a <> snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[] => array[] => double a := [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = array[] => array[] => double
+
+verify check(0.0, a[0][0], 1.0)
+verify check(0.0, a[0][1], 1.0)
+verify check(0.0, a[0][2], 1.0)
+verify check(0.0, a[1][0], 1.0)
+verify check(0.0, a[1][1], 1.0)
+verify check(0.0, a[1][2], 1.0)
+verify check(0.0, a[2][0], 1.0)
+verify check(0.0, a[2][1], 1.0)
+
+verify a[0][0] <> a[0][1]
+verify a[0][1] <> a[0][2]
+verify a[0][2] <> a[1][0]
+verify a[1][0] <> a[1][1]
+verify a[1][1] <> a[1][2]
+verify a[1][2] <> a[2][0]
+verify a[2][0] <> a[2][1]
+verify a[2][1] <> a[2][2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a = snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[] => array[] => lazy double a :- [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = array[] => array[] => lazy double
+
+verify check(0.0, a[0][0], 1.0)
+verify check(0.0, a[0][1], 1.0)
+verify check(0.0, a[0][2], 1.0)
+verify check(0.0, a[1][0], 1.0)
+verify check(0.0, a[1][1], 1.0)
+verify check(0.0, a[1][2], 1.0)
+verify check(0.0, a[2][0], 1.0)
+verify check(0.0, a[2][1], 1.0)
+
+verify a[0][0] <> a[0][1]
+verify a[0][1] <> a[0][2]
+verify a[0][2] <> a[1][0]
+verify a[1][0] <> a[1][1]
+verify a[1][1] <> a[1][2]
+verify a[1][2] <> a[2][0]
+verify a[2][0] <> a[2][1]
+verify a[2][1] <> a[2][2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a <> snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+var a := (array[3,3] => double) (
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform()
+);
+
+verify ltype(a) = var
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: x := a[0,0];
+>>
+:: y := a[0,0];
+
+verify x = y
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[,] => var a := (array[3,3] => var) (
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform()
+);
+
+verify ltype(a) = array[,] => var
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: x := a[0,0];
+>>
+:: y := a[0,0];
+
+verify x = y
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[,] => var a := (array[3,3] => double) (
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform()
+);
+
+verify ltype(a) = array[,] => var
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a =  snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[,] => double a := (array[3,3] => double) (
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform()
+);
+
+verify ltype(a) = array[,] => double
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a =  snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[,] => double a := [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = array[,] => double
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a = snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[,] => lazy double a :- [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = array[,] => lazy double
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a <> snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+lazy array[,] => var a := (array[3,3] => var) (
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform()
+);
+
+verify ltype(a) = lazy array[,] => var
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+verify check(0.0, a[2,2], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: snap := a;
+
+verify a = snap
+>>
+verify a = snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+lazy array[,] => var a := '(array[3,3] => var) (
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform(),
+	uniform(), uniform(), uniform()
+)';
+
+verify ltype(a) = lazy array[,] => var
+
+verify check(0.0, a[0,0], 1.0)
+verify check(0.0, a[0,1], 1.0)
+verify check(0.0, a[0,2], 1.0)
+verify check(0.0, a[1,0], 1.0)
+verify check(0.0, a[1,1], 1.0)
+verify check(0.0, a[1,2], 1.0)
+verify check(0.0, a[2,0], 1.0)
+verify check(0.0, a[2,1], 1.0)
+verify check(0.0, a[2,2], 1.0)
+
+verify a[0,0] <> a[0,1]
+verify a[0,1] <> a[0,2]
+verify a[0,2] <> a[1,0]
+verify a[1,0] <> a[1,1]
+verify a[1,1] <> a[1,2]
+verify a[1,2] <> a[2,0]
+verify a[2,0] <> a[2,1]
+verify a[2,1] <> a[2,2]
+
+:: snap := a;
+
+verify a =  snap
+>>
+verify a <> snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+:: a := [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = array[] => array[] => double
+
+verify check(0.0, a[0][0], 1.0)
+verify check(0.0, a[0][1], 1.0)
+verify check(0.0, a[0][2], 1.0)
+verify check(0.0, a[1][0], 1.0)
+verify check(0.0, a[1][1], 1.0)
+verify check(0.0, a[1][2], 1.0)
+verify check(0.0, a[2][0], 1.0)
+verify check(0.0, a[2][1], 1.0)
+verify check(0.0, a[2][2], 1.0)
+
+verify a[0][0] <> a[0][1]
+verify a[0][1] <> a[0][2]
+verify a[0][2] <> a[1][0]
+verify a[1][0] <> a[1][1]
+verify a[1][1] <> a[1][2]
+verify a[1][2] <> a[2][0]
+verify a[2][0] <> a[2][1]
+verify a[2][1] <> a[2][2]
+
+:: snap := a;
+
+verify a = snap
+>>
+verify a = snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[] => :: a := [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = array[] => array[] => double
+
+verify check(0.0, a[0][0], 1.0)
+verify check(0.0, a[0][1], 1.0)
+verify check(0.0, a[0][2], 1.0)
+verify check(0.0, a[1][0], 1.0)
+verify check(0.0, a[1][1], 1.0)
+verify check(0.0, a[1][2], 1.0)
+verify check(0.0, a[2][0], 1.0)
+verify check(0.0, a[2][1], 1.0)
+verify check(0.0, a[2][2], 1.0)
+
+verify a[0][0] <> a[0][1]
+verify a[0][1] <> a[0][2]
+verify a[0][2] <> a[1][0]
+verify a[1][0] <> a[1][1]
+verify a[1][1] <> a[1][2]
+verify a[1][2] <> a[2][0]
+verify a[2][0] <> a[2][1]
+verify a[2][1] <> a[2][2]
+
+:: snap := a;
+
+verify a = snap
+>>
+verify a = snap
+
+//
+
+sys.reset();
+
+:: check := /.(double lb, double x, double ub) => bool -> lb < x && x < ub;
+
+array[] => array[] => :: a := [
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()],
+	[uniform(), uniform(), uniform()]
+];
+
+verify ltype(a) = array[] => array[] => double
+
+verify check(0.0, a[0][0], 1.0)
+verify check(0.0, a[0][1], 1.0)
+verify check(0.0, a[0][2], 1.0)
+verify check(0.0, a[1][0], 1.0)
+verify check(0.0, a[1][1], 1.0)
+verify check(0.0, a[1][2], 1.0)
+verify check(0.0, a[2][0], 1.0)
+verify check(0.0, a[2][1], 1.0)
+verify check(0.0, a[2][2], 1.0)
+
+verify a[0][0] <> a[0][1]
+verify a[0][1] <> a[0][2]
+verify a[0][2] <> a[1][0]
+verify a[1][0] <> a[1][1]
+verify a[1][1] <> a[1][2]
+verify a[1][2] <> a[2][0]
+verify a[2][0] <> a[2][1]
+verify a[2][1] <> a[2][2]
+
+:: snap := a;
+
+verify a = snap
+>>
+verify a = snap
+
+//
+
+sys.reset();
+
+:: L0 := [800,  801];
+:: L1 := [810,  811];
+
+:: AL := [L0, L1];
+:: AF :- [L0, L1];
+
+verify AL = [[800,  801], [810,  811]]
+verify AF = [[800,  801], [810,  811]]
+verify AL = AF
+
+L0[1] := 842;
+verify L0[1] = 842
+verify L0 = [800,  842]
+
+verify AL[0][0] = 800
+verify AL[0][1] = 801
+verify AL[1][0] = 810
+verify AL[1][1] = 811
+verify AL[0] = [800, 801]
+verify AL = [[800,  801], [810,  811]]
+
+verify AF[0][0] = 800
+verify AF[0][1] = 842
+verify AF[1][0] = 810
+verify AF[1][1] = 811
+verify AF[0][1] = 842
+verify AF[0] = [800, 842]
+verify AF = [[800,  842], [810,  811]]
+
+//
+
+sys.reset();
+
+:: L0 :- [ 0,  1,  2,  3];
+:: L1 :- [10, 11, 12, 13];
+:: L2 :- [20, 21, 22, 23];
+:: L3 :- [30, 31, 32, 33];
+
+array[] => var V0 :- [ 0,  1,  2,  3];
+array[] => var V1 :- [10, 11, 12, 13];
+array[] => var V2 :- [20, 21, 22, 23];
+array[] => var V3 :- [30, 31, 32, 33];
+
+:: A  :- [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+
+:: AL :- [L0, L1, L2, L3];
+
+:: AV :- [V0, V1, V2, V3];
+
+:: AA :- [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+
+verify A[0][0] = AL[0][0]
+verify A[1][2] = AL[1][2]
+verify A[2][3] = AL[2][3]
+verify A[3][3] = AL[3][3]
+
+verify A[0][0] = AV[0][0]
+verify A[1][2] = AV[1][2]
+verify A[2][3] = AV[2][3]
+verify A[3][3] = AV[3][3]
+
+verify A[0][0] = AA[0][0]
+verify A[1][2] = AA[1][2]
+verify A[2][3] = AA[2][3]
+verify A[3][3] = AA[3][3]
+
+L0 :- [ 0,  1,  2,  38808];
+verify L0[3] = 38808
+verify L0[3] = AL[0][3]
+
+AA :- [[0, 7357, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+verify AA[0][1] = 7357
+AA :- [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+verify AA[0][1] = 1
+
+AA :- [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 7357, 23], [30, 31, 32, 33]];
+verify AA[2][2] = 7357
+AA :- [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+verify AA[2][2] = 22
+
+//
+
+sys.reset();
+
+:: L0 := [ 0,  1,  2,  3];
+:: L1 := [10, 11, 12, 13];
+:: L2 := [20, 21, 22, 23];
+:: L3 := [30, 31, 32, 33];
+
+array[] => var V0 := [ 0,  1,  2,  3];
+array[] => var V1 := [10, 11, 12, 13];
+array[] => var V2 := [20, 21, 22, 23];
+array[] => var V3 := [30, 31, 32, 33];
+
+:: A  := [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+
+:: AL := [L0, L1, L2, L3];
+:: AF :- [L0, L1, L2, L3];
+
+:: AV := [V0, V1, V2, V3];
+:: AX :- [V0, V1, V2, V3];
+
+:: AA := [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+
+verify A[0][0] = AL[0][0]
+verify A[1][2] = AL[1][2]
+verify A[2][3] = AL[2][3]
+verify A[3][3] = AL[3][3]
+
+verify A[0][0] = AV[0][0]
+verify A[1][2] = AV[1][2]
+verify A[2][3] = AV[2][3]
+verify A[3][3] = AV[3][3]
+
+verify A[0][0] = AA[0][0]
+verify A[1][2] = AA[1][2]
+verify A[2][3] = AA[2][3]
+verify A[3][3] = AA[3][3]
+
+L0[3] := 38808;
+verify L0[3] = 38808
+verify AL[0][3] = 3
+verify AF[0][3] = 38808
+verify AV[0][3] = 3
+verify AX[0][3] = 3
+
+L0[3] := 3;
+verify L0[3] = 3
+verify AL[0][3] = 3
+verify AF[0][3] = 3
+verify AV[0][3] = 3
+verify AX[0][3] = 3
+
+AA[0][1] := 7357;
+verify AA[0][1] = 7357
+AA[0][1] := 1;
+verify AA[0][1] = 1
+
+AA[2][2] := 7357;
+verify AA[2][2] = 7357
+verify AL[2][2] = 22
+verify AV[2][2] = 22
+AA[2][2] := 22;
+verify AA[2][2] = 22
+
+//
+
+sys.reset()
+
+:: v2 :- [
+	[  0,   1],
+	[ 10,  11]
+];
+
+array[,] => :: a2 :- [
+	[  0,   1],
+	[ 10,  11]
+];
+
+verify rtype(v2) = array[] => array[] => int
+verify ltype(v2) = array[] => array[] => lazy int
+
+verify rtype(a2) = array[,] => int
+verify ltype(a2) = array[,] => lazy int
+
+verify v2[0][0] = a2[0,0]
+verify v2[0][1] = a2[0,1]
+verify v2[1][0] = a2[1,0]
+verify v2[1][1] = a2[1,1]
+
+// COMPILER_COMPATIBILITY
+// @@ javier: Actual JS implementation does not differences array of arrays from 2D arrays
+// verify v2 <> a2
+
+//
+
+sys.reset();
+
+array[,] => lazy var   M0 :- [[0, 1], [10, 11]];
+array[,] => lazy ::    M1 :- [[0, 1], [10, 11]];
+array[,] => lazy int   M2 :- [[0, 1], [10, 11]];
+
+array[,] => var        W0 := [[0, 1], [10, 11]];
+array[,] => ::         W1 := [[0, 1], [10, 11]];
+array[,] => int        W2 := [[0, 1], [10, 11]];
+
+verify M0 = M1
+verify M0 = M2
+verify M1 = M2
+
+verify W0 = W1
+verify W0 = W2
+verify W1 = W2
+
+verify M0 = W2
+
+//
+
+sys.reset();
+
+::                  L0 := [[0, 1], [10, 11]];
+
+var                 L1 := [[0, 1], [10, 11]];
+
+array[] => var         L2 := [[0, 1], [10, 11]];
+
+array[] => array[] => ::  L3 := [[0, 1], [10, 11]];
+
+array[] => array[] => var L4 := [[0, 1], [10, 11]];
+
+array[] => array[] => int L5 := [[0, 1], [10, 11]];
+
+verify L0 = L1
+verify L1 = L2
+verify L2 = L3
+verify L3 = L4
+verify L4 = L5
+
+//
+
+sys.reset();
+
+:: L0 :- [ 0,  1,  2,  3];
+:: L1 :- [10, 11, 12, 13];
+:: L2 :- [20, 21, 22, 23];
+:: L3 :- [30, 31, 32, 33];
+
+array[] => var V0 :- [ 0,  1,  2,  3];
+array[] => var V1 :- [10, 11, 12, 13];
+array[] => var V2 :- [20, 21, 22, 23];
+array[] => var V3 :- [30, 31, 32, 33];
+
+:: A  :- [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+
+:: AL :- [L0, L1, L2, L3];
+
+:: AV :- [V0, V1, V2, V3];
+
+:: AA :- [[0, 1, 2, 3], [10, 11, 12, 13], [20, 21, 22, 23], [30, 31, 32, 33]];
+
+
+verify A[0][0] = AL[0][0]
+verify A[1][2] = AL[1][2]
+verify A[2][3] = AL[2][3]
+verify A[3][3] = AL[3][3]
+
+verify A[0][0] = AV[0][0]
+verify A[1][2] = AV[1][2]
+verify A[2][3] = AV[2][3]
+verify A[3][3] = AV[3][3]
+
+verify A[0][0] = AA[0][0]
+verify A[1][2] = AA[1][2]
+verify A[2][3] = AA[2][3]
+verify A[3][3] = AA[3][3]
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy var st :- [
+	[ 1, 2 ],
+	[ 3, 4 ]
+];
+
+array[] => array[] => lazy var vt :- [
+	[ln(double(st[0][0])), ln(double(st[0][1]))],
+	[ln(double(st[1][0])), ln(double(st[1][1]))]
+];
+
+array[] => array[] => lazy var xt :- [
+	[exp(double(vt[0][0])), exp(double(vt[0][1]))],
+	[exp(double(vt[1][0])), exp(double(vt[1][1]))]
+];
+
+array[] => array[] => lazy var zt :- [
+	[xt[0][0] - st[0][0], xt[0][1] - st[0][1]],
+	[xt[1][0] - st[1][0], xt[1][1] - st[1][1]]
+];
+
+var sts :- sum(st);
+var xts :- sum(xt);
+var zts :- sum(zt);
+
+verify sts = 10
+verify abs(xts - sts) < 0.0000000001
+verify abs(zts) < 0.0000000001
+
+//
+
+sys.reset();
+
+array[,] => var st := [
+	[ 1, 2 ],
+	[ 3, 4 ]
+];
+
+array[,] => lazy var vt :- [
+	[ln(double(st[0,0])), ln(double(st[0,1]))],
+	[ln(double(st[1,0])), ln(double(st[1,1]))]
+];
+
+array[,] => lazy var xt :- [
+	[exp(double(vt[0,0])), exp(double(vt[0,1]))],
+	[exp(double(vt[1,0])), exp(double(vt[1,1]))]
+];
+
+array[,] => lazy var zt :- [
+	[xt[0,0] - st[0,0], xt[0,1] - st[0,1]],
+	[xt[1,0] - st[1,0], xt[1,1] - st[1,1]]
+];
+
+//
+// @@ defining ad-hoc sum function for lack of 2D generalized sum behavior
+//
+
+:: sum2x2 := /.(array[,] => var A) => double -> A[0,0] + A[0,1] + A[1,0] + A[1,1];
+
+>>
+
+var sts := sum2x2(st);
+var xts := sum2x2(xt);
+var zts := sum2x2(zt);
+
+>>
+
+verify sts = 10
+verify abs(xts - sts) < 0.0000000001
+verify abs(zts) < 0.0000000001
+
+//
+
+sys.reset();
+
+array[,] => lazy var st :- [
+	[ 1, 2 ],
+	[ 3, 4 ]
+];
+
+array[,] => lazy var vt :- [
+	[ln(double(st[0,0])), ln(double(st[0,1]))],
+	[ln(double(st[1,0])), ln(double(st[1,1]))]
+];
+
+array[,] => lazy var xt :- [
+	[exp(double(vt[0,0])), exp(double(vt[0,1]))],
+	[exp(double(vt[1,0])), exp(double(vt[1,1]))]
+];
+
+array[,] => lazy var zt :- [
+	[xt[0,0] - st[0,0], xt[0,1] - st[0,1]],
+	[xt[1,0] - st[1,0], xt[1,1] - st[1,1]]
+];
+
+//
+// @@ defining ad-hoc sum function for lack of 2D generalized sum behavior
+//
+
+:: sum2x2 := /.(array[,] => var A) => double -> A[0,0] + A[0,1] + A[1,0] + A[1,1];
+
+lazy var sts :- sum2x2(st);
+lazy var xts :- sum2x2(xt);
+lazy var zts :- sum2x2(zt);
+
+verify sts = 10
+verify abs(xts - sts) < 0.0000000001
+verify abs(zts) < 0.0000000001
+
+:: x :- uniform();
+
+st :- [
+	[ 1 + x, 2 + x ],
+	[ 3 + x, 4 + x ]
+];
+
+>>
+
+verify abs(sts - 10 - 4 * x) < 0.0000000001
+verify abs(xts - sts) < 0.0000000001
+verify abs(zts) < 0.0000000001
+
+>>
+
+verify abs(sts - 10 - 4 * x) < 0.0000000001
+verify abs(xts - sts) < 0.0000000001
+verify abs(zts) < 0.0000000001
+
+//
+
+sys.reset();
+
+::                  L0      :- [[0, 1], [10, 11]];
+
+var                 L1      :- [[0, 1], [10, 11]];
+
+array[] => var         L2      :- [[0, 1], [10, 11]];
+
+array[] => array[] => ::  L3      :- [[0, 1], [10, 11]];
+
+array[] => array[] => var L4      :- [[0, 1], [10, 11]];
+
+array[] => array[] => int L5      := [[0, 1], [10, 11]];
+
+array[] => array[] => lazy int L6 :- [[0, 1], [10, 11]];
+
+verify L0 = L1
+verify L1 = L2
+verify L2 = L3
+verify L3 = L4
+verify L4 = L5
+verify L5 = L6
+
+//
+
+sys.reset();
+
+::           L0         :- (array[2,2] => int)(0, 1, 10, 11);
+
+lazy var     L1         :- (array[2,2] => int)(0, 1, 10, 11);
+
+array[,] => lazy var L2 := (array[2,2] => lazy int)(0, 1, 10, 11);
+
+array[,] => ::  L3      := (array[2,2] => lazy int)(0, 1, 10, 11);
+
+array[,] => lazy var L4 := (array[2,2] => int)(0, 1, 10, 11);
+
+array[,] => int L5      := (array[2,2] => int)(0, 1, 10, 11);
+
+array[,] => lazy int L6 := (array[2,2] => int)(0, 1, 10, 11);
+
+verify L0 = L1
+verify L1 = L2
+verify L2 = L3
+verify L3 = L4
+verify L4 = L5
+verify L5 = L6
+
+//
+
+sys.reset();
+
+array[] => array[] => lazy var St :- [
+	[ 100,  ? ],
+	[ 109, 92 ]
+];
+
+array[] => array[] => lazy var Ot :- [
+	[ St[0][0], St[0][1] ],
+	[ St[1][0], St[1][1] ]
+];
+
+verify Ot[0][0] = St[0][0]
+verify Ot[0][1] = St[0][1]
+verify Ot[1][0] = St[1][0]
+verify Ot[1][1] = St[1][1]
+
+//
+
+sys.reset();
+
+array[,] => lazy var St :- [
+	[ 100,  ? ],
+	[ 109, 92 ]
+];
+
+array[,] => lazy var Ot :- [
+	[ St[0, 0], St[0, 1] ],
+	[ St[1, 0], St[1, 1] ]
+];
+
+verify Ot[0, 0] = St[0, 0]
+verify Ot[0, 1] = St[0, 1]
+verify Ot[1, 0] = St[1, 0]
+verify Ot[1, 1] = St[1, 1]
+
+//
+// Comprehensive 2D slicing test
+//
+
+//
+
+sys.reset();
+
+array[,] => int M := [[0, 1], [2, 3]];
+
+verify ltype(M) = array[,] => int
+
+verify M[0, 0] = 0
+verify M[0, 1] = 1
+verify M[1, 0] = 2
+verify M[1, 1] = 3
+
+verify M[0, 0..1] = [0, 1]
+verify M[1, 0..1] = [2, 3]
+
+verify M[0..1, 0] = [0, 2]
+verify M[0..1, 1] = [1, 3]
+
+verify M[0..1, 0..1] = (array[2,2] => int)(0, 1, 2, 3)
+
+//
+
+sys.reset();
+
+array[,] => :: M := [[0, 1], [2, 3]];
+
+verify ltype(M) = array[,] => int
+
+verify M[0, 0] = 0
+verify M[0, 1] = 1
+verify M[1, 0] = 2
+verify M[1, 1] = 3
+
+verify M[0, 0..1] = [0, 1]
+verify M[1, 0..1] = [2, 3]
+
+verify M[0..1, 0] = [0, 2]
+verify M[0..1, 1] = [1, 3]
+
+verify M[0..1, 0..1] = (array[2,2] => int)(0, 1, 2, 3)
+
+//
+
+sys.reset();
+
+array[,] => :: m2 :- [
+	[  0,   1,   2,   3],
+	[ 10,  11,  12,  13],
+	[ 20,  21,  22,  23],
+	[ 30,  31,  32,  33]
+];
+
+verify rtype(m2) = array[,] => int
+verify ltype(m2) = array[,] => lazy int
+
+// 2D
+
+verify m2[0..3, 0..3] = m2
+
+// 0..3, *
+
+verify m2[0..3, 0..3] = (array[4,4] => ::)(0, 1, 2, 3, 10, 11, 12, 13, 20, 21, 22, 23, 30, 31, 32, 33)
+verify m2[0..3, 0..2] = (array[4,3] => ::)(0, 1, 2, 10, 11, 12, 20, 21, 22, 30, 31, 32)
+verify m2[0..3, 0..1] = (array[4,2] => ::)(0, 1, 10, 11, 20, 21, 30, 31)
+verify m2[0..3, 0..0] = (array[4,1] => ::)(0, 10, 20, 30)
+
+verify m2[0..3, 1..3] = (array[4,3] => ::)(1, 2, 3, 11, 12, 13, 21, 22, 23, 31, 32, 33)
+verify m2[0..3, 1..2] = (array[4,2] => ::)(1, 2, 11, 12, 21, 22, 31, 32)
+verify m2[0..3, 1..1] = (array[4,1] => ::)(1, 11, 21, 31)
+
+verify m2[0..3, 2..3] = (array[4,2] => ::)(2, 3, 12, 13, 22, 23, 32, 33)
+verify m2[0..3, 2..2] = (array[4,1] => ::)(2, 12, 22, 32)
+
+verify m2[0..3, 3..3] = (array[4,1] => ::)(3, 13, 23, 33)
+
+// 0..2, *
+
+verify m2[0..2, 0..3] = (array[3,4] => ::)(0, 1, 2, 3, 10, 11, 12, 13, 20, 21, 22, 23)
+verify m2[0..2, 0..2] = (array[3,3] => ::)(0, 1, 2, 10, 11, 12, 20, 21, 22)
+verify m2[0..2, 0..1] = (array[3,2] => ::)(0, 1, 10, 11, 20, 21)
+verify m2[0..2, 0..0] = (array[3,1] => ::)(0, 10, 20)
+
+verify m2[0..2, 1..3] = (array[3,3] => ::)(1, 2, 3, 11, 12, 13, 21, 22, 23)
+verify m2[0..2, 1..2] = (array[3,2] => ::)(1, 2, 11, 12, 21, 22)
+verify m2[0..2, 1..1] = (array[3,1] => ::)(1, 11, 21)
+
+verify m2[0..2, 2..3] = (array[3,2] => ::)(2, 3, 12, 13, 22, 23)
+verify m2[0..2, 2..2] = (array[3,1] => ::)(2, 12, 22)
+
+verify m2[0..2, 3..3] = (array[3,1] => ::)(3, 13, 23)
+
+// 0..1, *
+
+verify m2[0..1, 0..3] = (array[2,4] => ::)(0, 1, 2, 3, 10, 11, 12, 13)
+verify m2[0..1, 0..2] = (array[2,3] => ::)(0, 1, 2, 10, 11, 12)
+verify m2[0..1, 0..1] = (array[2,2] => ::)(0, 1, 10, 11)
+verify m2[0..1, 0..0] = (array[2,1] => ::)(0, 10)
+
+verify m2[0..1, 1..3] = (array[2,3] => ::)(1, 2, 3, 11, 12, 13)
+verify m2[0..1, 1..2] = (array[2,2] => ::)(1, 2, 11, 12)
+verify m2[0..1, 1..1] = (array[2,1] => ::)(1, 11)
+
+verify m2[0..1, 2..3] = (array[2,2] => ::)(2, 3, 12, 13)
+verify m2[0..1, 2..2] = (array[2,1] => ::)(2, 12)
+
+verify m2[0..1, 3..3] = (array[2,1] => ::)(3, 13)
+
+// 0..0, *
+
+verify m2[0..0, 0..3] = (array[1,4] => ::)(0, 1, 2, 3)
+verify m2[0..0, 0..2] = (array[1,3] => ::)(0, 1, 2)
+verify m2[0..0, 0..1] = (array[1,2] => ::)(0, 1)
+verify m2[0..0, 0..0] = (array[1,1] => ::)(0)
+
+verify m2[0..0, 1..3] = (array[1,3] => ::)(1, 2, 3)
+verify m2[0..0, 1..2] = (array[1,2] => ::)(1, 2)
+verify m2[0..0, 1..1] = (array[1,1] => ::)(1)
+
+verify m2[0..0, 2..3] = (array[1,2] => ::)(2, 3)
+verify m2[0..0, 2..2] = (array[1,1] => ::)(2)
+
+verify m2[0..0, 3..3] = (array[1,1] => ::)(3)
+
+// 1..3, *
+
+verify m2[1..3, 0..3] = (array[3,4] => ::)(10, 11, 12, 13, 20, 21, 22, 23, 30, 31, 32, 33)
+verify m2[1..3, 0..2] = (array[3,3] => ::)(10, 11, 12, 20, 21, 22, 30, 31, 32)
+verify m2[1..3, 0..1] = (array[3,2] => ::)(10, 11, 20, 21, 30, 31)
+verify m2[1..3, 0..0] = (array[3,1] => ::)(10, 20, 30)
+
+verify m2[1..3, 1..3] = (array[3,3] => ::)(11, 12, 13, 21, 22, 23, 31, 32, 33)
+verify m2[1..3, 1..2] = (array[3,2] => ::)(11, 12, 21, 22, 31, 32)
+verify m2[1..3, 1..1] = (array[3,1] => ::)(11, 21, 31)
+
+verify m2[1..3, 2..3] = (array[3,2] => ::)(12, 13, 22, 23, 32, 33)
+verify m2[1..3, 2..2] = (array[3,1] => ::)(12, 22, 32)
+
+verify m2[1..3, 3..3] = (array[3,1] => ::)(13, 23, 33)
+
+// 1..2, *
+
+verify m2[1..2, 0..3] = (array[2,4] => ::)(10, 11, 12, 13, 20, 21, 22, 23)
+verify m2[1..2, 0..2] = (array[2,3] => ::)(10, 11, 12, 20, 21, 22)
+verify m2[1..2, 0..1] = (array[2,2] => ::)(10, 11, 20, 21)
+verify m2[1..2, 0..0] = (array[2,1] => ::)(10, 20)
+
+verify m2[1..2, 1..3] = (array[2,3] => ::)(11, 12, 13, 21, 22, 23)
+verify m2[1..2, 1..2] = (array[2,2] => ::)(11, 12, 21, 22)
+verify m2[1..2, 1..1] = (array[2,1] => ::)(11, 21)
+
+verify m2[1..2, 2..3] = (array[2,2] => ::)(12, 13, 22, 23)
+verify m2[1..2, 2..2] = (array[2,1] => ::)(12, 22)
+
+verify m2[1..2, 3..3] = (array[2,1] => ::)(13, 23)
+
+// 1..1, *
+
+verify m2[1..1, 0..3] = (array[1,4] => ::)(10, 11, 12, 13)
+verify m2[1..1, 0..2] = (array[1,3] => ::)(10, 11, 12)
+verify m2[1..1, 0..1] = (array[1,2] => ::)(10, 11)
+verify m2[1..1, 0..0] = (array[1,1] => ::)(10)
+
+verify m2[1..1, 1..3] = (array[1,3] => ::)(11, 12, 13)
+verify m2[1..1, 1..2] = (array[1,2] => ::)(11, 12)
+verify m2[1..1, 1..1] = (array[1,1] => ::)(11)
+
+verify m2[1..1, 2..3] = (array[1,2] => ::)(12, 13)
+verify m2[1..1, 2..2] = (array[1,1] => ::)(12)
+
+verify m2[1..1, 3..3] = (array[1,1] => ::)(13)
+
+// 2..3, *
+
+verify m2[2..3, 0..3] = (array[2,4] => ::)(20, 21, 22, 23, 30, 31, 32, 33)
+verify m2[2..3, 0..2] = (array[2,3] => ::)(20, 21, 22, 30, 31, 32)
+verify m2[2..3, 0..1] = (array[2,2] => ::)(20, 21, 30, 31)
+verify m2[2..3, 0..0] = (array[2,1] => ::)(20, 30)
+
+verify m2[2..3, 1..3] = (array[2,3] => ::)(21, 22, 23, 31, 32, 33)
+verify m2[2..3, 1..2] = (array[2,2] => ::)(21, 22, 31, 32)
+verify m2[2..3, 1..1] = (array[2,1] => ::)(21, 31)
+
+verify m2[2..3, 2..3] = (array[2,2] => ::)(22, 23, 32, 33)
+verify m2[2..3, 2..2] = (array[2,1] => ::)(22, 32)
+
+verify m2[2..3, 3..3] = (array[2,1] => ::)(23, 33)
+
+// 3..3, *
+
+verify m2[3..3, 0..3] = (array[1,4] => ::)(30, 31, 32, 33)
+verify m2[3..3, 0..2] = (array[1,3] => ::)(30, 31, 32)
+verify m2[3..3, 0..1] = (array[1,2] => ::)(30, 31)
+verify m2[3..3, 0..0] = (array[1,1] => ::)(30)
+
+verify m2[3..3, 1..3] = (array[1,3] => ::)(31, 32, 33)
+verify m2[3..3, 1..2] = (array[1,2] => ::)(31, 32)
+verify m2[3..3, 1..1] = (array[1,1] => ::)(31)
+
+verify m2[3..3, 2..3] = (array[1,2] => ::)(32, 33)
+verify m2[3..3, 2..2] = (array[1,1] => ::)(32)
+
+verify m2[3..3, 3..3] = (array[1,1] => ::)(33)
+
+// 1D
+
+verify m2[0, 0..3] = [  0,   1,   2,   3]
+verify m2[1, 0..3] = [ 10,  11,  12,  13]
+verify m2[2, 0..3] = [ 20,  21,  22,  23]
+verify m2[3, 0..3] = [ 30,  31,  32,  33]
+
+verify m2[0..3, 0] = [  0,  10,  20,  30]
+verify m2[0..3, 1] = [  1,  11,  21,  31]
+verify m2[0..3, 2] = [  2,  12,  22,  32]
+verify m2[0..3, 3] = [  3,  13,  23,  33]
+
+//
+
+
+
+sys.reset();
+
+array[,] => struct { string; int; } a2 := [
+	[ ("00",  0), ("01",  1) ],
+	[ ("10", 10), ("11", 11) ]
+];
+
+verify ltype(a2) = array[,] => struct { string; int; }
+
+verify a2[0,0] = ("00",  0)
+verify a2[0,1] = ("01",  1)
+verify a2[1,0] = ("10", 10)
+verify a2[1,1] = ("11", 11)
+
+verify a2[0,0][0] = "00"
+verify a2[0,1][1] = 1
+verify a2[1,0][0] = "10"
+verify a2[1,1][1] = 11
+
+//
+
+sys.reset();
+
+array[,] => struct { ::; ::; } a2 := [
+	[ ("00",  0), ("01",  1) ],
+	[ ("10", 10), ("11", 11) ]
+];
+
+verify ltype(a2) = array[,] => struct { string; int; }
+
+verify a2[0,0] = ("00",  0)
+verify a2[0,1] = ("01",  1)
+verify a2[1,0] = ("10", 10)
+verify a2[1,1] = ("11", 11)
+
+verify a2[0,0][0] = "00"
+verify a2[0,1][1] = 1
+verify a2[1,0][0] = "10"
+verify a2[1,1][1] = 11
+
+//
+
+sys.reset();
+
+array[,] => :: a2 := [
+	[ ("00",  0), ("01",  1) ],
+	[ ("10", 10), ("11", 11) ]
+];
+
+verify ltype(a2) = array[,] => struct { string; int; }
+
+verify a2[0,0] = ("00",  0)
+verify a2[0,1] = ("01",  1)
+verify a2[1,0] = ("10", 10)
+verify a2[1,1] = ("11", 11)
+
+verify a2[0,0][0] = "00"
+verify a2[0,1][1] = 1
+verify a2[1,0][0] = "10"
+verify a2[1,1][1] = 11
+
+//
+
+sys.reset();
+
+verify "2D.sym" <> ?

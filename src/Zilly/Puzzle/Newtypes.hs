@@ -62,8 +62,13 @@ pattern ZInfer    = TCon "Infer"  []
 pattern ZArray a  = TCon "Array" [a]
 
 pattern NDArray :: Int -> Types -> Types
-pattern NDArray n a <- ((\t@(TCon _ [a]) -> (,a) <$> getArrDimType t) -> Just (n,a))
+pattern NDArray n a <- (_ndaux -> Just (n,a))
   where NDArray n a = TCon ("array" <> Text.pack (show n)) [a]
+
+_ndaux :: Types -> Maybe (Int, Types)
+_ndaux t@(TCon _ [a]) = (,a) <$> getArrDimType t
+_ndaux _ = Nothing
+
 
 getArrDimType :: Types -> Maybe Int
 getArrDimType (TCon name [a])
@@ -74,6 +79,7 @@ getArrDimType _ = Nothing
 rtype :: Types -> Types
 rtype (Lazy a) = a
 rtype (a :-> b) = a :-> b
+rtype (NDArray n a) = NDArray n (rtype a)
 rtype (TCon n xs) = TCon n (rtype <$> xs)
 rtype (TVar _) = error "cannot rtype a type variable at the moment."
 
@@ -85,7 +91,7 @@ isSuperTypeOf (Lazy a) (Lazy b) = isSuperTypeOf a b
 isSuperTypeOf (Lazy a) b = isSuperTypeOf a b
 isSuperTypeOf (NTuple a b xs) (NTuple c d ys) = length xs <= length ys
   && isSuperTypeOf a c && isSuperTypeOf b d
-  && all (\(x,y) -> isSuperTypeOf x y) (zip xs ys)
+  && all (uncurry isSuperTypeOf) (zip xs ys)
 isSuperTypeOf (a :-> b) (c :-> d) = isSubtypeOf a c && isSuperTypeOf b d
 isSuperTypeOf (TVar _) _ = True
 isSuperTypeOf _ (TVar _) = True
@@ -97,7 +103,7 @@ isSubtypeOf (NDArray n a) (NDArray m b) = n == m && isSubtypeOf a b
 isSubtypeOf (Lazy a) (Lazy b) = isSubtypeOf a b
 isSubtypeOf (NTuple a b xs) (NTuple c d ys) = length xs >= length ys
   && isSubtypeOf a c && isSubtypeOf b d
-  && all (\(x,y) -> isSubtypeOf x y) (zip xs ys)
+  && all (uncurry isSubtypeOf) (zip xs ys)
 isSubtypeOf (a :-> b) (c :-> d) = isSuperTypeOf a c && isSubtypeOf b d
 isSubtypeOf (TVar _) _ = True
 isSubtypeOf _ (TVar _) = True

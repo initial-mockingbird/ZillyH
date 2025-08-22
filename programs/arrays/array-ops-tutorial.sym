@@ -1,0 +1,99 @@
+///
+/// array-ops-tutorial
+///
+/// test and tutorial for the incredibly complicated array resizing functions
+///
+
+//
+
+sys.reset();
+
+:: initial := [ 0, 1, 2, 3.0 ];
+
+:: a1 := initial;
+
+a1[0] := 0.1;
+
+a1
+dim(a1)
+
+verify dim(a1) = [4]
+
+// 
+// insert(exp, dim, pos, num)
+//
+// exp: expression must refer to a variable (lvalue) of an array type 
+// dim: dimension chosen for the operation: 0 <= dim < N where N is the number of exp dimensions
+// pos: the insert position for the operation
+// num: the number of elements to insert (initial value follows default value rules)
+
+insert(a1, 0, 2, 1);
+
+a1
+
+verify dim(a1) = [5]
+
+verify a1[2] = 0
+
+a1[2] := 1.5;
+
+verify a1[2] = 1.5
+
+insert(a1, 0, 0, 3);
+
+verify a1[0..3] = [0, 0, 0, 0.1]
+
+insert(a1, 0, dim(a1)[0], 3);
+
+a1
+
+verify dim(a1) = [11]
+
+int last := dim(a1)[0] - 1;
+int first := dim(a1)[0] - 3;
+
+verify a1[first..last] = [ 0, 0, 0]
+
+// slice assignment (generalized lvalue!) courtesy of Javier L. L.
+
+a1[first..last] := [ 8, 8, 8];
+
+a1
+
+// 
+// delete(exp, dim, pos, num)
+//
+// exp: expression must refer to a variable (lvalue) of an array type 
+// dim: dimension chosen for the operation: 0 <= dim < N where N is the number of exp dimensions
+// pos: the delete position for the operation
+// num: the number of elements to delete, starting at pos
+//
+
+// delete first 3
+delete(a1, 0, 0, 3)
+
+a1
+
+// delete last 3
+
+delete(a1, 0, dim(a1)[0] - 3, 3)
+
+a1
+
+// delete one element at position 2
+
+delete(a1, 0, 2, 1);
+
+// assign 0 to the first element
+
+a1[0] := 0;
+
+// HOLY SMOKES:  we are back to where we started!!!
+
+verify a1 = initial
+
+a1
+
+//
+// EXERCISE: complete this tutorial with a sequence for a 2D array!
+//

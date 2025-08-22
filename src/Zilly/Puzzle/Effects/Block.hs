@@ -283,6 +283,12 @@ evalProgram' evalA (x : xs) = declare @m @env x >>= \env -> withEnv env $
       pure (env'', x' : xs', errs)
 
 
+instance GetDependencies (PIndexerExpression ctx) where
+  getDependencies (PIndex e) = getDependencies e
+  getDependencies (PRangeIndexer (low,high)) = S.unions
+    [ getDependencies low
+    , getDependencies high
+    ]
 
 instance SingI n => GetDependencies (EPrec ctx n) where
   getDependencies e
@@ -303,9 +309,12 @@ instance SingI n => GetDependencies (EPrec ctx n) where
       PFloat _ _ -> S.empty
       PBool _ _ -> S.empty
       PString _ _ -> S.empty
+      PArray _ xs -> S.unions
+        [ getDependencies x | x <- xs ]
     | Just Refl <- matches @PrefixPrec (sing @n)
     = case e of
       PUMinus _ a -> getDependencies a
+      PNegate _ a -> getDependencies a
       OfHigherPrefixPrec a -> getDependencies a
     | Just Refl <- matches @PostfixPrec (sing @n)
     = case e of
@@ -347,6 +356,10 @@ instance SingI n => GetDependencies (EPrec ctx n) where
         , getDependencies b
         ]
       PMinus _ a b -> S.unions
+        [ getDependencies a
+        , getDependencies b
+        ]
+      PAppend _ a b -> S.unions
         [ getDependencies a
         , getDependencies b
         ]
@@ -416,10 +429,13 @@ instance SingI n => GetVar (EPrec ctx n) where
       PFloat _ _ -> S.empty
       PBool _ _ -> S.empty
       PString _ _ -> S.empty
+      PArray _ xs -> S.unions
+        [ getVar x | x <- xs ]
 
     | Just Refl <- matches @PrefixPrec (sing @n)
     = case e of
       PUMinus _ _ -> S.empty
+      PNegate _ _ -> S.empty
       OfHigherPrefixPrec a -> getVar a
 
     | Just Refl <- matches @PostfixPrec (sing @n)
@@ -444,6 +460,7 @@ instance SingI n => GetVar (EPrec ctx n) where
     = case e of
       PPlus _ _ _ -> S.empty
       PMinus _ _ _ -> S.empty
+      PAppend _ _ _ -> S.empty
       OfHigher6 a -> getVar a
 
     | Just Refl <- matches @4 (sing @n)
@@ -493,10 +510,12 @@ instance SingI n => IsStaticallyConstructive (EPrec ctx n) where
       PFloat _ _ -> True
       PBool _ _ -> True
       PString _ _ -> True
+      PArray _ xs -> all isStaticallyConstructive xs
 
     | Just Refl <- matches @PrefixPrec (sing @n)
     = case e of
       PUMinus _ _ -> False
+      PNegate _ _ -> False
       OfHigherPrefixPrec a -> isStaticallyConstructive a
 
     | Just Refl <- matches @PostfixPrec (sing @n)
@@ -521,6 +540,7 @@ instance SingI n => IsStaticallyConstructive (EPrec ctx n) where
     = case e of
       PPlus _ _ _ -> False
       PMinus _ _ _ -> False
+      PAppend _ _ _ -> False
       OfHigher6 a -> isStaticallyConstructive a
     | Just Refl <- matches @4 (sing @n)
     = case e of

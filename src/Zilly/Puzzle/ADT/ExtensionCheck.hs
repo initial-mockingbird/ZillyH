@@ -139,6 +139,10 @@ extensionCheckEAtom (PString bk a) =
 extensionCheckEAtom (PBool bk a) =
   validateExtension BoolType bk >> pure (PBool bk a)
 extensionCheckEAtom (PVar bk a) = pure (PVar bk a)
+extensionCheckEAtom (PArray bk xs) = do
+  -- validateExtension ArrayType bk
+  xs' <- traverse extensionCheckE xs
+  pure (PArray bk xs')
 extensionCheckEAtom (PTuple bk a b xs) = do
   validateExtension TupleType bk
   a' <- extensionCheckE a
@@ -189,12 +193,20 @@ extensionCheckEPostfix (PApp bk a xs) = do
 extensionCheckEPostfix (PAppArr bk a xs) = do
   validateExtension ArrayType bk
   a' <- extensionCheckE a
-  xs' <- traverse extensionCheckE xs
+  xs' <- traverse extensionCheckIndexer xs
   pure (PAppArr bk a' xs')
 extensionCheckEPostfix (OfHigherPostfixPrec a) = do
   a' <- extensionCheckE a
   pure (OfHigherPostfixPrec a')
 
+extensionCheckIndexer ::
+  ( ExtensionCheckEff m
+  )
+  => PIndexerExpression ParsingStage
+  -> m (PIndexerExpression ParsingStage)
+extensionCheckIndexer (PIndex a) = PIndex <$> extensionCheckE a
+extensionCheckIndexer (PRangeIndexer (a,b)) =
+  PRangeIndexer <$> ((,) <$> extensionCheckE a <*> extensionCheckE b)
 
 extensionCheckE8 ::
   ( ExtensionCheckEff m
