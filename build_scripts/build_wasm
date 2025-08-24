@@ -2,10 +2,10 @@
 #! nix-shell -i bash -p bash
 
 
-# $1 = path to where the cabal .wasm and .js will be held 
+# $1 = path to where the cabal .wasm and .js will be held
 # $2 = package to build
 
-set -e 
+set -e
 set -u
 set -x
 set -o pipefail
@@ -17,6 +17,7 @@ mkdir $OUTPUT_DIR
 
 
 BIN=$OUTPUT_DIR/bin.wasm
+JSGLUE=$OUTPUT_DIR/ghc_wasm_jsffi.js
 JS=$OUTPUT_DIR/ghc_wasm_jsffi.js
 WASI_GHC_PATH=$(wasm32-wasi-ghc --print-libdir)
 POST_LINKER=$WASI_GHC_PATH/post-link.mjs
@@ -27,3 +28,4 @@ $POST_LINKER --input "$HS_WASM" --output "$JS"
 wizer --allow-wasi --wasm-bulk-memory true --init-func _initialize -o "$BIN" "$HS_WASM"
 wasm-opt "$BIN" -o "$BIN" -O2
 wasm-tools strip -o "$BIN" "$BIN"
+bun build "$JSGLUE" > "$JSGLUE"
