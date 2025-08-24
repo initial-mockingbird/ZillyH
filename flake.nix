@@ -21,6 +21,19 @@
             [ inputs.ghc-wasm.packages.${pkgs.system}.all_9_12
               pkgs.hpack
               pkgs.just
+              pkgs.esbuild
+              pkgs.bun
+            ];
+        };
+        devShells.dev = pkgs.mkShell {
+          name = "haskell-template";
+          meta.description = "Haskell development environment";
+          inputsFrom = [
+          ];
+          nativeBuildInputs =
+            [ inputs.ghc-wasm.packages.${pkgs.system}.all_9_12
+              pkgs.hpack
+              pkgs.just
               pkgs.haskellPackages.Cabal_3_14_2_0
               pkgs.haskell.compiler.ghc912
               (pkgs.haskell-language-server.override { supportedGhcVersions = [ "912" ]; })
