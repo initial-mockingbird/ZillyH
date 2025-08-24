@@ -25,6 +25,8 @@
               pkgs.haskell.compiler.ghc912
               (pkgs.haskell-language-server.override { supportedGhcVersions = [ "912" ]; })
               pkgs.haskellPackages.hoogle
+              pkgs.esbuild
+              pkgs.bun
             ];
         };
       };

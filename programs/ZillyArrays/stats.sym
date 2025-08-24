@@ -1,0 +1,57 @@
+::zilly+
+sys.reset();
+
+Z => Z => Z min := fn(Z l) -> fn(Z r) -> if(l <= r,l,r);
+
+array[,]<R> => Z => array[]<R> r := fn(array[,]<R> m) -> fn(Z row) -> m[row,0 .. dim(m)[1] - 1];
+
+array[,]<R> => Z => array[]<R> c := fn(array[,]<R> m) -> fn(Z col) -> m[0 .. dim(m)[0] - 1,col];
+
+(R => R => R) => array[]<R> => array[]<R> => array[]<R> zipWith := fn(R => R => R f) -> fn(array[]<R> xs) -> fn(array[]<R> ys) ->  vector(min(length(xs))(length(ys)),fn (Z i) ->f(xs[i])(ys[i]));
+
+R => R => R mulR := fn(R l) -> fn(R r) -> l * r;
+
+Z => Z => (Z => R => R => R) => R =>  array[]<R> => R _foldl := fn (Z top) -> fn (Z i)  -> fn (Z => R => R => R f)  -> fn (R acc) -> fn (array[]<R> xs) -> if (i = top, acc, _foldl(top)(i+1)(f)(f(i)(acc)(xs[i]))(xs));
+
+(Z => R => R => R) => R =>  array[]<R> => R foldl := fn (Z => R => R => R f)  -> fn (R acc) -> fn (array[]<R> xs) -> _foldl(length(xs))(0)(f)(acc)(xs);
+
+array[]<R> => R sum := fn(array[]<R> xs) -> foldl(fn(Z i) -> fn(R acc) -> fn(R x) -> acc + x)(0)(xs);
+
+array[]<R> => R avg := fn(array[]<R> xs) -> sum(xs) / length(xs);
+
+array[]<R> => R var := fn(array[]<R> xs) -> sum(vector(length(xs),fn(Z i) -> xs[i]^2))  / length(xs) - (sum(xs)/length(xs))^2;
+
+array[]<R> => array[]<R> => R corr := fn(array[]<R> xs) -> fn(array[]<R> ys) -> (avg(zipWith(mulR)(xs)(ys)) - avg(xs) * avg(ys))  / (var(xs)^0.5 * var(ys)^0.5);
+
+array[]<Z> a0 := [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ];
+array[]<Z> a1 := [ 0, 0, 0 ,0, 0, 10, 10, 10, 10, 10 ];
+array[]<Z> a2 := cons(1e2, vector(1e3, fn(Z i) -> 5));
+array[]<R> a3 := vector(10, fn(Z i) -> 5 + random(0.1));
+
+avg(a0)
+avg(a1)
+avg(a2)
+avg(a3)
+var(a0)
+var(a1)
+var(a2)
+var(a3)
+
+R => R f := fn(R x) -> x * 2 + 1;
+array[]<R> xs := vector(10, fn(Z i) -> i);
+array[]<lazy<R>> ys := vector(10, fn(Z i) -> 'f(xs[i]) + random(200.0)');
+
+lazy<R> corrXY := 'corr(xs)(ys)';
+
+
+xs
+ys
+corrXY
+sys.tick();
+ys
+corrXY
+
+ys := vector(10, fn(Z i) -> f(xs[i]) + random(0.1));
+
+ys
+corrXY

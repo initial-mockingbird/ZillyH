@@ -126,6 +126,10 @@ tcA0 (Zilly.Puzzle.Parser.Print e bk) = do
   env <- getEnv
   (e', et) <- withExpectedType S.empty $ tcE @_ @ctx e
   pure (Zilly.Puzzle.ADT.Action.Print e', env)
+tcA0 (Zilly.Puzzle.Parser.SysCommand "tick" bk)  = do
+  env' <-  getEnv
+  pure (Zilly.Puzzle.ADT.Action.SysCommand "tick", env')
+
 tcA0 (Zilly.Puzzle.Parser.SysCommand cmd bk) | cmd `elem` extensions = do
   env' <-  def @(m (TypeRepMap (E ctx)))
   pure (Zilly.Puzzle.ADT.Action.SysCommand cmd, env')
@@ -359,8 +363,8 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "vector") [cols,fun]) = do
   (cols', bt) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx cols
   (fun', ft)  <- withExpectedType (etTransform et) $ tcE @_ @ctx fun
   case ft of
-    T.Z T.:-> t ->pure (VectorSat cols' fun', T.NDArray 1 ft)
-    _ -> error "impossible: function type is not of the form Z -> t"
+    T.Z T.:-> t ->pure (VectorSat cols' fun', T.NDArray 1 t)
+    _ -> throwError "function type is not of the form Z -> t"
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "cons") [elem,arr]) = do
   (arr',arrt) <- tcE @_ @ctx arr
   case arrt of
@@ -390,7 +394,7 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "matrix") [rows,cols,fun]) = do
   (fun', ft)  <- withExpectedType (etTransform et) $ tcE @_ @ctx fun
   case ft of
     (T.Z T.:-> (T.Z T.:-> t)) ->pure (MatrixSat rows' cols' fun', T.NDArray 2 t)
-    _ -> error "impossible: function type is not of the form Z -> Z -> t"
+    _ -> throwError "impossible: function type is not of the form Z -> Z -> t"
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "dim") [arr]) = do
   (arr',arrT) <- withExpectedType (S.empty) $ tcE @_ @ctx arr
   case arrT of

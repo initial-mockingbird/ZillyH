@@ -558,10 +558,10 @@ type instance EAppX ParsingStage = BookeepInfo
 type instance EAAppX ParsingStage = BookeepInfo
 
 mkApp :: Parser (EPrec ParsingStage 0) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
-mkApp p =  (\p' x y -> PApp p' y x ) <$> mkBookeepInfo <*> parens (p `sepBy` ",")
+mkApp p =  (\p' x y -> PApp p' y x ) <$> mkBookeepInfo <*> between "(" ")" (p `sepBy` ",")
 
 mkAppArr :: Parser (PIndexerExpression ParsingStage) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
-mkAppArr p =  (\p' x y -> PAppArr p' y x ) <$> mkBookeepInfo <*> bracketed' (p `sepBy` ",")
+mkAppArr p =  (\p' x y -> PAppArr p' y x ) <$> mkBookeepInfo <*> between "[" "]" (p `sepBy` ",")
 
 data PIndexerExpression ctx
   = PRangeIndexer (EPrec ctx 0, EPrec ctx 0)
@@ -573,8 +573,10 @@ foldPIndexerExpression f g = \case
   PIndex a            -> g a
 
 pIndexerExpression :: Parser (PIndexerExpression ParsingStage)
-pIndexerExpression = f <$> expr <*> optionMaybe (".." *> expr)
+pIndexerExpression = f <$> eOrInt <*> optionMaybe (".." *> expr)
   where
+    eOrInt :: Parser (EPrec ParsingStage 0)
+    eOrInt = OfHigher0 <$> (mkInt <*> decimal <* spaces) <|> expr
     f :: EPrec ParsingStage 0 -> Maybe (EPrec ParsingStage 0) -> PIndexerExpression ParsingStage
     f a (Just b) = PRangeIndexer (a,b)
     f a Nothing  = PIndex a

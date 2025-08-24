@@ -84,8 +84,7 @@ evalA' a = fmap (a,) getQ >>= \case
   (SysCommand "tick", _) -> do
     cycleCC
     putQ 0
-    env <- getEnv @(E ctx)
-    pure (env, a)
+    evalA a
   (SysCommand "reset", _) -> do
     res <- evalA a
     cycleCC
@@ -164,6 +163,10 @@ evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
 evalA a@(SysCommand "reset") = do
   env <- def @(m (TypeRepMap (E ctx)))
   pure  (env,a)
+evalA a@(SysCommand "tick") = do
+  env <- getEnv
+  pure  (env,a)
+
 evalA (SysCommand _) = evalA ABottom
 evalA ABottom = error "trying to eval action bottom"
 

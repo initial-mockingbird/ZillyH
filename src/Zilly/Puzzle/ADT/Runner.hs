@@ -395,8 +395,14 @@ _1dSym = genericEx "./programs/ZillyArrays/1D.sym"
 _2dSym :: IO ()
 _2dSym = genericEx "./programs/ZillyArrays/2D.sym"
 
+matMul :: IO ()
+matMul = genericEx "./programs/ZillyArrays/matMul.sym"
 
+stats :: IO ()
+stats = genericEx "./programs/ZillyArrays/stats.sym"
 
+slices :: IO ()
+slices = genericEx "./programs/ZillyArrays/slices.sym"
 
 genericEx :: FilePath -> IO ()
 genericEx fp = do
