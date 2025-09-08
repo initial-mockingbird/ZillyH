@@ -1,19 +1,18 @@
-{-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE TypeAbstractions    #-}
 {-# LANGUAGE GADTs               #-}
 
-module Zilly.Puzzle.ADT.Unsugar where
+module Zilly.Puzzle.TypeCheck.Unsugar
+  ( unsugarE
+  ) where
 
 import Zilly.Puzzle.Parser
 
 
 import Prelude.Singletons
 import Data.Singletons.TH
-import Debug.Trace (trace)
 import Data.Matchers
 
 unsugarE :: forall n ctx. SingI n => EPrec ctx n -> EPrec ctx n

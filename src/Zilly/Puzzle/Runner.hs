@@ -13,18 +13,17 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Zilly.Puzzle.ADT.Runner where
+module Zilly.Puzzle.Runner where
 
 import Zilly.Puzzle.Parser qualified as P
 import Zilly.Puzzle.Parser (Parser)
-import Zilly.Puzzle.ADT.Expression
-import Zilly.Puzzle.ADT.Action
+import Zilly.Puzzle.Expression.Exports
+import Zilly.Puzzle.Action.Exports
 import Zilly.Puzzle.Environment.TypedMap hiding (fromList,toList)
 import Zilly.Puzzle.Effects.CC
-import Zilly.Puzzle.Newtypes
+import Zilly.Puzzle.Types.Exports
 import Zilly.Puzzle.Effects.Block (CCActions(..))
-import Zilly.Puzzle.ADT.ExtensionCheck
-import Zilly.Puzzle.ADT.TypeCheck
+import Zilly.Puzzle.TypeCheck.Exports
 
 import Control.Monad.Random
 import Control.Monad.IO.Class (MonadIO)
@@ -395,8 +394,14 @@ _1dSym = genericEx "./programs/ZillyArrays/1D.sym"
 _2dSym :: IO ()
 _2dSym = genericEx "./programs/ZillyArrays/2D.sym"
 
+matMul :: IO ()
+matMul = genericEx "./programs/ZillyArrays/matMul.sym"
 
+stats :: IO ()
+stats = genericEx "./programs/ZillyArrays/stats.sym"
 
+slices :: IO ()
+slices = genericEx "./programs/ZillyArrays/slices.sym"
 
 genericEx :: FilePath -> IO ()
 genericEx fp = do

@@ -20,7 +20,7 @@ import Control.Monad.IO.Class
 import Data.String (IsString(..))
 import Data.Kind (Type)
 import Control.Monad.Error.Class
-import Zilly.Puzzle.Newtypes
+import Zilly.Puzzle.Types.Exports
 
 -------------------------------
 -- Errors

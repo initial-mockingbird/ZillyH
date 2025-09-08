@@ -8,7 +8,7 @@ module Main where
 -- import Zilly.Classic.Runner
 import GHC.Wasm.Prim
 import Language.Javascript.JSaddle.Wasm qualified as JSaddle.Wasm
-import Zilly.Puzzle.ADT.Runner (buildInterpreter)
+import Zilly.Puzzle.Runner (buildInterpreter)
 import GHC.IO
 
 main :: IO ()

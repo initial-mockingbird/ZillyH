@@ -1,20 +1,25 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE TypeAbstractions    #-}
-{-# LANGUAGE GADTs #-}
 
-module Zilly.Puzzle.ADT.ExtensionCheck where
+module Zilly.Puzzle.TypeCheck.ExtensionCheck
+  ( Extensions(..)
+  , ExtensionCheckEff(..)
+  , extensionCheckE
+  , extensionCheckA0
+  , extensionCheckA1
+  , extensionCheckTypes
+
+  ) where
 
 import Zilly.Puzzle.Parser
-import Zilly.Puzzle.Newtypes qualified as T
+import Zilly.Puzzle.Types.Exports qualified as T
 
 
 import Prelude.Singletons
 import Data.Singletons.TH
-import Debug.Trace (trace)
 import Data.Matchers
 import Data.Traversable
 

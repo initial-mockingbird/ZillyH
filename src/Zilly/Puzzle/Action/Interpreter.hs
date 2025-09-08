@@ -1,33 +1,25 @@
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE TypeAbstractions #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE ImportQualifiedPost #-}
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE TypeAbstractions      #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE ImportQualifiedPost   #-}
 
-module Zilly.Puzzle.ADT.Action where
 
-import Zilly.Puzzle.ADT.Expression
-import Zilly.Puzzle.Newtypes
+module Zilly.Puzzle.Action.Interpreter
+  ( AEffects
+  , ACtxConstraint
+  , evalA'
+  , evalA
+  , evalProgram
+  ) where
+
+import Zilly.Puzzle.Action.Base
+import Zilly.Puzzle.Expression.Exports
 import Zilly.Puzzle.Environment.TypedMap
 import Zilly.Puzzle.Effects.CC
-import Data.Kind (Type)
-import Control.Monad.Reader
-import Debug.Trace (trace)
 import Data.Default
 import Control.Monad.Error.Class
 import Zilly.Puzzle.Effects.Block (CCActions(..))
@@ -47,14 +39,6 @@ type ACtxConstraint ctx m =
   , Default (m (TypeRepMap (E ctx)))
 
   )
-
-data A (ctx :: Type) where
-  Assign   :: Types -> LensM (E ctx) -> E ctx -> A ctx
-  Reassign :: LensM (E ctx) -> [[(E ctx, Maybe (E ctx))]] -> E ctx -> A ctx
-  Print    :: E ctx -> A ctx
-  SysCommand :: String -> A ctx
-  ABottom  :: A ctx
-
 
 evalA' :: forall {m} ctx.
   ( ACtxConstraint ctx m
@@ -84,8 +68,7 @@ evalA' a = fmap (a,) getQ >>= \case
   (SysCommand "tick", _) -> do
     cycleCC
     putQ 0
-    env <- getEnv @(E ctx)
-    pure (env, a)
+    evalA a
   (SysCommand "reset", _) -> do
     res <- evalA a
     cycleCC
@@ -164,6 +147,10 @@ evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
 evalA a@(SysCommand "reset") = do
   env <- def @(m (TypeRepMap (E ctx)))
   pure  (env,a)
+evalA a@(SysCommand "tick") = do
+  env <- getEnv
+  pure  (env,a)
+
 evalA (SysCommand _) = evalA ABottom
 evalA ABottom = error "trying to eval action bottom"
 
@@ -173,39 +160,3 @@ evalProgram :: forall {m} ctx.
   => [A ctx] -> m ((TypeRepMap (E ctx) ,[A ctx]))
 evalProgram []     = getEnv >>= \env -> pure ((env, []))
 evalProgram (x:xs) = evalA' @ctx x >>= \(env',x') -> fmap (x' :) <$> withEnv env' (evalProgram xs)
-
-instance
-  ( CtxPureConstraint ctx
-  , MonadIO (EvalMonad (E ctx))
-  , MonadError String (EvalMonad (E ctx))
-  ) => Show (A ctx) where
-  showsPrec _ = \case
-    (Assign t x e)
-      -> shows t
-      . showString " "
-      . shows (UT $ varNameM x)
-      . showString " := "
-      . shows e
-      . showString ";"
-    (Reassign  x [] e)
-      -> shows (UT $ varNameM x)
-      . showString " := "
-      . shows e
-      . showString ";"
-    (Reassign x eiss e)
-      -> shows (UT $ varNameM x)
-      . foldl (\acc eis
-        -> acc
-        . showString " ["
-        . foldl (\acc' (l,mu) ->
-            acc' . shows l . maybe id (\u -> showString ".." . shows u) mu
-          ) (showString "" )
-          eis
-        . showString " ]"
-        ) id eiss
-      . showString " := "
-      . shows e
-      . showString ";"
-    (Print e) -> shows e
-    (SysCommand s) -> showString "sys." . showString s . showString "();"
-    ABottom -> showString "⊥"

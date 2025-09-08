@@ -1,38 +1,38 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE TypeAbstractions    #-}
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns        #-}
 
-module Zilly.Puzzle.ADT.TypeCheck where
+module Zilly.Puzzle.TypeCheck.TypeCheck
+  ( TCMonad(..)
+  , TCEffs
+  , tcAs
+  , tcA0
+  , tcE
+
+  ) where
 
 import Zilly.Puzzle.Parser
-import Zilly.Puzzle.Newtypes qualified as T
-import Zilly.Puzzle.ADT.Expression
+import Zilly.Puzzle.Types.Exports qualified as T
+import Zilly.Puzzle.Expression.Exports
 import Zilly.Puzzle.Environment.TypedMap
-import Zilly.Puzzle.ADT.Action
+import Zilly.Puzzle.Action.Exports
 
 import Data.Set (Set)
 import Data.Set qualified as S
 import Prelude.Singletons
 import Data.Singletons.TH
-import Debug.Trace (trace)
 import Data.Matchers
 import Data.Traversable
 import Control.Monad.Error.Class
-import Data.Text (Text)
 import Data.Text qualified as Text
-import Data.String (IsString(..))
 import Data.List (intercalate)
 import Data.Default
 import Data.Foldable
@@ -91,7 +91,7 @@ tcA0 (Decl ltype (yieldVarName -> Just v) r bk) = do
     $ withExpectedType (S.singleton ltype)
     $ tcE @_ @ctx r
   env'' <- reassign v r' env'
-  pure (Zilly.Puzzle.ADT.Action.Assign ltype var r', env'')
+  pure (Zilly.Puzzle.Action.Exports.Assign ltype var r', env'')
 tcA0 (Zilly.Puzzle.Parser.Assign (yieldArrAssign -> Just (v,ixss)) r bk) = do
   env <- getEnv
   ixsT <- forM ixss $ \ixs -> forM ixs $ \case
@@ -125,10 +125,14 @@ tcA0 (Zilly.Puzzle.Parser.Assign (yieldArrAssign -> Just (v,ixss)) r bk) = do
 tcA0 (Zilly.Puzzle.Parser.Print e bk) = do
   env <- getEnv
   (e', et) <- withExpectedType S.empty $ tcE @_ @ctx e
-  pure (Zilly.Puzzle.ADT.Action.Print e', env)
+  pure (Zilly.Puzzle.Action.Exports.Print e', env)
+tcA0 (Zilly.Puzzle.Parser.SysCommand "tick" bk)  = do
+  env' <-  getEnv
+  pure (Zilly.Puzzle.Action.Exports.SysCommand "tick", env')
+
 tcA0 (Zilly.Puzzle.Parser.SysCommand cmd bk) | cmd `elem` extensions = do
   env' <-  def @(m (TypeRepMap (E ctx)))
-  pure (Zilly.Puzzle.ADT.Action.SysCommand cmd, env')
+  pure (Zilly.Puzzle.Action.Exports.SysCommand cmd, env')
   where
     extensions =
       [ "reset"
@@ -359,8 +363,8 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "vector") [cols,fun]) = do
   (cols', bt) <- withExpectedType (S.singleton T.Z) $ tcE @_ @ctx cols
   (fun', ft)  <- withExpectedType (etTransform et) $ tcE @_ @ctx fun
   case ft of
-    T.Z T.:-> t ->pure (VectorSat cols' fun', T.NDArray 1 ft)
-    _ -> error "impossible: function type is not of the form Z -> t"
+    T.Z T.:-> t ->pure (VectorSat cols' fun', T.NDArray 1 t)
+    _ -> throwError "function type is not of the form Z -> t"
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "cons") [elem,arr]) = do
   (arr',arrt) <- tcE @_ @ctx arr
   case arrt of
@@ -390,7 +394,7 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "matrix") [rows,cols,fun]) = do
   (fun', ft)  <- withExpectedType (etTransform et) $ tcE @_ @ctx fun
   case ft of
     (T.Z T.:-> (T.Z T.:-> t)) ->pure (MatrixSat rows' cols' fun', T.NDArray 2 t)
-    _ -> error "impossible: function type is not of the form Z -> Z -> t"
+    _ -> throwError "impossible: function type is not of the form Z -> Z -> t"
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "dim") [arr]) = do
   (arr',arrT) <- withExpectedType (S.empty) $ tcE @_ @ctx arr
   case arrT of

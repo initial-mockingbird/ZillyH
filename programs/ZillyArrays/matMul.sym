@@ -1,0 +1,41 @@
+::zilly+
+sys.reset();
+
+Z => Z => Z min := fn(Z l) -> fn(Z r) -> if(l <= r,l,r);
+
+array[,]<R> => Z => array[]<R> r := fn(array[,]<R> m) -> fn(Z row) -> m[row,0 .. dim(m)[1] - 1];
+
+array[,]<R> => Z => array[]<R> c := fn(array[,]<R> m) -> fn(Z col) -> m[0 .. dim(m)[0] - 1,col];
+
+(R => R => R) => array[]<R> => array[]<R> => array[]<R> zipWith := fn(R => R => R f) -> fn(array[]<R> xs) -> fn(array[]<R> ys) ->  vector(min(length(xs))(length(ys)),fn (Z i) ->f(xs[i])(ys[i]));
+
+R => R => R mulR := fn(R l) -> fn(R r) -> l * r;
+
+Z => array[]<R> => R _sum := fn(Z n) -> fn(array[]<R> xs) -> if(n = 0, xs[0], xs[n] + _sum(n - 1)(xs));
+
+array[]<R> => R sum := fn(array[]<R> xs) -> _sum(length(xs) - 1)(xs);
+
+array[]<R> => array[]<R> => R dot := fn(array[]<R> xs) -> fn(array[]<R> ys) -> sum(zipWith(mulR)(xs)(ys));
+
+array[,]<R> => array[,]<R> => array[,]<R> matMul := fn(array[,]<R> a) -> fn(array[,]<R> b) -> matrix(dim(a)[0], dim(b)[1], fn(Z i) -> fn(Z j) -> dot(r(a)(i))(c(b)(j)));
+
+
+array[,]<Z> i := [ [1,0,0], [0,1,0], [0,0,1] ];
+array[,]<Z> _2i := matrix(3,3, fn(Z i) -> fn(Z j) -> if(i = j, 2, 0));
+array[,]<Z> a := [ [1,2,3], [4,5,6], [7,8,9] ];
+
+matMul(i)(a)
+matMul(a)(i)
+matMul(_2i)(a)
+matMul(a)(_2i)
+
+array[,]<Z> idem := [ [2,-2,-4], [-1,3,4], [1,-2,-3]];
+
+matMul(idem)(idem)
+matMul(matMul(idem)(idem))(idem)
+matMul(matMul(matMul(idem)(idem))(idem))(idem)
+
+array[,]<Z> nil := [ [0,1,0], [0,0,1], [0,0,0] ];
+
+matMul(nil)(nil)
+matMul(matMul(nil)(nil))(nil)

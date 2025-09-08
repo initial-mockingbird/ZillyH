@@ -43,19 +43,34 @@ library
       Utilities.Codes
       Utilities.LensM
       Utilities.ShowM
-      Zilly.Puzzle.ADT.Action
-      Zilly.Puzzle.ADT.Expression
-      Zilly.Puzzle.ADT.ExtensionCheck
-      Zilly.Puzzle.ADT.Runner
-      Zilly.Puzzle.ADT.TypeCheck
-      Zilly.Puzzle.ADT.Unsugar
+      Zilly.Puzzle.Action.Base
+      Zilly.Puzzle.Action.Exports
+      Zilly.Puzzle.Action.Interpreter
+      Zilly.Puzzle.Action.Show
       Zilly.Puzzle.Effects.Block
       Zilly.Puzzle.Effects.CC
       Zilly.Puzzle.Effects.Cycle
       Zilly.Puzzle.Effects.Memoize
       Zilly.Puzzle.Environment.TypedMap
-      Zilly.Puzzle.Newtypes
+      Zilly.Puzzle.Expression.Base
+      Zilly.Puzzle.Expression.Classes
+      Zilly.Puzzle.Expression.Eq
+      Zilly.Puzzle.Expression.Exports
+      Zilly.Puzzle.Expression.Interpreter
+      Zilly.Puzzle.Expression.Patterns
+      Zilly.Puzzle.Expression.Show
+      Zilly.Puzzle.Expression.Std
       Zilly.Puzzle.Parser
+      Zilly.Puzzle.Runner
+      Zilly.Puzzle.TypeCheck.Exports
+      Zilly.Puzzle.TypeCheck.ExtensionCheck
+      Zilly.Puzzle.TypeCheck.TypeCheck
+      Zilly.Puzzle.TypeCheck.Unsugar
+      Zilly.Puzzle.Types.Exports
+      Zilly.Puzzle.Types.Morphisms
+      Zilly.Puzzle.Types.Patterns
+      Zilly.Puzzle.Types.Show
+      Zilly.Puzzle.Types.Types
   other-modules:
       Paths_ZillyH
   autogen-modules:
