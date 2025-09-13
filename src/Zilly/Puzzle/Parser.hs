@@ -66,6 +66,8 @@ import GHC.TypeLits (sameNat)
 import Data.Text qualified as Text
 import Data.Matchers
 import Text.Read (readMaybe)
+import Data.List (intercalate)
+import Debug.Trace (trace)
 
 traceSingI :: forall {k} (n :: k) a. (SingKind k, Show (Demote k), SingI n) => a -> a
 traceSingI a = trace (show $ demote @n) a
@@ -86,6 +88,8 @@ keywords = stdLib ++
   , "fn"
   , "λ"
   , "array"
+  , "match"
+  , "with"
   ]
 
 -- | standard library for Lilly
@@ -101,6 +105,7 @@ reservedOperators =
   , "->"
   , "=>"
   , ":-"
+  , "|"
   ]
 
 ----------------------------
@@ -125,7 +130,7 @@ instance u ~ () => IsString (Parser u ) where
   fromString str
     | str `elem` keywords = keyword str
     | str `elem` reservedOperators
-      = token (string str *> notFollowedBy (choice $ (void . string) <$> ["+","-","=","<",">","%","^",":"]) )
+      = token (string str *> notFollowedBy (choice $ (void . string) <$> ["+","-","=","<",">","%","^",":","|"]) )
     | otherwise           = void $ token (string str)
 
 
@@ -170,11 +175,11 @@ type Atom    = Inf
 
 -- | One level bellow atom precedence. Needed to be defined as
 -- a constant due to restrictions on type family evaluation inside GADTs.
-type PredInf = 0xfffffffffffffffe
 
-type PrefixPrec = 0xfffffffffffffffd
 
-type PostfixPrec = 0xfffffffffffffffe
+type PrefixPrec = 0xfffffffffffffffc
+
+type PostfixPrec = 0xfffffffffffffffd
 
 
 -- | Expressions Have the lowest precedence.
@@ -194,18 +199,27 @@ data instance TPrec ctx Atom where
   -- | Mimics TCon carrying the book-keeping information.
   TNormal   :: forall n ctx. (SingI n, (n < Atom) ~ True)
     => TNX ctx -> String -> [TPrec ctx n] -> TPrec ctx Atom
+  TARecord :: forall n ctx. (SingI n, (n < Atom) ~ True)
+    => TARecordX ctx -> [(String, TPrec ctx n)] -> TPrec ctx Atom
   OfLowerTPrec :: forall n ctx. (SingI n, (n < Atom) ~ True)
     => TPrec ctx n -> TPrec ctx Atom
 
-
-type family TNX (ctx :: Type)    :: Type
-type instance TNX ParsingStage    = BookeepInfo
+type family TARecordX (ctx :: Type) :: Type
+type family TNX (ctx :: Type)       :: Type
+type instance TNX ParsingStage       = BookeepInfo
+type instance TARecordX ParsingStage = BookeepInfo
 
 
 mkTNormal :: forall n . (SingI n, (n < Atom) ~ True)
     => Parser (String -> [TPrec ParsingStage n] -> TPrec ParsingStage Atom)
 mkTNormal = TNormal @n @ParsingStage <$> mkBookeepInfo
 
+
+pARecordT :: Parser (TPrec ParsingStage Atom)
+pARecordT = TARecord <$> mkBookeepInfo <*> between "{" "}" (field `sepBy` ",")
+  where
+    field :: Parser (String, TPrec ParsingStage 0)
+    field = (,) <$> (ident <* ":") <*> pTypes
 
 pArrayT :: Parser String
 pArrayT
@@ -237,7 +251,7 @@ pParenOrTupleT
 
 
 pTypeAtom :: Parser (TPrec ParsingStage Atom)
-pTypeAtom =  pNormal <|> pParenOrTupleT
+pTypeAtom =  pARecordT <|> pNormal <|> pParenOrTupleT
 
 
 instance (SingI n',SingI n, (n' > n) ~ True) => TPrec ctx n' PU.< TPrec ctx n where
@@ -329,6 +343,7 @@ t2NT f = case sing @n of
     (_,Just Refl) -> case f of
       TNormal _ "lazy" [a] -> T.Lazy (t2NT a)
       TNormal _ a as -> T.TCon (Text.pack a) (t2NT <$> as)
+      TARecord _ fields -> T.ARecord [(Text.pack k, t2NT v) | (k,v) <- fields]
       OfLowerTPrec f' -> t2NT f'
     _             -> error "Type precedence must be one of: Atom, 0."
 
@@ -382,6 +397,13 @@ data instance EPrec ctx Atom where
     => EIfX ctx
     -> (EPrec ctx n0, EPrec ctx n1, EPrec ctx n2)
     -> EPrec ctx Atom
+  PMatch
+    :: EMatchX ctx
+    -> EPrec ctx 0
+    -> [(PPattern ctx, EPrec ctx 0)]
+    -> EPrec ctx Atom
+  PECons :: EECons ctx -> String -> [EPrec ctx 0] -> EPrec ctx Atom
+  PEARecord :: EARecordX ctx -> [(String, EPrec ctx 0)] -> EPrec ctx Atom
 
 type family EIX (ctx :: Type) :: Type
 type family EFX (ctx :: Type) :: Type
@@ -393,7 +415,9 @@ type family EPX (ctx :: Type) :: Type
 type family EDefX (ctx :: Type) :: Type
 type family EIfX (ctx :: Type) :: Type
 type family EAX (ctx :: Type) :: Type
-
+type family EMatchX  (ctx :: Type) :: Type
+type family EECons (ctx :: Type) :: Type
+type family EARecordX (ctx :: Type) :: Type
 
 type instance EIX ParsingStage = BookeepInfo
 type instance EFX ParsingStage = BookeepInfo
@@ -405,6 +429,9 @@ type instance EPX ParsingStage = BookeepInfo
 type instance EDefX ParsingStage = BookeepInfo
 type instance EIfX ParsingStage = BookeepInfo
 type instance EAX ParsingStage = BookeepInfo
+type instance EMatchX  ParsingStage = BookeepInfo
+type instance EECons ParsingStage = BookeepInfo
+type instance EARecordX ParsingStage = BookeepInfo
 
 
 mkIf :: forall {n} n0 n1 n2.
@@ -471,13 +498,16 @@ pArray = mkArray (expr `sepBy` ",")
 pNumber :: Parser (EPrec ParsingStage Atom)
 pNumber = pNumber' <* spaces
   where
-  f x bk = case x == fromInteger (round x) of
-    True  -> PInt bk  (round x)
-    False -> PFloat bk x
+  f x bk = case x of
+    Left i  -> PInt bk i
+    Right f -> PFloat bk f
 
   pNumber'
       -- = flip f <$> mkBookeepInfo <*> fractional3 @Double False
-      = flip f <$> mkBookeepInfo <*> floating3 @Double False
+      = flip f <$> mkBookeepInfo <*> decimalFract @Int @Double
+
+pConsName :: Parser String
+pConsName = (:) <$> char '#' <*> ident
 
 
 
@@ -509,18 +539,39 @@ pString = PString <$> mkBookeepInfo <*> (char '"' >> f)
       _ -> error "pString is buggy."
 
 
+mkMatch ::  Parser (EPrec ParsingStage Atom)
+mkMatch = PMatch
+  <$> (mkBookeepInfo <* "match")
+  <*> (expr <* "with")
+  <*> sepBy ((,) <$> pPPattern <*> ( "->" *> expr)) "|"
 
+
+mkECons :: forall {n0}. (n0 ~ Atom)
+  => Parser (String -> [EPrec ParsingStage 0] -> EPrec ParsingStage n0)
+mkECons = PECons <$> mkBookeepInfo
+
+mkEARecord :: forall {n0}. (n0 ~ Atom)
+  => Parser (EPrec ParsingStage n0)
+mkEARecord = PEARecord <$> mkBookeepInfo <*> between "{" "}" (field `sepBy` ",")
+  where
+    field :: Parser (String, EPrec ParsingStage 0)
+    field = (,) <$> (ident <* ":=") <*> expr
 
 atom :: Parser (EPrec ParsingStage Atom)
 atom
-  = pNumber
-  <|> pString
+  -- = pNumber
+  -- <|> pString
+  = pString
   <|> pDefer
   <|> pArray
   <|> pIf
   <|> pParenOrTupleP
   <|> pBool
+  <|> mkMatch
+  <|> mkEARecord
+  <|> mkECons <*> pConsName <*> between "(" ")" (expr `sepBy` ",")
   <|> mkVar    <*> ident
+  <|> pNumber
 
 
 -----------------------------------
@@ -548,20 +599,26 @@ data instance EPrec ctx PostfixPrec where
   -- Function applications: @expr(expr00,expr01,....)(expr10,expr11,...)...@
   PApp    :: EAppX ctx -> EPrec ctx PostfixPrec -> [EPrec ctx 0] -> EPrec ctx PostfixPrec
   PAppArr :: EAAppX ctx -> EPrec ctx PostfixPrec -> [PIndexerExpression ctx] -> EPrec ctx PostfixPrec
+  PDotApp :: EDAppX ctx -> EPrec ctx PostfixPrec -> String -> EPrec ctx PostfixPrec
   OfHigherPostfixPrec :: forall n ctx. (SingI n,(n > PostfixPrec) ~ True)
     => EPrec ctx n -> EPrec ctx PostfixPrec
 
 type family EAppX (ctx :: Type)  :: Type
 type family EAAppX (ctx :: Type) :: Type
+type family EDAppX (ctx :: Type) :: Type
 
 type instance EAppX ParsingStage = BookeepInfo
 type instance EAAppX ParsingStage = BookeepInfo
+type instance EDAppX ParsingStage = BookeepInfo
 
 mkApp :: Parser (EPrec ParsingStage 0) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
 mkApp p =  (\p' x y -> PApp p' y x ) <$> mkBookeepInfo <*> between "(" ")" (p `sepBy` ",")
 
 mkAppArr :: Parser (PIndexerExpression ParsingStage) -> Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
 mkAppArr p =  (\p' x y -> PAppArr p' y x ) <$> mkBookeepInfo <*> between "[" "]" (p `sepBy` ",")
+
+mkDotApp :: Parser (EPrec ParsingStage PostfixPrec -> EPrec ParsingStage PostfixPrec)
+mkDotApp = (\p' x y -> PDotApp p' y x ) <$> mkBookeepInfo <*> (char '.' *> ident)
 
 data PIndexerExpression ctx
   = PRangeIndexer (EPrec ctx 0, EPrec ctx 0)
@@ -787,6 +844,135 @@ mkLambda
   <*> optionMaybe ("=>" *> fmap t2NT pTypes) )
   <* "->"
 
+
+
+----------------------------------
+-- Pattern Matching Expressions
+----------------------------------
+
+data PPattern ctx
+  = MkPPattern (PLPattern ctx) [PPaternGuard ctx]
+
+pPPattern :: Parser (PPattern ParsingStage)
+pPPattern = MkPPattern <$> pLPattern <*> option [] (between "<" ">" (pBindingGuard `sepBy` ","))
+
+
+data PLPattern ctx where
+  PLVarPattern :: PLVarCtx ctx -> String -> PLPattern ctx
+  PLWildcardPattern :: PLWCCtx ctx -> PLPattern ctx
+  PLIntPattern :: PLIntCtx ctx -> Int -> PLPattern ctx
+  PLBoolPattern :: PLBoolCtx ctx -> Bool -> PLPattern ctx
+  PLStringPattern :: PLStringCtx ctx -> String -> PLPattern ctx
+  PLFloatPattern :: PLFloatCtx ctx -> Double -> PLPattern ctx
+  PLTuplePattern :: PLTupleCtx ctx -> PLPattern ctx -> PLPattern ctx -> [PLPattern ctx] -> PLPattern ctx
+  PLConstructorPattern :: PLConsCtx ctx -> String -> [PLPattern ctx] -> PLPattern ctx
+  PLARecordPattern :: PLARecordCtx ctx -> [(String, T.Types)] -> PLPattern ctx
+
+type family PLVarCtx     (ctx :: Type) :: Type
+type family PLWCCtx      (ctx :: Type) :: Type
+type family PLIntCtx     (ctx :: Type) :: Type
+type family PLBoolCtx    (ctx :: Type) :: Type
+type family PLStringCtx  (ctx :: Type) :: Type
+type family PLFloatCtx   (ctx :: Type) :: Type
+type family PLTupleCtx   (ctx :: Type) :: Type
+type family PLConsCtx    (ctx :: Type) :: Type
+type family PLARecordCtx (ctx :: Type) :: Type
+
+type instance PLVarCtx     ParsingStage = BookeepInfo
+type instance PLWCCtx      ParsingStage = BookeepInfo
+type instance PLIntCtx     ParsingStage = BookeepInfo
+type instance PLBoolCtx    ParsingStage = BookeepInfo
+type instance PLStringCtx  ParsingStage = BookeepInfo
+type instance PLFloatCtx   ParsingStage = BookeepInfo
+type instance PLTupleCtx   ParsingStage = BookeepInfo
+type instance PLConsCtx    ParsingStage = BookeepInfo
+type instance PLARecordCtx ParsingStage = BookeepInfo
+
+
+pLVarPattern :: Parser (PLPattern ParsingStage)
+pLVarPattern = PLVarPattern <$> mkBookeepInfo <*> ident
+
+pLWildcardPattern :: Parser (PLPattern ParsingStage)
+pLWildcardPattern = PLWildcardPattern <$> mkBookeepInfo <* (char '_' <* space <* spaces)
+
+pLIntOrFloatPattern :: Parser (PLPattern ParsingStage)
+pLIntOrFloatPattern = f <$> mkBookeepInfo <*> (floating3 @Double False <* spaces)
+  where
+    f :: BookeepInfo -> Double -> PLPattern ParsingStage
+    f bk x = case x == fromInteger (round x) of
+      True  -> PLIntPattern bk (round x)
+      False -> PLFloatPattern bk x
+
+pLBoolPattern :: Parser (PLPattern ParsingStage)
+pLBoolPattern = PLBoolPattern <$> mkBookeepInfo <*> ("true" $> True <|> "false" $> False)
+
+pLStringPattern :: Parser (PLPattern ParsingStage)
+pLStringPattern = PLStringPattern <$> mkBookeepInfo <*> (char '"' >> f)
+  where
+  f = do
+    b <- Text.Parsec.many (noneOf ['"','\\'])
+    c <- anyChar
+    case c of
+      '"' -> pure b
+      '\\' -> do
+        c' <- anyChar
+        mappend (b <> ['\\',c']) <$> f
+      _ -> error "pLStringPattern is buggy."
+
+pLTuplePattern :: Parser (PLPattern ParsingStage)
+pLTuplePattern
+  = PLTuplePattern
+  <$> mkBookeepInfo
+  <*> ("(" *>  pLPattern)
+  <*> ("," *> pLPattern)
+  <*> option [] ("," *> sepBy pLPattern ",")
+  <* ")"
+
+pLConstructorPattern :: Parser (PLPattern ParsingStage)
+pLConstructorPattern
+  = PLConstructorPattern
+  <$> mkBookeepInfo
+  <*> pConsName
+  <*> Text.Parsec.many pLPattern
+
+pLARecordPattern :: Parser (PLPattern ParsingStage)
+pLARecordPattern
+  = PLARecordPattern
+  <$> mkBookeepInfo
+  <*> between "{" "}" (fieldPattern `sepBy` ",")
+  where
+    fieldPattern :: Parser (String, T.Types)
+    fieldPattern = (,) <$> (ident <* ":") <*> (t2NT <$> pTypes)
+
+
+pLPattern :: Parser (PLPattern ParsingStage)
+pLPattern
+  = try pLWildcardPattern
+  <|> pLIntOrFloatPattern
+  <|> pLBoolPattern
+  <|> pLStringPattern
+  <|> pLTuplePattern
+  <|> pLConstructorPattern
+  <|> pLARecordPattern
+  <|> pLVarPattern
+
+data PPaternGuard ctx where
+  PExprGuard    :: ExprGuardCtx ctx -> EPrec ctx 0 -> PPaternGuard ctx
+  PBindingGuard :: BindingGuardCtx ctx -> PLPattern ctx -> EPrec ctx 0 -> PPaternGuard ctx
+
+type family ExprGuardCtx    (ctx :: Type) :: Type
+type family BindingGuardCtx (ctx :: Type) :: Type
+
+type instance ExprGuardCtx    ParsingStage = BookeepInfo
+type instance BindingGuardCtx ParsingStage = BookeepInfo
+
+
+pBindingGuard :: Parser (PPaternGuard ParsingStage)
+pBindingGuard = PBindingGuard <$> mkBookeepInfo <*> pLPattern <*> ("<-" *> expr)
+
+pPPatternGuard :: Parser (PPaternGuard ParsingStage)
+pPPatternGuard = try pBindingGuard <|> (PExprGuard <$> mkBookeepInfo <*> expr)
+
 ------------------------------
 -- Precedence 0 Expressions
 ------------------------------
@@ -825,6 +1011,7 @@ expr = fmap OfHigher0 . precedence $
   sops Postfix
     [ mkApp    expr
     , mkAppArr pIndexerExpression
+    , mkDotApp
     ] |-<
 
   Atom atom
@@ -896,21 +1083,43 @@ pattern MkSeq :: A0 ctx -> [A0 ctx] -> A1 ctx
 pattern MkSeq b bs <-  Seq _ b bs
   where MkSeq b bs = Seq undefined b bs
 
+newtype Record = MkRecord { unRecord :: [(String,T.Types)]}
+
+pProductTypeBody :: Parser [(BookeepInfo, T.Types)]
+pProductTypeBody = (fmap . fmap) t2NT <$> Text.Parsec.many ((,) <$> mkBookeepInfo <*> pTypes)
+
+data ProductConstructor = MkProductConstructor
+  { pcName :: String
+  , pcTypes :: [(BookeepInfo, T.Types)]
+  }
+
+pProductTypeCons :: Parser ProductConstructor
+pProductTypeCons = MkProductConstructor
+  <$> ( (:) <$> char '#' <*> ident )
+  <*> pProductTypeBody
+
+pSOP :: Parser [(BookeepInfo, ProductConstructor)]
+pSOP = flip sepBy "|" $ (,) <$> mkBookeepInfo <*> pProductTypeCons
+
+
 data A0 ctx
   = Decl T.Types (Expr ctx) (Expr ctx) (ADeclX ctx)
   | Assign (Expr ctx) (Expr ctx)     (AAssignX ctx)
   | Print (Expr ctx)           (APrintX ctx)
+  | PTypeDef String [(BookeepInfo, ProductConstructor)] (ATDeclX ctx)
   | SysCommand String (SysCommandX ctx)
 
 type family ADeclX      (ctx :: Type) :: Type
 type family AAssignX    (ctx :: Type) :: Type
 type family APrintX     (ctx :: Type) :: Type
+type family ATDeclX     (ctx :: Type) :: Type
 type family SysCommandX (ctx :: Type) :: Type
 
-type instance ADeclX     ParsingStage   = BookeepInfo
+type instance ADeclX      ParsingStage  = BookeepInfo
 type instance AAssignX    ParsingStage  = BookeepInfo
 type instance APrintX     ParsingStage  = BookeepInfo
 type instance SysCommandX ParsingStage  = BookeepInfo
+type instance ATDeclX     ParsingStage  = BookeepInfo
 
 instance A0 ctx PU.< A1 ctx where
   upcast = OfA0
@@ -935,9 +1144,17 @@ mkSysCommand = special <|> normal
     normal :: Parser (A0 ParsingStage)
     normal  = mkBookeepInfo <**> (token $ string "sys." $> SysCommand <*> ident <* optional "()" <* optional ";")
 
+mkTypeDef :: Parser (A0 ParsingStage)
+mkTypeDef = mkBookeepInfo <**>
+  (PTypeDef <$> ("type" *> ident) <*> (f <$> optionMaybe ( ":=" *> pSOP)))
+  where f :: Maybe [(BookeepInfo, ProductConstructor)] -> [(BookeepInfo, ProductConstructor)]
+        f (Just x) = x
+        f Nothing  = []
+
 a0 :: Parser (A0 ParsingStage)
 a0
   =   mkSysCommand
+  <|> mkTypeDef
   <|> flip Print <$> mkBookeepInfo <*> try (fully expr)
   <|> try (mkAssign expr expr)
   <|> (mkDecl (t2NT <$> pTypes) expr expr)
@@ -1068,11 +1285,38 @@ instance SingI n => Show (TPrec ctx n) where
         . showString "<"
         . foldl (\acc x -> acc . showString ", " . shows x) (shows b ) bs
         . showString ">"
+      TARecord _ (f : fields)
+        -> showString "{"
+        . foldl (\acc (n,t) -> acc . showString ", " . showString n . showString ": " . shows t) (showString (fst f) . showString ": " . shows (snd f)) fields
+        . showString "}"
+      TARecord _ []
+        -> showString "{}"
       OfLowerTPrec a -> showString "(" . shows a . showString ")"
     (_, Just Refl) -> \case
       OfHigherTPrec0 a -> shows a
       TArrow _ a b -> showParen (p > 0) $ shows a . showString " => " . shows b
     _ -> const $ showString "Precedence not defined"
+
+
+instance Show (PLPattern ctx) where
+  show (PLVarPattern _ s) = s
+  show (PLWildcardPattern _) = "_"
+  show (PLIntPattern _ i) = show i
+  show (PLBoolPattern _ b) = if b then "true" else "false"
+  show (PLStringPattern _ s) = show s
+  show (PLFloatPattern _ f) = show f
+  show (PLTuplePattern _ p1 p2 ps) = "(" ++ intercalate ", " (map show (p1:p2:ps)) ++ ")"
+  show (PLConstructorPattern _ name ps) = name ++ concatMap ((" " ++) . show) ps
+  show (PLARecordPattern _ fields) = "{" ++ intercalate ", " (map (\(n,t) -> n ++ ": " ++ show t) fields) ++ "}"
+
+instance Show (PPaternGuard ctx) where
+  show (PExprGuard _ e) = show e
+  show (PBindingGuard _ p e) = show p ++ " <- " ++ show e
+
+instance Show (PPattern ctx) where
+  show (MkPPattern p gs) = show p ++ case gs of
+    [] -> ""
+    _  -> "<" ++ intercalate ", " (map show gs) ++ ">"
 
 
 instance SingI n => Show (EPrec ctx n) where
@@ -1133,6 +1377,7 @@ instance SingI n => Show (EPrec ctx n) where
           . showString "]"
         PApp _ f [] -> showParen (p > 10) $ showsPrec 11 f
         PAppArr _ f [] -> showParen (p > 10) $ showsPrec 11 f
+        PDotApp _ e field -> showsPrec 11 e . showString "." . showString field
         OfHigherPostfixPrec a  -> showsPrec p a
       () | Just Refl <- matches @Atom (sing @n) -> \case
         PInt _ n -> shows n
@@ -1154,17 +1399,34 @@ instance SingI n => Show (EPrec ctx n) where
           . foldr (\x acc -> shows x . showString ", " . acc) (shows x) xs
           . showString "]"
         PArray _ [] -> showString "[]"
+        PMatch _ e (b : branches)
+          -> showString "match " . shows e . showString " with\n "
+          . foldl (\acc (p,g) -> acc . showString "| " . showString (show p) . showString " -> " . shows g . showString "\n ") (showString "| " . showString (show (fst b)) . showString " -> " . shows (snd b) . showString "\n ") branches
+        PMatch _ e []
+          -> showString "match " . shows e . showString " with\n "
+          . showString "| _ -> ⊥ \n"
+        PECons _ h t -> shows h . showString "( " . showString (intercalate "," $ show <$> t) . showString ")"
+        PEARecord _ fields
+          -> showString "{"
+          . showString (intercalate ", " $ fmap (\(n,v) -> n ++ " := " ++ show v) fields)
+          . showString "}"
       _ -> const $ showString "Precedence not defined"
 
 instance Show (PIndexerExpression ctx) where
   show (PIndex e) = show e
   show (PRangeIndexer (e,e')) = show e <> " .. " <> show e'
 
+instance Show ProductConstructor where
+  show (MkProductConstructor n ts) = n <> concatMap (\(_,t) -> " " <> show t) ts
+
 instance Show (A0 ctx) where
   show (Decl t e e' _) = show t <> " " <> show e <> " := " <> show e' <> ";"
   show (Assign e e' _) = show e <> " := " <> show e' <> ";"
   show (Print e _)     = show e
   show (SysCommand e _) = "sys." <> e <> "();"
+  show (PTypeDef n cons _) = case fmap snd cons of
+    [] -> "type " <> n <> ";"
+    cons'  -> "type " <> n <> " := " <> intercalate " | " (show <$> cons') <> ";"
 
 instance Show (A1 ctx) where
   show (OfA0 x) = show x
@@ -1208,6 +1470,7 @@ instance SingI n => HasBookeepInfo (EPrec ParsingStage n) where
     _ | Just Refl <- matches @PostfixPrec (sing @n) -> \case
       PApp    bk _ _ -> bk
       PAppArr bk _ _ -> bk
+      PDotApp bk _ _ -> bk
       OfHigherPostfixPrec x -> getBookeepInfo x
     _ | Just Refl <- matches @PrefixPrec (sing @n) -> \case
       PUMinus bk _ -> bk
@@ -1223,4 +1486,8 @@ instance SingI n => HasBookeepInfo (EPrec ParsingStage n) where
       PParen bk _ -> bk
       PDefer bk _ -> bk
       PIf bk _ -> bk
+      PMatch bk _ _ -> bk
+      PArray bk _ -> bk
+      PECons bk _ _ -> bk
+      PEARecord bk _ -> bk
     _ -> error "Error. BookeepInfo not defined for this precedence."

@@ -31,104 +31,104 @@ import Zilly.Puzzle.Types.Exports
 
 uminusStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 uminusStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ MinusU (Formula $$ VarS "x")
+  = Lambda (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ MinusU (Formula $$ VarS Z "x")
 
 negateStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 negateStd
-  = Lambda (ZBool, Nothing) (mkVar @(E ctx) "x")
-  $ Negate (Formula $$ VarS "x")
+  = Lambda (ZBool :-> ZBool) (ZBool, Nothing) (mkVar @(E ctx) "x")
+  $ Negate (Formula $$ VarS ZBool "x")
 
 subStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 subStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ MinusInfix (Formula $$ VarS "y") (Formula $$ VarS "x")
+  = Lambda (Z :-> Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ MinusInfix (Formula $$ VarS Z "y") (Formula $$ VarS Z "x")
 
 
 minusStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 minusStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ MinusInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ MinusInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 plusStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 plusStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ PlusInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ PlusInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 timesStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 timesStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ TimesInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ TimesInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 divStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 divStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ DivInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ DivInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 powStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 powStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ PowInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ PowInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 appendStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 appendStd
-  = Lambda (ZString, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (ZString, Nothing) (mkVar @(E ctx) "y")
-  $ AppendInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (ZString :-> ZString :-> ZString) (ZString, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda             (ZString :-> ZString) (ZString, Nothing) (mkVar @(E ctx) "y")
+  $ AppendInfix (Formula $$ VarS ZString "x") (Formula $$ VarS ZString "y")
 
 andStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 andStd
-  = Lambda (ZBool, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (ZBool, Nothing) (mkVar @(E ctx) "y")
-  $ AndInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (ZBool :-> ZBool :-> ZBool) (ZBool, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda           (ZBool :-> ZBool) (ZBool, Nothing) (mkVar @(E ctx) "y")
+  $ AndInfix (Formula $$ VarS ZBool "x") (Formula $$ VarS ZBool "y")
 
 orStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 orStd
-  = Lambda (ZBool, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (ZBool, Nothing) (mkVar @(E ctx) "y")
-  $ OrInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (ZBool :-> ZBool :-> ZBool) (ZBool, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda           (ZBool :-> ZBool) (ZBool, Nothing) (mkVar @(E ctx) "y")
+  $ OrInfix (Formula $$ VarS ZBool "x") (Formula $$ VarS ZBool "y")
 
 ltStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 ltStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ LTInfix (Formula $$ VarS "y") (Formula $$ VarS "x")
+  = Lambda (Z :-> Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> Z) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ If Z (LTInfix (Formula $$ VarS Z "y") (Formula $$ VarS Z "x")) (ValZ 1) (ValZ 0)
 
 leStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 leStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ LEInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ LEInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 gtStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 gtStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ GTInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ GTInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 geStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 geStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ GEInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ GEInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 eqStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 eqStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ EQInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ EQInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 neStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 neStd
-  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
-  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
-  $ NEInfix (Formula $$ VarS "x") (Formula $$ VarS "y")
+  = Lambda (Z :-> Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda       (Z :-> ZBool) (Z, Nothing) (mkVar @(E ctx) "y")
+  $ NEInfix (Formula $$ VarS Z "x") (Formula $$ VarS Z "y")
 
 eStd :: E ctx
 eStd = ValF 2.718281828459045

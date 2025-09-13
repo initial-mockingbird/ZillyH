@@ -15,6 +15,7 @@
 
 module Zilly.Puzzle.Runner where
 
+import Data.Text qualified as Text
 import Zilly.Puzzle.Parser qualified as P
 import Zilly.Puzzle.Parser (Parser)
 import Zilly.Puzzle.Expression.Exports
@@ -48,6 +49,9 @@ import Data.Foldable (traverse_)
 import Control.Monad.Except
 import Debug.Trace (trace)
 import System.Random (randomIO)
+import Data.Map qualified as Map
+import Data.Map (Map)
+import Data.Maybe (fromMaybe)
 
 
 data InterpretMode = ClassicInterpreter |  UnsugaredInterpreter deriving Eq
@@ -81,7 +85,10 @@ data PuzzleState = PuzzleState
   , pstVarDict    :: TypeRepMap (E PRunnerCtx)
   , pstQ          :: Int
   , pstEnabledExtensions :: Set Extensions
+  , pstTypeDict   :: Map String [(String,[Types])]
+  , pstConsDict   :: Map String [(Types,[Types])]
   }
+
 data PuzzleReader = PuzzleReader
   { prExpectedType :: Set Types
 
@@ -91,7 +98,6 @@ type PuzzleWriter = ()
 data PRunnerCtx
 
 data PuzzleError = PuzzleError String
-  deriving (Typeable)
 
 instance Show PuzzleError where
   show (PuzzleError msg) = "Error: " <> msg
@@ -123,6 +129,32 @@ runPuzzleM :: PuzzleState -> PuzzleM a -> IO (Either String (a, PuzzleState))
 runPuzzleM initialState (PuzzleM ma) = do
   let initialReader = PuzzleReader S.empty
   fmap (\(a,b,_) -> (a,b)) <$> runExceptT (runRWST ma initialReader initialState)
+
+instance HasTypeEnv PuzzleM where
+  declareType name defs = do
+    tDict <- gets pstTypeDict
+    when (Map.member name tDict) $
+      throwError $ "Type " <> name <> " is already defined."
+    let tDict' = Map.insert name defs tDict
+    consDict <- gets pstConsDict
+    let consDict' = Map.unionWith (<>) consDict
+                  $ Map.fromListWith (<>)
+                    [(consName, [(TCon (Text.pack name) [],  ts)]) | (consName,ts) <-  defs]
+    modify (\s -> s { pstTypeDict = tDict', pstConsDict = consDict' })
+  updateType name defs = do
+    tDict <- gets pstTypeDict
+    unless (Map.member name tDict) $
+      throwError $ "Type " <> name <> " is not defined."
+    let tDict' = Map.insert name defs tDict
+    consDict <- gets pstConsDict
+    let consDict' = Map.unionWith (<>) consDict
+                  $ Map.fromListWith (<>)
+                    [(consName, [(TCon (Text.pack name) [],  ts)]) | (consName,ts) <-  defs]
+    modify (\s -> s { pstTypeDict = tDict', pstConsDict = consDict' })
+  lookupType name = Map.lookup name <$> gets pstTypeDict
+  lookupCons name = fromMaybe [] . Map.lookup name <$> gets pstConsDict
+
+
 
 instance TCMonad PuzzleM where
   getExpectedType = asks prExpectedType
@@ -307,6 +339,8 @@ interpret input = do
             , MultiParamApp
             , MultiParamLambda
             , ExtendedPrelude
+            , UserDefinedTypes
+            , GenericTypes
             ]
 
       modify (\s -> s { pstVarDict = m, pstEnabledExtensions = completeExtensions })
@@ -335,6 +369,8 @@ buildInterpreter = do
         , pstVarDict = m
         , pstQ = 0
         , pstEnabledExtensions = S.empty
+        , pstTypeDict = Map.empty
+        , pstConsDict = Map.empty
         }
   mst <- newMVar initialState
   pure $ \s -> catchError (do
@@ -402,6 +438,9 @@ stats = genericEx "./programs/ZillyArrays/stats.sym"
 
 slices :: IO ()
 slices = genericEx "./programs/ZillyArrays/slices.sym"
+
+userDefinedTypes :: IO ()
+userDefinedTypes = genericEx "./programs/Types/defs.z"
 
 genericEx :: FilePath -> IO ()
 genericEx fp = do

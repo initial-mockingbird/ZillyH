@@ -9,6 +9,8 @@
 {-# LANGUAGE TupleSections       #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ViewPatterns        #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Zilly.Puzzle.TypeCheck.TypeCheck
   ( TCMonad(..)
@@ -24,6 +26,7 @@ import Zilly.Puzzle.Types.Exports qualified as T
 import Zilly.Puzzle.Expression.Exports
 import Zilly.Puzzle.Environment.TypedMap
 import Zilly.Puzzle.Action.Exports
+import Zilly.Puzzle.Patterns.Exports
 
 import Data.Set (Set)
 import Data.Set qualified as S
@@ -33,19 +36,21 @@ import Data.Matchers
 import Data.Traversable
 import Control.Monad.Error.Class
 import Data.Text qualified as Text
-import Data.List (intercalate)
+import Data.List (intercalate, transpose)
 import Data.Default
 import Data.Foldable
 import Data.Array qualified as A
 import Control.Monad
+import Data.Maybe (fromMaybe)
+import Data.Map qualified as M
 
 reportTCError :: MonadError String m
   => BookeepInfo -> Set T.Types -> T.Types -> m a
 reportTCError bk expected actual =
   throwError $ "Type error at " ++ show (tokenPos bk) ++ ". Any of the types: " ++ showExpected expected ++ " were expected, but instead got " ++ show actual
   where
-   showExpected :: Set T.Types -> String
-   showExpected = intercalate ", "  . fmap show . S.toList
+  showExpected :: Set T.Types -> String
+  showExpected = intercalate ", "  . fmap show . S.toList
 
 implementsEQ :: T.Types -> Bool
 implementsEQ t = case t of
@@ -56,6 +61,7 @@ implementsEQ t = case t of
   T.NDArray _ t -> implementsEQ t
   T.Tuple a b -> implementsEQ a && implementsEQ b
   T.Lazy t -> implementsEQ t
+  T.ARecord fields -> all (implementsEQ . snd) fields
   _ -> False
 
 class Monad m => TCMonad m where
@@ -79,10 +85,57 @@ tcAs ienv as = foldlM (\(env, acc) a -> do
   (a', env') <- withEnv env $ tcA0 a
   pure (env', acc ++ [a'])) (ienv, []) as
 
+tcProductConstructor :: forall {m} ctx.
+  ( TCEffs ctx m
+  )
+  => ProductConstructor -> m (String, [T.Types])
+tcProductConstructor (MkProductConstructor consName consTypes) = do
+  consTypes' <- forM consTypes $ \(_,ct) -> tcType @ctx ct
+  pure (consName, consTypes')
+
+tcType :: forall {m} ctx.
+  ( TCEffs ctx m
+  )
+  => T.Types -> m T.Types
+tcType = \case
+  T.Z -> pure T.Z
+  T.F -> pure T.F
+  T.ZBool -> pure T.ZBool
+  T.ZString -> pure T.ZString
+  T.ZNull -> pure T.ZNull
+  T.ZDouble -> pure T.F
+  T.ZInfer -> pure $ T.ZInfer
+  T.Lazy t -> T.Lazy <$> tcType @ctx t
+  T.NDArray n t -> T.NDArray n <$> tcType @ctx t
+  T.Tuple a b -> T.Tuple <$> tcType @ctx a <*> tcType @ctx b
+  T.NTuple a b ts -> T.NTuple <$> tcType @ctx a <*> tcType @ctx b <*> mapM (tcType @ctx) ts
+  (a T.:-> b) -> (T.:->) <$> tcType @ctx a <*> tcType @ctx b
+  T.Top -> pure T.Top
+  T.Bot -> pure T.Bot
+  T.RV a -> T.RV <$> tcType @ctx a
+  T.ARecord fields -> do
+    unless ( length (S.fromList (fmap fst fields)) == length fields) $
+      throwError $ "Record type has duplicate field names: " ++ show fields
+    fields' <- forM fields $ \(k,t) -> (k,) <$> tcType @ctx t
+    pure $ T.ARecord fields'
+  T.TCon name ts -> T.TCon name <$> mapM (tcType @ctx) ts
+  T.TFamApp name t ts -> T.TFamApp name <$> tcType @ctx t <*> mapM (tcType @ctx) ts
+  T.TVar tv -> pure $ T.TVar tv
+
+
 tcA0 :: forall {m} ctx.
   ( TCEffs ctx m
   )
   => A0 ParsingStage -> m (A ctx, TypeRepMap (E ctx))
+tcA0 (PTypeDef tn sop _) = do
+  declareType tn []
+  sop'  <- forM sop (tcProductConstructor @ctx . snd)
+  unless (length (S.fromList (fmap fst sop')) == length sop') $
+    throwError $ "Type " ++ tn ++ " has duplicate constructor names: " ++ show (fmap fst sop')
+  updateType tn sop'
+  env <- getEnv
+  pure (TypeDef tn sop', env)
+
 tcA0 (Decl ltype (yieldVarName -> Just v) r bk) = do
   env <- getEnv
   env' <- declare ltype v env
@@ -222,7 +275,7 @@ tcEAtom (PVar bk v) = do
       ltype <- varMetadata var env
       let rtype = T.rtype ltype
       validateType bk rtype
-      pure (Var var, rtype)
+      pure (Var ltype var, rtype)
 tcEAtom (PTuple bk a b xs) = do
   let isTuple t = case t of
         T.NTuple _ _ _ -> True
@@ -254,14 +307,14 @@ tcEAtom (PTuple bk a b xs) = do
           _ -> reportTCError bk (S.singleton $ T.NTuple etaStud etbStud ets) (T.NTuple at' at' stud)
   (xs', ets') <- unzip <$> f xs ets
   let t = T.NTuple at' bt' ets'
-  pure  (MkTuple a' b' xs', t)
+  pure  (MkTuple t a' b' xs', t)
 
 tcEAtom (PParen _ a) = tcE a
 tcEAtom (PDefer bk a) = do
   eta <- S.map T.rtype <$> getExpectedType
   (a',at') <- withExpectedType eta $ tcE a
   validateType bk $ T.Lazy at'
-  pure (Defer a', T.Lazy at')
+  pure (Defer (T.Lazy at') a', T.Lazy at')
 tcEAtom (PIf bk (a, b, c)) = do
   (a',at') <- withExpectedType (S.fromList [T.Z,T.F,T.ZBool]) $ tcE a
   (b',bt') <- tcE b
@@ -271,7 +324,10 @@ tcEAtom (PIf bk (a, b, c)) = do
     T.Z     -> pure ()
     T.F     -> pure ()
     _ -> reportTCError bk (S.singleton T.ZBool) at'
-  pure (If a' b' c', bt')
+  ub <- case T.upperBound bt' ct' of
+    Just ub -> pure ub
+    Nothing -> throwError $ "Branches of if expression must have compatible types, but got: " ++ show bt' ++ " and " ++ show ct'
+  pure (If ub a' b' c', bt')
 tcEAtom (PArray bk xs) = do
   let isArray t = case t of
         T.NDArray _ _ -> True
@@ -287,11 +343,11 @@ tcEAtom (PArray bk xs) = do
   let et = if dimensions == 1 then bt else T.NDArray (dimensions -1) bt
   (xs', ets') <- fmap unzip  $ forM xs $ \x -> withExpectedType (S.singleton et) $ tcE @_ @ctx x
   case dimensions == 1 of
-    True -> pure (MkArray $ A.fromList [length xs'] xs', T.NDArray 1 bt)
+    True -> pure (MkArray (T.NDArray 1 bt) $ A.fromList [length xs'] xs', T.NDArray 1 bt)
     False -> do
       xs'' <- for xs' $ \x' ->
         case x' of
-          MkArray arr -> pure arr
+          MkArray _ arr -> pure arr
           _ -> throwError $ "Expected an array literal, but got: " ++ show x'
       case xs'' of
         (r:rs) -> when (any (\a  -> A.shapeL a /= A.shapeL r) rs) $ do
@@ -301,8 +357,174 @@ tcEAtom (PArray bk xs) = do
             (r:_) -> length xs'' : A.shapeL r
             _     -> [length xs'']
       let res = A.reshape shape (A.concatOuter xs'')
-      pure (MkArray $ res, T.NDArray dimensions bt)
+      pure (MkArray (T.NDArray dimensions bt) $ res, T.NDArray dimensions bt)
+tcEAtom (PECons bk cons args) = do
+  ets <- getExpectedType
+  possibleConsT <- filter (\p -> length args == length (snd p) ) <$> lookupCons cons
+  let consTs  = transpose $ snd <$> possibleConsT
+  args' <- forM (args `zip` consTs) $ \(arg, ets) ->
+    withExpectedType (S.fromList ets) $ tcE @_ @ctx arg
+  let argsT = fmap snd args'
+      compatibleConsT
+        = filter (\(t,ts)
+            -> (t `S.member` ets || null ets)
+            && all (uncurry $ T.isSuperTypeOf) (ts `zip` argsT)
+            ) possibleConsT
 
+  case compatibleConsT of
+    [(t,_)] -> pure (Cons t cons (fst <$> args'), t)
+    [] -> throwError
+      $ "No compatible constructor found for "
+      ++ cons
+      ++ " with argument types: "
+      ++ show argsT
+      ++ " and expected types: "
+      ++  (intercalate "," . fmap show . S.toList) ets
+      ++ " at "
+      ++ show (tokenPos bk)
+    _  -> throwError
+      $ "Ambiguous constructor "
+      ++ cons
+      ++ " with argument types: "
+      ++ show argsT
+      ++ " and expected types: "
+      ++ show ets
+      ++ ". Possible types are: "
+      ++ intercalate ", " (fmap (show . fst) compatibleConsT)
+      ++ " at "
+      ++ show (tokenPos bk)
+tcEAtom (PEARecord bk fields) = do
+  let filterARecords t = case t of
+        T.ARecord ts -> [ts]
+        _ -> []
+  ets
+    <- filter (\ft -> all (\(k,_) -> Text.unpack k `elem` fmap fst fields) $  ft)
+    . concatMap filterARecords
+    . S.toList
+    <$> getExpectedType
+
+  fieldsWithTypes <- for fields $ \(k,e) -> do
+      let et
+            = S.fromList
+            $ concatMap (\fts -> snd <$> filter (\(k',_) -> k' == Text.pack k) fts)
+            ets
+      (e',et') <- withExpectedType et $ tcE @_ @ctx e
+      pure (k,e',et')
+
+  let aRecordT = T.ARecord [(Text.pack k, et) | (k,_,et) <- fieldsWithTypes]
+  let aRecord  = ARecord aRecordT [(k, e') | (k,e',_) <- fieldsWithTypes]
+  validateType bk aRecordT
+  pure (aRecord, aRecordT)
+tcEAtom (PMatch bk e branches) = do
+  (e',et) <- withExpectedType S.empty $ tcE @_ @ctx e
+  branches' <- forM branches $ \(p,be) -> do
+    (p',env) <- tcPattern et p
+    (be',bt) <- withEnv env $ tcE @_ @ctx be
+    pure (p', be', bt)
+
+  let branchTypes = S.fromList $ fmap (\(_,_,t) -> t) branches'
+      branchUB = foldl (\acc bt -> acc >>= T.upperBound bt) (Just T.Bot) branchTypes
+  t <- getExpectedType
+  case branchUB of
+    Just T.Bot -> throwError $ "Branches of match expression must have compatible types, but got: " ++ show branchTypes
+    Just ub -> case any (`T.isSuperTypeOf` ub) t || null t of
+      True -> pure (Match ub e' [(p,be) | (p,be,_) <- branches'], ub)
+      False -> reportTCError bk t ub
+    Nothing -> throwError $ "Branches of match expression must have compatible types, but got: " ++ show branchTypes
+
+
+tcLPattern :: forall {m} ctx.
+  ( TCEffs ctx m
+  )
+  => T.Types -> PLPattern ParsingStage -> m (LPattern ctx, TypeRepMap (E ctx))
+tcLPattern t (PLVarPattern bk v) = do
+  env <- getEnv
+  env' <- declareFresh t v env
+  pure (LVar v , env')
+tcLPattern _ (PLWildcardPattern _) = (LWild,) <$> getEnv
+tcLPattern T.Z (PLIntPattern bk n) = (LInt n, ) <$> getEnv
+tcLPattern T.F (PLFloatPattern bk n) = (LFloat n, ) <$> getEnv
+tcLPattern T.ZBool (PLBoolPattern bk b) = (LBool b, ) <$> getEnv
+tcLPattern T.ZString (PLStringPattern bk s) = (LString s, ) <$> getEnv
+tcLPattern (T.NTuple t1 t2 ts) (PLTuplePattern bk p1 p2 ps) | length ts == length ps = do
+  (p1', env1) <- tcLPattern t1 p1
+  (p2', env2) <- withEnv env1 $ tcLPattern t2 p2
+  (ps', env3) <- foldlM (\(acc, env) (t,p) -> do
+      (p', env') <- withEnv env $ tcLPattern t p
+      pure (acc ++ [p'], env')
+    ) ([], env2) (ts `zip` ps)
+  let p1Vars = S.fromList $ lPatternVars p1'
+      p2Vars = S.fromList $ lPatternVars p2'
+      psVars = S.fromList . lPatternVars <$>  ps'
+      psVars' = p1Vars : p2Vars : psVars
+  case length (S.unions psVars') == sum (length <$> psVars') of
+    True -> pure ()
+    False -> throwError $ "A Variable in tuple pattern " ++ show (PLTuplePattern bk p1 p2 ps) ++ " is not unique."
+  pure (LTuple p1' p2' ps', env3)
+tcLPattern t (PLConstructorPattern bk con ps) = do
+  mCons <- filter (\(t',_) -> t' == t) <$> lookupCons con
+  env0 <- getEnv
+  case mCons of
+    [] -> throwError
+      $ "Constructor " ++ con ++ " does not build type " ++ show t
+      ++ " at " ++ show (tokenPos bk)
+    [( _, consTs)] -> do
+      when (length consTs /= length ps) $
+        throwError $ "Constructor " ++ con ++ " expects " ++ show (length consTs) ++ " arguments, but got " ++ show (length ps) ++ " at " ++ show (tokenPos bk)
+      (ps', env') <- foldlM (\(acc, env) (t',p) -> do
+          (p', env') <- withEnv env $ tcLPattern t' p
+          pure (acc ++ [p'], env')
+        ) ([], env0) (consTs `zip` ps)
+      let psVars = S.fromList . lPatternVars <$>  ps'
+      case length (S.unions psVars) == sum (length <$> psVars) of
+        True -> pure ()
+        False -> throwError $ "A Variable in constructor pattern " ++ show (PLConstructorPattern bk con ps) ++ " is not unique."
+      pure (LCons con ps', env')
+    _  -> throwError $ "Ambiguous constructor " ++ con ++ " for type " ++ show t ++ " at " ++ show (tokenPos bk)
+tcLPattern t@(T.ARecord fields) (PLARecordPattern bk fieldPatterns) = do
+  let fieldMap = M.fromList fields
+  for_ fieldPatterns $ \(k,fpt) -> case M.lookup (Text.pack k) fieldMap of
+    Nothing -> throwError $ "Field " ++ k ++ " not found in record type " ++ show t ++ " at " ++ show (tokenPos bk)
+    Just ft -> do
+      unless (fpt `T.isSuperTypeOf` ft) $
+        throwError $ "Field " ++ k ++ " in record pattern "
+          ++ show (PLARecordPattern @ParsingStage bk fieldPatterns)
+          ++ " has type " ++ show fpt
+          ++ ", which is not compatible with expected type "
+          ++ show ft ++ " at " ++ show (tokenPos bk)
+      pure ()
+
+  env <- getEnv
+  env' <- foldlM (\envAcc (k,ft) -> do
+      declareFresh ft k envAcc
+    ) env fieldPatterns
+  pure (LARecord fieldPatterns, env')
+tcLPattern t p = throwError
+  $ "Pattern " ++ show p ++ " is not compatible with expected type " ++ show t
+
+tcPatternGuard :: forall {m} ctx.
+  ( TCEffs ctx m
+  )
+  => PPaternGuard ParsingStage -> m (PatternGuard (E ctx) ctx, TypeRepMap (E ctx))
+tcPatternGuard (PExprGuard bk e) = do
+  (e', _) <- withExpectedType (S.singleton T.ZBool) $ tcE @_ @ctx e
+  (ExprGuard e', ) <$> getEnv
+tcPatternGuard (PBindingGuard bk p e) = do
+  (e',et) <- withExpectedType S.empty $ tcE @_ @ctx e
+  (p', env') <- tcLPattern et p
+  pure (BindingGuard p' e', env')
+
+tcPattern :: forall {m} ctx.
+  ( TCEffs ctx m
+  )
+  => T.Types -> PPattern ParsingStage -> m (Pattern (E ctx) ctx, TypeRepMap (E ctx))
+tcPattern t (MkPPattern lp gs) = do
+  (lp', env1) <- tcLPattern t lp
+  (gs', env2) <- foldlM (\(acc, env) g -> do
+      (g', env') <- withEnv env $ tcPatternGuard g
+      pure (acc ++ [g'], env')
+    ) ([], env1) gs
+  pure (Pattern lp' gs', env2)
 
 tcEPrefixPrec :: forall {m} ctx.
   ( TCEffs ctx m
@@ -350,7 +572,7 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg]) = do
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "random") [arg]) = do
   (arg', at) <- withExpectedType (S.fromList [T.Z, T.F]) $  tcE arg
   validateType bk at
-  pure (Random $$ arg', at)
+  pure (Random at $$ arg', at)
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "vector") [cols,fun]) = do
   let mkFunExpectedType t = T.Z T.:-> t
   let vunwrapper t = case t of
@@ -465,7 +687,7 @@ tcEPostfixPrec (PApp bk f [arg]) = do
   case ft of
     x T.:-> y | at `T.isSubtypeOf` x -> do
       validateType bk y
-      pure (App f' arg', y)
+      pure (App y f' arg', y)
     x T.:-> y ->
         reportTCError bk (S.singleton $ x ) at
     _ -> reportTCError bk (S.singleton $ (T.TVar (T.TV "x1") T.:->  T.TVar (T.TV "x2") )) ft
@@ -486,7 +708,26 @@ tcEPostfixPrec (PAppArr bk arr ixs) = do
   (arr', at) <- withExpectedType S.empty $ tcE @_ @ctx arr
   at' <- mkProjectedType at
   validateType bk at'
-  pure (ArraySlice arr' ixsT, at')
+  pure (ArraySlice at' arr' ixsT, at')
+tcEPostfixPrec (PDotApp bk obj field) = do
+  (obj', ot) <- withExpectedType S.empty $ tcE @_ @ctx obj
+  case ot of
+    T.ARecord fields -> case lookup (Text.pack field) fields of
+      Just ft -> do
+        validateType bk ft
+        pure (DotApp ft obj' field, ft)
+      Nothing -> throwError $ "Field " ++ field ++ " not found in record type " ++ show ot ++ " at " ++ show (tokenPos bk)
+    t@(T.TCon tname _) -> lookupType (Text.unpack tname) >>= \case
+      Just [(consName, [T.ARecord fields])] | Just ft <- lookup (Text.pack field) fields -> do
+        validateType bk ft
+        pure (DotApp ft obj' field, ft)
+      Just (_:_:_) -> throwError
+        $ "Type " ++ Text.unpack tname ++ " has multiple constructors, so field access is ambiguous at "
+        ++ show (tokenPos bk)
+      Just _ -> throwError $ "Type " ++ Text.unpack tname ++ " has no fields " ++ field ++ " at " ++ show (tokenPos bk)
+      Nothing -> throwError $ "Type " ++ show t ++ " not found at " ++ show (tokenPos bk)
+
+    _ -> reportTCError bk (S.singleton $ T.ARecord [(Text.pack "x1", T.TVar (T.TV "x2"))]) ot
 
 
 tcEPostfixPrec (OfHigherPostfixPrec a) = tcE a
@@ -625,7 +866,7 @@ tcE1 (PLambda bk [(yieldVarName -> Just arg, gltype)] mgbody body) = do
   (body',bt) <- withEnv env' $ withExpectedType gbody $ tcE body
   validateType bk (gltype T.:-> bt)
   let var = Zilly.Puzzle.Environment.TypedMap.mkVar @(E ctx) arg
-  pure (Lambda (gltype,mgbody) var body' , gltype T.:-> bt)
+  pure (Lambda (gltype T.:-> bt) (gltype,mgbody) var body' , gltype T.:-> bt)
 tcE1 (PLambda bk _ _ _) = do
   throwError $ "Lambda expression must have at least one argument."
 tcE1 (OfHigher1 a) = tcE a

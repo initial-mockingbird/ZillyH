@@ -21,6 +21,8 @@ module Zilly.Puzzle.Types.Patterns
   , pattern Tuple
   , pattern NTuple
   , pattern (:->)
+  , pattern ARecord
+  , pattern RV
   , getArrDimType
   ) where
 
@@ -59,11 +61,21 @@ pattern ZBool     = TCon "B"   []
 pattern ZNull     = TCon "Null"   []
 pattern ZDouble   = TCon "R"      []
 pattern ZInfer    = TCon "Infer"  []
-pattern ZArray a  = TCon "Array" [a]
+pattern ZArray a  = TCon "array" [a]
 
 pattern NDArray :: Int -> Types -> Types
 pattern NDArray n a <- (_ndaux -> Just (n,a))
   where NDArray n a = TCon ("array" <> Text.pack (show n)) [a]
+
+
+pattern ARecord :: [(Text.Text, Types)] -> Types
+pattern ARecord fields <- TCon "~Record" (fmap (\(TCon k [v]) -> (k,v)) -> fields)
+  where ARecord fields = TCon "~Record" [TCon k [v] | (k,v) <- fields]
+
+
+pattern RV :: Types -> Types
+pattern RV t <- TFamApp "RV" t []
+  where RV t = TFamApp "RV" t []
 
 _ndaux :: Types -> Maybe (Int, Types)
 _ndaux t@(TCon _ [a]) = (,a) <$> getArrDimType t

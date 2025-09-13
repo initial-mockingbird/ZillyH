@@ -1,0 +1,51 @@
+::zilly+
+type identityInt := #mkIdentityInt Z;
+type Void;
+type ARecord := #mkARecord { a: Z, b: Bool };
+type optionalZ := #SomeZ Z | #NoneZ;
+type optionalLZ := #SomeLZ Lazy<Z> | #NoneLZ;
+type SumOfRecords := #mkSumOfRecordsA { a: Z } | #mkSumOfRecordsB { b: Bool } | #c Int;
+type listOfZ := #NilZ | #ConsZ { head: Z, tail: listOfZ };
+type Person := #mkPerson { name: String, age: Z };
+
+identityInt idInt := #mkIdentityInt(5+8);
+optionalZ someZ := #SomeZ(5);
+optionalZ noneZ := #NoneZ();
+someZ
+noneZ
+match someZ with #SomeZ x -> x | #NoneZ -> 0
+{a : Z, b : B} rec := { a := 10, b := True };
+rec
+rec.a
+rec.b
+match rec with { a : Z, b : B } -> (a, b)
+match rec with { a : Z } -> a
+match rec with { b : B } -> b
+match rec with {} -> 0
+Person dan := #mkPerson({ name := "Dan", age := 30 });
+dan
+dan.name
+dan.age
+match dan with #mkPerson { name : String , age : Z } -> (name, age)
+match dan with #mkPerson { name : String } -> name
+match dan with #mkPerson { age : Z } -> age
+match dan with #mkPerson {} -> "No name"
+match dan with #mkPerson {age : Z, name : String } -> (name,age)
+
+listOfZ myList := #ConsZ({ head := 1, tail := #ConsZ({ head := 2, tail := #NilZ() }) });
+myList
+
+Z => Z => listOfZ enumerateFrom := fn(Z start) -> fn(Z end) -> if(start > end, #NilZ(), #ConsZ({ head := start, tail := enumerateFrom(start + 1)(end) }));
+
+listOfZ myEnumList := enumerateFrom(0)(10);
+
+listOfZ => Z sumListOfZ := fn(listOfZ  lst) -> match lst with #NilZ -> 0 | #ConsZ { head : Z, tail : listOfZ } -> head + sumListOfZ(tail);
+sumListOfZ(myList)
+
+(Z => B) => listOfZ => listOfZ filterListOfZ := fn(Z => B pred) -> fn(listOfZ lst) -> match lst with #NilZ -> #NilZ() | #ConsZ { head : Z, tail : listOfZ } -> if(pred(head), #ConsZ({ head := head, tail := filterListOfZ(pred)(tail) }), filterListOfZ(pred)(tail));
+(Z => B) => listOfZ => listOfZ filterListOfZ2 := fn(Z => B pred) -> fn(listOfZ lst) -> match lst with #NilZ -> #NilZ() | #ConsZ r -> if(pred(r.head), #ConsZ({ head := r.head, tail := filterListOfZ2(pred)(r.tail) }), filterListOfZ2(pred)(r.tail));
+
+
+Z => B greaterThan5 := fn(Z x) -> x > 5;
+filterListOfZ(greaterThan5)(myEnumList)
+filterListOfZ2(greaterThan5)(myEnumList)

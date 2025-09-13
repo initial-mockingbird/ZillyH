@@ -44,6 +44,7 @@ library
       Utilities.LensM
       Utilities.ShowM
       Zilly.Puzzle.Action.Base
+      Zilly.Puzzle.Action.Classes
       Zilly.Puzzle.Action.Exports
       Zilly.Puzzle.Action.Interpreter
       Zilly.Puzzle.Action.Show
@@ -61,6 +62,10 @@ library
       Zilly.Puzzle.Expression.Show
       Zilly.Puzzle.Expression.Std
       Zilly.Puzzle.Parser
+      Zilly.Puzzle.Patterns.Base
+      Zilly.Puzzle.Patterns.Classes
+      Zilly.Puzzle.Patterns.Exports
+      Zilly.Puzzle.Patterns.Show
       Zilly.Puzzle.Runner
       Zilly.Puzzle.TypeCheck.Exports
       Zilly.Puzzle.TypeCheck.ExtensionCheck

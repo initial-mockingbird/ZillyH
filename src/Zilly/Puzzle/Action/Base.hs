@@ -15,5 +15,6 @@ data A (ctx :: Type) where
   Assign   :: Types -> LensM (E ctx) -> E ctx -> A ctx
   Reassign :: LensM (E ctx) -> [[(E ctx, Maybe (E ctx))]] -> E ctx -> A ctx
   Print    :: E ctx -> A ctx
+  TypeDef  :: String -> [(String, [Types])] -> A ctx
   SysCommand :: String -> A ctx
   ABottom  :: A ctx

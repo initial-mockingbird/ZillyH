@@ -25,11 +25,12 @@ import Control.Monad.Error.Class
 import Zilly.Puzzle.Effects.Block (CCActions(..))
 import Data.Traversable
 import Data.Array qualified as A
-
+import Zilly.Puzzle.Action.Classes (HasTypeEnv(..))
 type AEffects m =
   ( Effects m
   , MonadCC m
   , CCActions m
+  , HasTypeEnv m
   -- , CCActions m
   )
 
@@ -85,6 +86,7 @@ evalA' a = fmap (a,) getQ >>= \case
 evalA :: forall {m} ctx.
   (ACtxConstraint ctx m)
   => A ctx -> m (TypeRepMap (E ctx), A ctx)
+evalA a@(TypeDef {}) = (,a) <$> getEnv
 evalA (Print a) = evalE @ctx a >>= \case
   a' -> getEnv >>= \env -> pure  (env, Print a')
 evalA a@(Assign ltype x y) = do
@@ -112,8 +114,8 @@ evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
     md <- varMetadata x env
     xv <- getL x env
     case xv of
-      MkArray arr -> do
-        let unravel (MkArray arr) = arr
+      MkArray t arr -> do
+        let unravel (MkArray _ arr) = arr
             unravel e = A.fromList [] [e]
         let
             sliceUnravel :: [(Int, Maybe Int)] -> A.Array (E ctx) -> A.Array (E ctx)
@@ -129,7 +131,7 @@ evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
               updated | null (A.shapeL updated)
                 -> A.updateSlice (current) ixs $ updated
               updated
-                -> A.updateSlice current ixs $ A.scalar $ MkArray updated
+                -> A.updateSlice current ixs $ A.scalar $ MkArray t updated
             update [] _ = y
 
 
@@ -139,7 +141,7 @@ evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
         -- slice' ixs1 arr1 & \arr2 ->
         -- slice' ixs2 arr2 &
         let arr' =  update ixs arr
-        (\env' -> (env',a)) <$> setM x (MkArray arr') md env
+        (\env' -> (env',a)) <$> setM x (MkArray t arr') md env
       v -> throwError $ "reassigning non-array variable: " <> show v
 
 
