@@ -8,8 +8,6 @@ module Zilly.Puzzle.Action.Show
 import Zilly.Puzzle.Action.Base
 import Zilly.Puzzle.Environment.TypedMap
 import Utilities.ShowM
-import Data.List (intercalate)
-
 instance Show (A ctx) where
   showsPrec _ = \case
     (Assign t x e)
@@ -40,10 +38,4 @@ instance Show (A ctx) where
       . showString ";"
     (Print e) -> shows e
     (SysCommand s) -> showString "sys." . showString s . showString "();"
-    (TypeDef name constructors)
-      -> showString "type " . showString name . showString " := "
-      . showString (intercalate " | " $ fmap (\(c,ts) ->
-          c ++ if null ts then "" else  intercalate " " (fmap show ts)
-        ) constructors)
-      . showString ";"
     ABottom -> showString "⊥"

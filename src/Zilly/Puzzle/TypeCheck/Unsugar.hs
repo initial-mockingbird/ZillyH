@@ -47,21 +47,7 @@ unsugarEAtom (PDefer bk a)
   = PDefer bk (unsugarE a)
 unsugarEAtom (PArray bk xs)
   = PArray bk (unsugarE <$> xs)
-unsugarEAtom (PMatch bk e branches)
-  = PMatch bk (unsugarE e) [(unsugarPattern p, unsugarE b) | (p,b) <- branches]
-  where
-    unsugarPatternGuard :: PPaternGuard ctx -> PPaternGuard ctx
-    unsugarPatternGuard (PExprGuard bk e) = PExprGuard bk (unsugarE e)
-    unsugarPatternGuard (PBindingGuard bk lp e)
-      = PBindingGuard bk lp (unsugarE e)
 
-    unsugarPattern :: PPattern ctx -> PPattern ctx
-    unsugarPattern (MkPPattern lp guards) =
-      MkPPattern lp (unsugarPatternGuard <$> guards)
-unsugarEAtom (PECons bk s es)
-  = PECons bk s (unsugarE <$> es)
-unsugarEAtom (PEARecord bk fields) =
-  PEARecord bk [(k, unsugarE v) | (k,v) <- fields]
 unsugarEPrefixPrec :: EPrec ctx PrefixPrec -> EPrec ctx PrefixPrec
 unsugarEPrefixPrec (PUMinus bk a) = PUMinus bk (unsugarE a)
 unsugarEPrefixPrec (PNegate bk a) = PNegate bk (unsugarE a)
@@ -77,8 +63,6 @@ unsugarEPostfixPrec (PAppArr bk f (x1:x2:xs))
   = unsugarEPostfixPrec $ PAppArr bk (PAppArr bk f [x1]) (x2:xs)
 unsugarEPostfixPrec (PAppArr bk f xs)
   = PAppArr bk (unsugarE f) (unsugarIndexer <$> xs)
-unsugarEPostfixPrec (PDotApp bk e field)
-  = PDotApp bk (unsugarE e) field
 unsugarEPostfixPrec (OfHigherPostfixPrec a)
   = OfHigherPostfixPrec (unsugarE a)
 

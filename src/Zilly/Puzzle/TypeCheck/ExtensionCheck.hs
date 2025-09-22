@@ -3,7 +3,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE TypeAbstractions    #-}
-{-# LANGUAGE GADTs               #-}
 
 module Zilly.Puzzle.TypeCheck.ExtensionCheck
   ( Extensions(..)
@@ -34,8 +33,6 @@ data Extensions
   | MultiParamApp
   | MultiParamLambda
   | ExtendedPrelude
-  | UserDefinedTypes
-  | GenericTypes
   deriving (Eq, Ord)
 
 instance Show Extensions where
@@ -48,8 +45,6 @@ instance Show Extensions where
   show MultiParamApp = "Multi-Parameter Application"
   show MultiParamLambda = "Multi-Parameter Lambda"
   show ExtendedPrelude = "Extended Prelude"
-  show UserDefinedTypes = "User-Defined Types"
-  show GenericTypes = "Generic Types"
 
 
 class Monad m => ExtensionCheckEff m where
@@ -62,16 +57,6 @@ extensionCheckTypes :: forall m .
   => BookeepInfo
   -> T.Types
   -> m T.Types
-extensionCheckTypes bk (T.NDArray n a) = do
-  validateExtension ArrayType bk
-  a' <- extensionCheckTypes bk a
-  pure (T.NDArray n a')
-extensionCheckTypes bk (T.ARecord fields) = do
-  validateExtension UserDefinedTypes bk
-  fields' <- for fields $ \(k,v) -> do
-    v' <- extensionCheckTypes bk v
-    pure (k,v')
-  pure (T.ARecord fields')
 extensionCheckTypes bk (T.Tuple a b) = do
   validateExtension TupleType bk
   a' <- extensionCheckTypes bk a
@@ -90,14 +75,6 @@ extensionCheckTypes bk (a T.:-> b) = do
   a' <- extensionCheckTypes bk a
   b' <- extensionCheckTypes bk b
   pure (a' T.:-> b')
-extensionCheckTypes bk (T.TVar v) = do
-  validateExtension GenericTypes bk
-  pure (T.TVar v)
-extensionCheckTypes bk (T.TFamApp name t args) = do
-  validateExtension UserDefinedTypes bk
-  t' <- extensionCheckTypes bk t
-  args' <- traverse (extensionCheckTypes bk) args
-  pure (T.TFamApp name t' args')
 extensionCheckTypes _ a = pure a
 
 
@@ -119,9 +96,6 @@ extensionCheckA0 (Print e bk) = do
   e' <- extensionCheckE e
   pure (Print e' bk)
 extensionCheckA0 (SysCommand s bk) = pure $ SysCommand s bk
-extensionCheckA0 (PTypeDef name fields  bk) = do
-  validateExtension UserDefinedTypes bk
-  pure (PTypeDef name fields bk)
 
 extensionCheckA1 :: forall m.
   ( ExtensionCheckEff m
@@ -191,23 +165,6 @@ extensionCheckEAtom (PIf bk (a, b, c)) = do
   b' <- extensionCheckE b
   c' <- extensionCheckE c
   pure (PIf bk (a', b', c'))
-extensionCheckEAtom (PMatch bk e patternsE) = do
-  validateExtension UserDefinedTypes bk
-  e' <- extensionCheckE e
-  patternsE' <- for patternsE $ \(pat, expr') -> do
-    expr'' <- extensionCheckE expr'
-    pure (pat, expr'')
-  pure (PMatch bk e' patternsE')
-extensionCheckEAtom (PECons bk s es) = do
-  validateExtension UserDefinedTypes bk
-  es' <- traverse extensionCheckE es
-  pure (PECons bk s es')
-extensionCheckEAtom (PEARecord  bk fields) = do
-  validateExtension UserDefinedTypes bk
-  fields' <- for fields $ \(k,v) -> do
-    v' <- extensionCheckE v
-    pure (k,v')
-  pure (PEARecord bk fields')
 
 extensionCheckEPrefix ::
   ( ExtensionCheckEff m
@@ -246,10 +203,6 @@ extensionCheckEPostfix (PAppArr bk a xs) = do
 extensionCheckEPostfix (OfHigherPostfixPrec a) = do
   a' <- extensionCheckE a
   pure (OfHigherPostfixPrec a')
-extensionCheckEPostfix (PDotApp bk e field) = do
-  validateExtension UserDefinedTypes bk
-  e' <- extensionCheckE e
-  pure (PDotApp bk e' field)
 
 extensionCheckIndexer ::
   ( ExtensionCheckEff m
