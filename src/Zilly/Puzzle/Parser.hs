@@ -1491,3 +1491,34 @@ instance SingI n => HasBookeepInfo (EPrec ParsingStage n) where
       PECons bk _ _ -> bk
       PEARecord bk _ -> bk
     _ -> error "Error. BookeepInfo not defined for this precedence."
+
+
+data Vec (n :: Natural) (a :: Type) where
+  VNil  :: Vec 0 a
+  (:>)  :: a -> Vec n a -> Vec (n + 1) a
+
+equalLength :: Vec n a -> Vec m a -> Maybe (n :~: m)
+equalLength VNil VNil         = Just Refl
+equalLength (_ :> xs) (_ :> ys) = case equalLength xs ys of
+  Just Refl -> Just Refl
+  Nothing   -> Nothing
+equalLength _ _               = Nothing
+
+zipWithVector :: (SingI n)
+  => (a -> a -> a) -> Vec n a -> Vec n a -> Vec n a
+zipWithVector = undefined
+
+zipWithPad :: forall n m a . (SingI n, SingI m)
+  => (a -> a -> a) -> a -> Vec n a -> Vec m a -> Vec (Max n m) a
+zipWithPad f a xs ys | Just Refl <- equalLength xs ys = zipWithVector f  xs ys
+zipWithPad f a (x :> xs) (y :> ys) = f x y :> zipWithPad f a xs ys
+  where
+   r :: forall x. Proxy x
+   r = Proxy
+
+
+
+-- zipWithPad f a (x :> xs) VNil       = f x a :> zipWithPad f a xs VNil
+-- zipWithPad f a VNil       (y :> ys) = f a y :> zipWithPad f a VNil ys
+zipWithPad _ _ VNil       VNil       = VNil
+zipWithPad _ _ _ _ = undefined
