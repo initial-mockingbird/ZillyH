@@ -21,7 +21,7 @@ JSGLUE=$OUTPUT_DIR/ghc_wasm_jsffi.js
 JS=$OUTPUT_DIR/ghc_wasm_jsffi.jsx
 WASI_GHC_PATH=$(wasm32-wasi-ghc --print-libdir)
 POST_LINKER=$WASI_GHC_PATH/post-link.mjs
-
+ASSETS_BIN=./assets/bin.wasm
 wasm32-wasi-cabal build $PACKAGE -f WASM
 HS_WASM=$(find . -name "$PACKAGE.wasm")
 $POST_LINKER --input "$HS_WASM" --output "$JS"
@@ -30,3 +30,4 @@ wasm-opt "$BIN" -o "$BIN" -O2
 wasm-tools strip -o "$BIN" "$BIN"
 bun build --outfile="$JSGLUE" --target=browser --format=esm  "$JS"
 rm "$JS"
+cp "$BIN" "$ASSETS_BIN"
