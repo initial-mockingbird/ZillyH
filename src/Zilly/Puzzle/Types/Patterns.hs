@@ -3,7 +3,7 @@
 {-# LANGUAGE TupleSections            #-}
 {-# LANGUAGE OverloadedStrings        #-}
 {-# LANGUAGE ImportQualifiedPost      #-}
-
+{-# LANGUAGE BangPatterns             #-}
 
 module Zilly.Puzzle.Types.Patterns
   ( pattern Z
@@ -23,13 +23,17 @@ module Zilly.Puzzle.Types.Patterns
   , pattern (:->)
   , pattern ARecord
   , pattern RV
-  , getArrDimType
+  , pattern NatDataKind
+  , pattern IsBoolean
+  , pattern TConstraints
+  , pattern StringDataKind
   ) where
 
 import Zilly.Puzzle.Types.Types
 import Data.Text qualified as Text
 import Text.Read (readMaybe)
-
+import Data.Set (Set)
+import Data.Set qualified as S
 
 infixr 0 :->
 
@@ -64,8 +68,8 @@ pattern ZInfer    = TCon "Infer"  []
 pattern ZArray a  = TCon "array" [a]
 
 pattern NDArray :: Int -> Types -> Types
-pattern NDArray n a <- (_ndaux -> Just (n,a))
-  where NDArray n a = TCon ("array" <> Text.pack (show n)) [a]
+pattern NDArray n a <- (TCon "array" [NatDataKind n,a])
+  where NDArray n a = TCon "array"  [NatDataKind n, a]
 
 
 pattern ARecord :: [(Text.Text, Types)] -> Types
@@ -77,11 +81,28 @@ pattern RV :: Types -> Types
 pattern RV t <- TFamApp "RV" t []
   where RV t = TFamApp "RV" t []
 
-_ndaux :: Types -> Maybe (Int, Types)
-_ndaux t@(TCon _ [a]) = (,a) <$> getArrDimType t
-_ndaux _ = Nothing
 
-getArrDimType :: Types -> Maybe Int
-getArrDimType (TCon name [_])
-  | Text.isPrefixOf "array" name = readMaybe $ Text.unpack $ Text.drop 5 name
-getArrDimType _ = Nothing
+pattern NatDataKind :: Int -> Types
+pattern NatDataKind n <- TCon (readMaybe . Text.unpack -> Just n) []
+  where NatDataKind n = TCon (Text.pack (show n)) []
+
+
+pattern StringDataKind :: Text.Text -> Types
+pattern StringDataKind s <- TCon s []
+  where StringDataKind s = TCon s []
+
+pattern IsBoolean :: Types -> Types
+pattern IsBoolean t <- TConstraint "IsBoolean" t [] ((== t) -> True)
+  where IsBoolean t = TConstraint "IsBoolean" t [] t
+
+pattern TConstraints :: Set (Name, Types, [Types]) -> Types -> Types
+pattern TConstraints cs t <- (goTConstraints -> (cs, t))
+  where TConstraints cs t = S.foldr (\(c, t1, ts) acc -> TConstraint c t1 ts acc) t cs
+
+
+
+goTConstraints :: Types -> (Set (Name, Types, [Types]), Types)
+goTConstraints (TConstraint c t ts t2) =
+  let (s,t3) = goTConstraints t2
+  in (S.insert (c, t, ts) s, t3)
+goTConstraints t = (S.empty, t)

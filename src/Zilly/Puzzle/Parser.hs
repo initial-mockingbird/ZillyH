@@ -153,6 +153,8 @@ data BookeepInfo = BI
 mkBookeepInfo :: Parser BookeepInfo
 mkBookeepInfo = BI <$> getPosition <*> fmap pstIdent getState
 
+
+
 ----------------------------
 -- Aux structures
 ----------------------------
@@ -221,18 +223,28 @@ pARecordT = TARecord <$> mkBookeepInfo <*> between "{" "}" (field `sepBy` ",")
     field :: Parser (String, TPrec ParsingStage 0)
     field = (,) <$> (ident <* ":") <*> pTypes
 
-pArrayT :: Parser String
+pArrayT :: Parser (TPrec ParsingStage Atom)
 pArrayT
   = "array" *>
-  ( mappend "array" . show . (+1) . length
-  <$> between ("[") ("]") (Text.Parsec.many ",")
+  ( f
+  <$> mkBookeepInfo
+  <*> between ("[") ("]") (Text.Parsec.many ",")
+  <*> bracketed pTypes
   )
+  where
+   f ::  TNX ParsingStage -> [a] -> TPrec ParsingStage 0 -> TPrec ParsingStage Atom
+   f bk xs x = TNormal @0 @ParsingStage bk "array"
+    [ OfHigherTPrec0 $ TNormal @0 @ParsingStage bk (show (1 + length xs)) []
+    , x
+    ]
 
 pNormal :: Parser (TPrec ParsingStage Atom)
 pNormal
-  = mkTNormal
-  <*> (pArrayT <|> ident)
+  = pArrayT <|>
+  (mkTNormal
+  <*> ident
   <*> option [] (bracketed $  pTypes `sepBy` "," )
+  )
 
 
 

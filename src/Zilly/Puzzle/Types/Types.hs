@@ -19,6 +19,9 @@ data Types
   = TCon Name [Types]
   | TVar TVar
   | TFamApp Name Types [Types]
+  -- TConstraint Eq a [] (a :-> a :-> Bool)
+  -- Eq a => (a -> a -> Bool)
+  | TConstraint Name Types [Types] Types
   deriving (Eq,Ord)
 
 instance IsString Types where

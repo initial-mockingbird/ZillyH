@@ -152,7 +152,7 @@ instance HasTypeEnv PuzzleM where
                     [(consName, [(TCon (Text.pack name) [],  ts)]) | (consName,ts) <-  defs]
     modify (\s -> s { pstTypeDict = tDict', pstConsDict = consDict' })
   lookupType name = Map.lookup name <$> gets pstTypeDict
-  lookupCons name = fromMaybe [] . Map.lookup name <$> gets pstConsDict
+  lookupCons name = undefined -- fromMaybe [] . Map.lookup name <$> gets pstConsDict
 
 
 
@@ -441,6 +441,10 @@ slices = genericEx "./programs/ZillyArrays/slices.sym"
 
 userDefinedTypes :: IO ()
 userDefinedTypes = genericEx "./programs/Types/defs.z"
+
+
+idol :: IO ()
+idol = genericEx "./programs/Types/idol.z"
 
 genericEx :: FilePath -> IO ()
 genericEx fp = do

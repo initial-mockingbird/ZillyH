@@ -17,6 +17,7 @@ import Data.Map qualified as M
 import Control.Monad (join, zipWithM)
 import Data.Maybe (isJust)
 import Zilly.Puzzle.Types.Show ()
+import Data.Functor.Compose
 
 rtype :: Types -> Types
 rtype (Lazy a) = a
@@ -38,6 +39,16 @@ isSuperTypeOf a b = isJust $ upperBound a b
 
 isSubtypeOf :: Types -> Types -> Bool
 isSubtypeOf a b = isJust $ lowerBound a b
+
+upperBoundM :: Applicative m => m Name -> Types -> Types -> m (Maybe Types)
+upperBoundM _ a b | a == b = pure $ Just a
+upperBoundM fresh (a :-> b) (c :-> d) = getCompose $
+  (:->) <$> Compose (lowerBoundM fresh a c) <*> Compose (upperBoundM fresh b d)
+
+upperBoundM _ _ _ = undefined
+
+lowerBoundM :: Applicative m => m Name -> Types -> Types -> m (Maybe Types)
+lowerBoundM = undefined
 
 
 upperBound :: Types -> Types -> Maybe Types

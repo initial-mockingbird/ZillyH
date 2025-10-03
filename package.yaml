@@ -148,3 +148,4 @@ tests:
     dependencies:
     - ZillyH
     - HTF
+    - QuickCheck

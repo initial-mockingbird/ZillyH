@@ -341,7 +341,10 @@ tcEAtom (PArray bk xs) = do
     False -> let T.NDArray n a = S.elemAt 0 eArrs' in pure (n, a)
 
   let et = if dimensions == 1 then bt else T.NDArray (dimensions -1) bt
-  (xs', ets') <- fmap unzip  $ forM xs $ \x -> withExpectedType (S.singleton et) $ tcE @_ @ctx x
+  (xs', ets') <- fmap unzip
+    $ forM xs
+    $ \x -> withExpectedType (S.singleton et)
+    $ tcE @_ @ctx x
   case dimensions == 1 of
     True -> pure (MkArray (T.NDArray 1 bt) $ A.fromList [length xs'] xs', T.NDArray 1 bt)
     False -> do
@@ -360,7 +363,7 @@ tcEAtom (PArray bk xs) = do
       pure (MkArray (T.NDArray dimensions bt) $ res, T.NDArray dimensions bt)
 tcEAtom (PECons bk cons args) = do
   ets <- getExpectedType
-  possibleConsT <- filter (\p -> length args == length (snd p) ) <$> lookupCons cons
+  possibleConsT <- undefined -- filter (\p -> length args == length (snd p) ) <$> lookupCons cons
   let consTs  = transpose $ snd <$> possibleConsT
   args' <- forM (args `zip` consTs) $ \(arg, ets) ->
     withExpectedType (S.fromList ets) $ tcE @_ @ctx arg
@@ -462,7 +465,7 @@ tcLPattern (T.NTuple t1 t2 ts) (PLTuplePattern bk p1 p2 ps) | length ts == lengt
     False -> throwError $ "A Variable in tuple pattern " ++ show (PLTuplePattern bk p1 p2 ps) ++ " is not unique."
   pure (LTuple p1' p2' ps', env3)
 tcLPattern t (PLConstructorPattern bk con ps) = do
-  mCons <- filter (\(t',_) -> t' == t) <$> lookupCons con
+  mCons <- undefined -- filter (\(t',_) -> t' == t) <$> lookupCons con
   env0 <- getEnv
   case mCons of
     [] -> throwError

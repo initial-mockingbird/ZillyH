@@ -1,0 +1,15 @@
+::zilly+
+
+
+type listOfLazyZ := #Nil | #Cons { head: Z, tail: lazy<listOfLazyZ> };
+Z => listOfLazyZ s := fn(Z x) -> #Cons({head := x, tail := 's(x+1)'});
+
+listOfLazyZ s0 := s(0);
+listOfLazyZ s1 := s0.tail;
+listOfLazyZ s2 := s1.tail;
+listOfLazyZ s3 := s2.tail;
+
+s0
+s1
+s2
+s3

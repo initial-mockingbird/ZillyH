@@ -12,4 +12,4 @@ class HasTypeEnv m where
   lookupType  :: String -> m (Maybe [(String,[Types])])
   -- Given a constructor name, return the list of types it can belong to
   -- and their arguments.
-  lookupCons  :: String -> m [(Types, [Types])]
+  lookupCons  :: String -> m (Maybe (Types, [Types]))
