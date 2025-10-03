@@ -15,6 +15,7 @@ module Zilly.Puzzle.Expression.Std
   , andStd
   , orStd
   , ltStd
+  , ltStd'
   , leStd
   , gtStd
   , geStd
@@ -99,6 +100,14 @@ ltStd
   = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
   $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
   $ LTInfix (Formula $$ VarS "y") (Formula $$ VarS "x")
+
+ltStd' :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
+ltStd'
+  = Lambda (Z, Nothing) (mkVar @(E ctx) "x")
+  $ Lambda (Z, Nothing) (mkVar @(E ctx) "y")
+  $ If (LTInfix (Formula $$ VarS "y") (Formula $$ VarS "x"))
+        (ValZ 1)
+        (ValZ 0)
 
 leStd :: forall {m} ctx. (CtxConstraint ctx m) =>  E ctx
 leStd

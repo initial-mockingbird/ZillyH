@@ -208,7 +208,7 @@ instance Default (PuzzleM (TypeRepMap (E PRunnerCtx))) where
 imap :: IO (TypeRepMap (E PRunnerCtx))
 imap = do
   subV   <- newMVar $ subStd  @PRunnerCtx
-  ltV      <- newMVar $ ltStd     @PRunnerCtx
+  ltV    <- newMVar $ ltStd'  @PRunnerCtx
 
   pure $ M.fromList
     [ ("sub", subV, Z :-> Z :-> Z)
