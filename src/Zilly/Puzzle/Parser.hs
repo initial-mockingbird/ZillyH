@@ -29,6 +29,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeAbstractions #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-|
 Module      : Zilly.Classic1.Parser
 Description : A Parser for Lilly
@@ -68,6 +69,8 @@ import Data.Matchers
 import Text.Read (readMaybe)
 import Data.List (intercalate)
 import Debug.Trace (trace)
+import Language.Haskell.TH (Q,Dec(..),reifyType,Name)
+import Language.Haskell.TH qualified as TH
 
 traceSingI :: forall {k} (n :: k) a. (SingKind k, Show (Demote k), SingI n) => a -> a
 traceSingI a = trace (show $ demote @n) a
@@ -1340,12 +1343,12 @@ instance SingI n => Show (EPrec ctx n) where
         PLambda _ [(x,t)] mt e -> showParen (p > 1)
           $ showString "fn(" . shows t . showString " "
           . shows x . (maybe (showString "") $ \s -> showString " => " . shows s) mt
-          . showString " -> "
+          . showString ") -> "
           . shows e
         PLambda ctx ((x,t) : xs) mt e -> showParen (p > 1)
           $ showString "fn(" . shows t . showString " "
           . shows x . (maybe (showString "") $ \s -> showString " => " . shows s) mt
-          . showString " -> "
+          . showString ") -> "
           . showsPrec 1 (PLambda ctx xs mt e)
         PLambda _ [] _ e -> showParen (p > 1) $ showString "fn() -> " . shows e
         OfHigher1 x -> showsPrec p x
@@ -1503,3 +1506,67 @@ instance SingI n => HasBookeepInfo (EPrec ParsingStage n) where
       PECons bk _ _ -> bk
       PEARecord bk _ -> bk
     _ -> error "Error. BookeepInfo not defined for this precedence."
+
+genCtxInstances :: Name -> Name -> Q [Dec]
+genCtxInstances ctxName tname = do
+  t <- TH.conT tname
+  ctx <- TH.conT ctxName
+  let f x = TySynInstD
+          $ TH.TySynEqn Nothing (TH.AppT (TH.ConT x) ctx) t
+
+  let insts =
+            [ ''EIX
+            , ''EFX
+            , ''EBX
+            , ''ESX
+            , ''EVX
+            , ''ETX
+            , ''EPX
+            , ''EAX
+            , ''EDefX
+            , ''EIfX
+            , ''EMatchX
+            , ''EECons
+            , ''EARecordX
+            , ''EUMX
+            , ''ENegateX
+            , ''EAppX
+            , ''EAAppX
+            , ''EDAppX
+            , ''EPowX
+            , ''EMulX
+            , ''EDivX
+            , ''EModX
+            , ''EPlusX
+            , ''EMinusX
+            , ''EAppendX
+            , ''EPLTX
+            , ''EPLTEQX
+            , ''EPGTX
+            , ''EPGTEQX
+            , ''EPEQX
+            , ''EPNEQX
+            , ''EAndX
+            , ''EOrX
+            , ''ELambdaX
+            , ''PLVarCtx
+            , ''PLWCCtx
+            , ''PLIntCtx
+            , ''PLBoolCtx
+            , ''PLStringCtx
+            , ''PLFloatCtx
+            , ''PLTupleCtx
+            , ''PLConsCtx
+            , ''PLARecordCtx
+            , ''ExprGuardCtx
+            , ''BindingGuardCtx
+            , ''ASeqX
+            , ''ADeclX
+            , ''AAssignX
+            , ''APrintX
+            , ''ATDeclX
+            , ''SysCommandX
+
+            ]
+
+  pure $ f <$> insts

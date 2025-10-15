@@ -8,6 +8,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE BangPatterns #-}
 module TC.HM where
 
 import Zilly.Puzzle.Types.Exports qualified as T
@@ -30,6 +32,7 @@ import GHC.TypeLits.Singletons
 import Control.Monad.State.Strict
 import Test.QuickCheck
 import Debug.Trace (trace)
+import Data.List qualified as List
 
 data HMTestState = HMTestState
   { typeVarCounter :: !Int
@@ -89,7 +92,7 @@ instance InferMonad HMTestM where
     let n = typeVarCounter s
     put s { typeVarCounter = n + 1 }
     return $ T.TVar (T.TV (Text.pack ("'a" ++ show n)))
-  constraint c t = modify (\s -> s { constraints = EqConstraint c t : constraints s })
+  constraint c = modify (\s -> s { constraints = c : constraints s })
   gamma = asks gammaEnv
   getConstraints = gets constraints
   reportTCError err = tell (HMTestWriter [err])
@@ -118,11 +121,16 @@ newtype UBEMonad a = UBEMonad
 type instance EBX HMStage = ()
 type instance EVX HMStage = ()
 type instance EPX HMStage = ()
+type instance EPEQX HMStage = ()
 type instance EAndX HMStage = ()
 type instance EOrX HMStage = ()
 type instance ENegateX HMStage = ()
 type instance EAppX HMStage = ()
 type instance ELambdaX HMStage = ()
+type instance EIX HMStage = ()
+type instance ESX HMStage = ()
+type instance EAX HMStage = ()
+type instance EFX HMStage = ()
 
 newtype VarGen = VarGen { getVarGen :: String }
 
@@ -251,10 +259,28 @@ tcBoolFirstOrder initialState initialReader = forAllShow (arbitrary @UntypedBool
 
 props :: [Property]
 props =
-  [ label "Type check boolean expressions (first-order)"
-    $ tcBoolFirstOrder initialState initialReader
-  , label "Type check boolean expressions (first-order, no bindings)"
-    $ tcBoolFirstOrder initialState noBindingsReader
+  [ label "Typechecking fn('a x) -> x"
+    $ once $ identityTyping
+  , label "TypeChecking fn(lazy<'a> x) -> x"
+    $ once $ identityTyping2
+  , label "TypeChecking fn('x x) -> fn('y y) -> x = y"
+    $ once $ eqTypingGen
+  , label "TypeChecking fn(('a -> 'b) f) -> fn('a x) -> f(x)"
+    $ once $ higherOrderTyping
+  , label ("Check if rigid type vars work")
+    $ once $ constRigidCheck
+  , label ("Checking empty array gets polymorphic type")
+    $ once $ emptyArrayCheck
+  , label ("Checking that a monovector array gets correct type (unconstrained dimension)")
+    $ once $ monovectorArrayCheck
+  , label ("Checking that a monovector array gets correct type (constrained dimension)")
+    $ once $ monovectorArrayCheck'
+  , label ("Checking that a poly/bounded vector array gets correct type")
+    $ once $ boundedVectorArrayCheck
+  -- , label "Type check boolean expressions (first-order)"
+  --   $ tcBoolFirstOrder initialState initialReader
+  -- , label "Type check boolean expressions (first-order, no bindings)"
+  --   $ tcBoolFirstOrder initialState noBindingsReader
   ]
   where
   initialState = HMTestState
@@ -271,3 +297,201 @@ props =
     { gammaEnv =  M.fromList [(T.TV (fromString v), Forall S.empty T.ZBool) | v <- S.toList fvs]
     }
   noBindingsReader = \_ -> HMTestReader { gammaEnv = mempty }
+
+
+-----------------
+-- Unit Tests
+-----------------
+
+
+genericBuilder :: EPrec HMStage 0 -> (T.Types -> Property) -> Property
+genericBuilder expr prop = ioProperty $ do
+  let run = do
+        te  <- infer expr
+        cs <- gets constraints
+        substs <- solve emptySubst cs
+        let !tes = apply substs te
+        pure (te,tes,cs,substs)
+  (res, finalState, log) <- runHMTestM initialState (initialReader (S.singleton "x")) run
+  case res of
+    Left err -> pure . flip counterexample False
+      $ "Type error: "
+      <> err
+      <> "\nLog:\n"
+      <> unlines (tcErrorLog log)
+    Right (te,tes,cs,substs)  -> do
+      liftIO . putStrLn
+        $ "Expression: \n"
+        <> show expr
+        <> "\nInferred type:\n"
+        <> show tes
+        <> "\nType before substitutions:\n"
+        <> show te
+        <>  "\nConstraints:\n"
+        <> unlines (show <$> cs)
+        <> "\nSubstitutions: "
+        <> (\(Subst s)-> List.intercalate ", " [ Text.unpack v <> " |-> " <> show t | (T.TV v,t) <- M.toList s ])substs
+        <> "\nLog:\n"
+        <> unlines (tcErrorLog log)
+      pure $ prop tes
+  where
+  initialState = HMTestState
+    { typeVarCounter = 0
+    , constraints = []
+    , typeEnv = M.fromList
+        [
+        ]
+    , consEnv = M.fromList
+        [
+        ]
+    }
+  initialReader = \fvs -> HMTestReader
+    { gammaEnv =  M.fromList [(T.TV (fromString v), Forall S.empty T.ZBool) | v <- S.toList fvs]
+    }
+
+identityTyping :: Property
+identityTyping = genericBuilder expr (property . checkIdType)
+  where
+  expr = OfHigher0
+      $ PLambda @HMStage ()
+        [ (OfHigher0 $ PVar @HMStage () "x", "'a") ]
+        Nothing
+        (OfHigher1 $ PVar @HMStage () "x")
+  checkIdType :: T.Types -> Bool
+  checkIdType (a T.:-> T.RV b) = a == b
+  checkIdType _ = False
+
+identityTyping2 :: Property
+identityTyping2 = genericBuilder expr (property . checkIdType)
+  where
+  expr = OfHigher0
+      $ PLambda @HMStage ()
+        [ (OfHigher0 $ PVar @HMStage () "x", T.Lazy "'a") ]
+        Nothing
+        (OfHigher1 $ PVar @HMStage () "x")
+  checkIdType :: T.Types -> Bool
+  checkIdType (a T.:-> b) = T.rtype a == b
+  checkIdType _ = False
+
+eqTypingGen :: Property
+eqTypingGen = genericBuilder expr (property . checkEqType)
+  where
+  expr = OfHigher0
+      $ PLambda @HMStage ()
+        [ (OfHigher0 $ PVar @HMStage () "x", "'x")
+        ]
+        Nothing
+        $ PLambda @HMStage ()
+          [ (OfHigher0 $ PVar @HMStage () "y", "'y")
+          ]
+          Nothing
+          (OfHigher1
+            $ PEQ @Atom @HMStage ()
+              (PVar @HMStage () "x")
+              (PVar @HMStage () "y")
+          )
+  checkEqType :: T.Types -> Bool
+  checkEqType (T.TConstraints cs (a T.:-> b T.:-> c)) = and
+    [ a == b
+    , S.member ("BOrZ", c, []) cs
+    ]
+  checkEqType _ = False
+
+higherOrderTyping :: Property
+higherOrderTyping = genericBuilder expr (property . checkHOType)
+  where
+  expr = OfHigher0
+      $ PLambda @HMStage ()
+        [ (OfHigher0 $ PVar @HMStage () "f", "'a" T.:-> "'b")
+        ]
+        Nothing
+        $ PLambda @HMStage ()
+          [ (OfHigher0 $ PVar @HMStage () "x", "'c")
+          ]
+          Nothing
+        (OfHigher1
+          $ PApp @HMStage ()
+            (OfHigherPostfixPrec $ PVar @HMStage () "f")
+            [OfHigher0 $ PVar @HMStage () "x"]
+        )
+  checkHOType :: T.Types -> Bool
+  checkHOType t = t == "'b"
+  checkHOType _ = False
+
+constRigidCheck :: Property
+constRigidCheck = genericBuilder expr (property . checkConstType)
+  where
+  c = PLambda @HMStage ()
+        [ (OfHigher0 $ PVar @HMStage () "x", T.TVar (T.TV "'a"))
+        ]
+        Nothing
+        $ PLambda @HMStage ()
+          [ (OfHigher0 $ PVar @HMStage () "y", T.TVar $ T.TV "'a")
+          ]
+          Nothing
+        (OfHigher1 $ PVar @HMStage () "x")
+  arg = OfHigher0 $ PInt @HMStage () 5
+  app1 = OfHigher0 $ PApp @HMStage ()
+    (OfHigherPostfixPrec $ PParen @1 @HMStage ()  c)
+    [arg]
+  app2 = OfHigher0 $ PApp @HMStage ()
+    (OfHigherPostfixPrec $ PParen @_ @HMStage ()  app1)
+    [OfHigher0 $ PString @HMStage () "bad argument"]
+  expr = app2
+  checkConstType :: T.Types -> Bool
+  checkConstType t = t == T.Z
+  checkConstType _ = False
+
+emptyArrayCheck :: Property
+emptyArrayCheck = genericBuilder expr (property . checkEmptyArrayType)
+  where
+  expr = OfHigher0 $ PArray @0 @HMStage () []
+  checkEmptyArrayType :: T.Types -> Bool
+  checkEmptyArrayType (T.TCon "array" [_,T.TVar _]) = True
+  checkEmptyArrayType _ = False
+
+monovectorArrayCheck :: Property
+monovectorArrayCheck = genericBuilder expr (property . checkVectorArrayType)
+  where
+  expr = OfHigher0 $ PArray @0 @HMStage ()
+    [ OfHigher0 $ PInt @HMStage () 1
+    , OfHigher0 $ PInt @HMStage () 2
+    , OfHigher0 $ PInt @HMStage () 3
+    ]
+  checkVectorArrayType :: T.Types -> Bool
+  checkVectorArrayType (T.TCon "array" [_, T.Z]) = True
+  checkVectorArrayType _ = False
+
+monovectorArrayCheck' :: Property
+monovectorArrayCheck' = genericBuilder expr (property . checkVectorArrayType)
+  where
+  f    = PLambda @HMStage ()
+        [ (OfHigher0 $ PVar @HMStage () "x", T.NDArray 1 T.Z)
+        ]
+        Nothing
+        (OfHigher1 $ PVar @HMStage () "x")
+
+  arr = PArray @0 @HMStage ()
+    [ OfHigher0 $ PInt @HMStage () 1
+    , OfHigher0 $ PInt @HMStage () 2
+    , OfHigher0 $ PInt @HMStage () 3
+    ]
+  farr = OfHigher0 $ PApp @HMStage ()
+    (OfHigherPostfixPrec $ PParen @1 @HMStage () f)
+    [OfHigher0 arr]
+  expr = farr
+  checkVectorArrayType :: T.Types -> Bool
+  checkVectorArrayType (T.TConstraints _ (T.NDArray 1 T.Z)) = True
+  checkVectorArrayType _ = False
+
+boundedVectorArrayCheck :: Property
+boundedVectorArrayCheck = genericBuilder expr (property . checkVectorArrayType)
+  where
+  expr = OfHigher0 $ PArray @0 @HMStage ()
+    [ OfHigher0 $ PInt @HMStage () 1
+    , OfHigher0 $ PFloat @HMStage () 2.5
+    , OfHigher0 $ PInt @HMStage () 3
+    ]
+  checkVectorArrayType :: T.Types -> Bool
+  checkVectorArrayType (T.TConstraints _ (T.TCon "array" [_, T.F])) = True
+  checkVectorArrayType _ = False

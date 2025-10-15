@@ -1,5 +1,5 @@
 {-# LANGUAGE ImportQualifiedPost #-}
-
+{-# LANGUAGE OverloadedStrings   #-}
 module Zilly.Puzzle.Types.Morphisms
   ( rtype
   , isSuperTypeOf
@@ -23,16 +23,21 @@ rtype :: Types -> Types
 rtype (Lazy a) = a
 rtype (a :-> b) = a :-> b
 rtype (NDArray n a) = NDArray n (rtype a)
+rtype (TCon "array" [a,b]) = TCon "array" [a, rtype b]
 rtype rec@(ARecord {}) = rec
-rtype (TCon n xs) = TCon n (rtype <$> xs)
 rtype (TVar a) =  RV . TVar $ a
+rtype (RTVar a) = RV . RTVar $ a
 rtype (RV x) = case x of
   TVar a       -> RV . RV $ TVar a
+  RTVar a      -> RV . RV $ RTVar a
   RV y        -> rtype $ rtype (RV y)
   TFamApp n y ys -> RV $ TFamApp n y ys
   _ -> rtype $ rtype x
 rtype (TFamApp n x xs) = RV $ TFamApp n x xs
-
+rtype (NTuple a b xs) = NTuple (rtype a) (rtype b) (rtype <$> xs)
+rtype (TCon a []) = TCon a []
+rtype (TCon a xs) = TCon a xs
+rtype (TConstraint n x xs y) = TConstraint n x xs (rtype y)
 
 isSuperTypeOf :: Types -> Types -> Bool
 isSuperTypeOf a b = isJust $ upperBound a b
@@ -40,15 +45,6 @@ isSuperTypeOf a b = isJust $ upperBound a b
 isSubtypeOf :: Types -> Types -> Bool
 isSubtypeOf a b = isJust $ lowerBound a b
 
-upperBoundM :: Applicative m => m Name -> Types -> Types -> m (Maybe Types)
-upperBoundM _ a b | a == b = pure $ Just a
-upperBoundM fresh (a :-> b) (c :-> d) = getCompose $
-  (:->) <$> Compose (lowerBoundM fresh a c) <*> Compose (upperBoundM fresh b d)
-
-upperBoundM _ _ _ = undefined
-
-lowerBoundM :: Applicative m => m Name -> Types -> Types -> m (Maybe Types)
-lowerBoundM = undefined
 
 
 upperBound :: Types -> Types -> Maybe Types
@@ -57,6 +53,7 @@ upperBound (a :-> b) (c :-> d) = (:->) <$> lowerBound a c <*> upperBound b d
 upperBound (NDArray n a) (NDArray m b)
   | n == m    = NDArray n <$> upperBound a b
   | otherwise = Nothing
+
 upperBound (Lazy a) (Lazy b) = Lazy <$> upperBound a b
 upperBound Z F = Just F
 upperBound F Z = Just F

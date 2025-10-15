@@ -105,4 +105,8 @@ goTConstraints :: Types -> (Set (Name, Types, [Types]), Types)
 goTConstraints (TConstraint c t ts t2) =
   let (s,t3) = goTConstraints t2
   in (S.insert (c, t, ts) s, t3)
+goTConstraints (a :-> b) =
+  let (s1,t1) = goTConstraints a
+      (s2,t2) = goTConstraints b
+  in (S.union s1 s2, t1 :-> t2)
 goTConstraints t = (S.empty, t)
