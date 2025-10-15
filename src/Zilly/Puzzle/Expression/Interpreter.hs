@@ -12,6 +12,8 @@ module Zilly.Puzzle.Expression.Interpreter
   , CtxPureConstraint
   , memoVal
   , evalE
+  , InterpretMode (..)
+  , evalEClassic
   ) where
 
 
@@ -30,6 +32,9 @@ import Zilly.Puzzle.Effects.Memoize
 import Control.Monad.Error.Class
 import Data.Array
 import Data.Traversable
+
+data InterpretMode = ClassicInterpreter |  UnsugaredInterpreter deriving Eq
+
 
 
 
@@ -105,8 +110,7 @@ evalE (If c a b) = do
       $ "Error on evaling 'if'-expression. Invalid condition: "
       <> show mc'
 evalE (MkArray es) = MkArray <$> traverse evalE es
-evalE (Lambda lctx arg body)
-  = (\env -> LambdaC lctx env arg body) <$> getEnv
+evalE (Lambda lctx arg body) = (\env -> LambdaC lctx env arg body) <$> getEnv
 evalE (Defer a)   = do
   env <- getEnv
   ma <- memoizeWithCC $ withEnv env $ evalE a
@@ -580,6 +584,89 @@ evalE (App f x) = do
       -> getEnv >>= \env -> setFreshL arg env mx' t >>= \env' -> withEnv env' $ evalE body
 
     _ -> error "Error on evaling 'function application'-expression. Function values can only be closures, subtyped functions, or bottom after reduction."
+
+evalEClassic :: forall {m} ctx.
+  ( CtxConstraint ctx m
+  )
+  => E ctx -> m (E ctx)
+evalEClassic e@(ValZ {})   = pure e
+evalEClassic   (Var l )    = getEnv >>= getL l >>= evalEClassic
+evalEClassic (If c a b)  = do
+  mc' <- evalEClassic c
+  case mc' of
+    Bottom e0 es -> pure $ Bottom e0 es
+    ValZ c' ->
+      case connectorZ c' of
+        True  -> evalEClassic a
+        False -> evalEClassic b
+    _ -> throwError
+      $ "Error on evaling 'if'-expression. Invalid condition: "
+      <> show mc'
+evalEClassic (Lambda lctx arg body) = (\env -> LambdaC lctx env arg body) <$> getEnv
+evalEClassic (Defer a)  = do
+  env <- getEnv
+  ma <- memoizeWithCC $ withEnv env $ evalEClassic a
+  pure $ LazyC env a ma
+evalEClassic (App Formula (Var x)) = getEnv >>= viewM x
+evalEClassic (App Random x) =  evalEClassic x >>= \case
+  Bottom e0 es   -> pure $ Bottom e0 es
+  ValZ e' | e' < 1 -> pure $ ValZ 0
+  ValZ e' -> ValZ <$> randInt e'
+  e' -> throwError
+    $ "Error on evaling 'random' expression. Unsupported argument: "
+    <> show e'
+evalEClassic (LTInfix a b) = (,) <$> evalEClassic a <*> evalEClassic b >>= \case
+  (ValZ a', ValZ b') -> pure . ValZ . rConnectorZ  $ a' < b'
+  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
+  (Bottom e0 es, _)             -> pure $ Bottom e0 es
+  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
+  (a',b') -> throwError
+    $ "Error on evaling 'lt'-expression. Unsupported arguments: "
+    <> show a' <> " and " <> show b'
+evalEClassic (SubtractSat a b) = (,) <$> evalEClassic a <*> evalEClassic b >>= \case
+  (ValZ a', ValZ b') -> pure . ValZ $ b' - a'
+  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
+  (Bottom e0 es, _)             -> pure $ Bottom e0 es
+  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
+  (a',b') -> throwError
+    $ "Error on evaling 'subtractSat'-expression. Unsupported arguments: "
+    <> show a' <> " and " <> show b'
+evalEClassic (MinusU a) = evalEClassic a >>= \case
+  Bottom e0 es -> pure $ Bottom e0 es
+  ValZ a' -> pure . ValZ $ -a'
+  x' -> throwError
+    $ "Error on evaling 'minusU'-expression. Unsupported argument: "
+    <> show x'
+evalEClassic f@(LambdaC {}) = pure $ f
+evalEClassic (LazyC _ _ mem)  = runMemoized mem
+evalEClassic b@(Bottom {})  = pure $ b
+evalEClassic (MinusInfix a b) = (,) <$> evalEClassic a <*> evalEClassic b >>= \case
+  (ValZ a', ValZ b') -> pure . ValZ $ a' - b'
+  (Bottom e0 es, Bottom e1 es') -> pure $ Bottom e0 (e1 : es <> es')
+  (Bottom e0 es, _)             -> pure $ Bottom e0 es
+  (_, Bottom e1 es')            -> pure $ Bottom e1 es'
+  (a',b') -> throwError
+    $ "Error on evaling '-'-expression. Unsupported arguments: "
+    <> show a' <> " and " <> show b'
+evalEClassic (App f x) = do
+  mf' <- evalEClassic f
+  mx' <- evalEClassic x
+  case (mf',mx') of
+    (Bottom e0 es, Bottom e1 es') -> pure  $ Bottom e0 (e1 : es <> es')
+    (Bottom e0 es, _)             -> pure  $ Bottom e0 es
+    (_, Bottom e1 es')            -> pure  $ Bottom e1 es'
+    (LambdaC (t,_) env binded body,_)
+      -> setFreshL binded env mx' t >>= \env' -> withEnv env' $ evalEClassic body
+    (Lambda (t,_) arg body, _)
+      -> getEnv >>= \env -> setFreshL arg env mx' t >>= \env' -> withEnv env' $ evalEClassic body
+
+    _ -> error "Error on evaling 'function application'-expression. Function values can only be closures, subtyped functions, or bottom after reduction."
+evalEClassic e = throwError
+  $ "Runtime error: Unsupported expression in Zilly: "
+  <> show e
+
+
+
 
 
 -- --------------------------

@@ -43,65 +43,65 @@ type ACtxConstraint ctx m =
 evalA' :: forall {m} ctx.
   ( ACtxConstraint ctx m
   )
-  => A ctx -> m (TypeRepMap (E ctx), A ctx)
-evalA' a = fmap (a,) getQ >>= \case
+  => (E ctx -> m (E ctx)) -> A ctx -> m (TypeRepMap (E ctx), A ctx)
+evalA' evalE a = fmap (a,) getQ >>= \case
   (Print _, 0) -> do
-    (env,result) <- evalA a
+    (env,result) <- evalA evalE a
     pure (env, result)
   (Print _, 1) -> do
     cycleCC
-    (env,result) <- evalA a
+    (env,result) <- evalA evalE a
     putQ 0
     pure (env, result)
 
   (Reassign {},0) -> do
-    (env, result) <- evalA a
+    (env, result) <- evalA evalE a
     cycleCC
     putQ 0
     pure (env, result)
   (Reassign {},1) -> do
     cycleCC
-    (env, result) <- evalA a
+    (env, result) <- evalA evalE a
     cycleCC
     putQ 0
     pure (env, result )
   (SysCommand "tick", _) -> do
     cycleCC
     putQ 0
-    evalA a
+    evalA evalE a
   (SysCommand "reset", _) -> do
-    res <- evalA a
+    res <- evalA evalE a
     cycleCC
     putQ 0
     pure res
   (Assign {}, _) -> do
-    (env, a') <- evalA a
+    (env, a') <- evalA evalE a
     putQ 1
     pure (env,a')
-  _ -> evalA a
+  _ -> evalA evalE a
 
 
 
 evalA :: forall {m} ctx.
   (ACtxConstraint ctx m)
-  => A ctx -> m (TypeRepMap (E ctx), A ctx)
-evalA (Print a) = evalE @ctx a >>= \case
+  => (E ctx -> m (E ctx)) -> A ctx -> m (TypeRepMap (E ctx), A ctx)
+evalA evalE (Print a) = evalE a >>= \case
   a' -> getEnv >>= \env -> pure  (env, Print a')
-evalA a@(Assign ltype x y) = do
+evalA evalE a@(Assign ltype x y) = do
   env1' <- getEnv
   -- env1' <- declare @(Ftype ltype) (varNameM x) env0
   withEnv @(E ctx) env1' $ evalE y >>= \a' -> do
       env <- getEnv
       (\env' -> (env',a)) <$> setM x a' ltype env
 
-evalA a@(Reassign x [] y) = evalE y >>= \a' -> do
+evalA evalE a@(Reassign x [] y) = evalE y >>= \a' -> do
   env <- getEnv
   md <- varMetadata x env
   (\env' -> (env',a)) <$> setM x a' md env
-evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
+evalA evalE a@(Reassign x (eis:eiss) y) = evalE y >>= \case
   y0 ->  do
     let y = A.scalar y0
-    ixs <- for (eis:eiss) $ \eixs -> for eixs $ \(l,u) -> (,) <$> evalE @ctx l <*> traverse (evalE @ctx) u >>= \case
+    ixs <- for (eis:eiss) $ \eixs -> for eixs $ \(l,u) -> (,) <$> evalE l <*> traverse evalE u >>= \case
       (ValZ l', Just (ValZ u')) -> pure (l', Just u')
       (ValZ l', Nothing) -> pure (l', Nothing)
       (a',b') -> throwError
@@ -144,19 +144,19 @@ evalA a@(Reassign x (eis:eiss) y) = evalE y >>= \case
 
 
 
-evalA a@(SysCommand "reset") = do
+evalA _ a@(SysCommand "reset") = do
   env <- def @(m (TypeRepMap (E ctx)))
   pure  (env,a)
-evalA a@(SysCommand "tick") = do
+evalA _ a@(SysCommand "tick") = do
   env <- getEnv
   pure  (env,a)
 
-evalA (SysCommand _) = evalA ABottom
-evalA ABottom = error "trying to eval action bottom"
+evalA evalE (SysCommand _) = evalA evalE ABottom
+evalA _ ABottom = error "trying to eval action bottom"
 
 evalProgram :: forall {m} ctx.
   ( ACtxConstraint ctx m
   )
-  => [A ctx] -> m ((TypeRepMap (E ctx) ,[A ctx]))
-evalProgram []     = getEnv >>= \env -> pure ((env, []))
-evalProgram (x:xs) = evalA' @ctx x >>= \(env',x') -> fmap (x' :) <$> withEnv env' (evalProgram xs)
+  => (E ctx -> m (E ctx)) -> [A ctx] -> m ((TypeRepMap (E ctx) ,[A ctx]))
+evalProgram _ []     = getEnv >>= \env -> pure ((env, []))
+evalProgram evalE (x:xs) = evalA' @ctx evalE x >>= \(env',x') -> fmap (x' :) <$> withEnv env' (evalProgram evalE xs)

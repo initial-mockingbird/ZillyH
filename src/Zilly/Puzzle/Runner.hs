@@ -50,7 +50,6 @@ import Debug.Trace (trace)
 import System.Random (randomIO)
 
 
-data InterpretMode = ClassicInterpreter |  UnsugaredInterpreter deriving Eq
 
 
 -------------------------------
@@ -81,6 +80,7 @@ data PuzzleState = PuzzleState
   , pstVarDict    :: TypeRepMap (E PRunnerCtx)
   , pstQ          :: Int
   , pstEnabledExtensions :: Set Extensions
+  , pstEvalE      :: E PRunnerCtx -> PuzzleM (E PRunnerCtx)
   }
 data PuzzleReader = PuzzleReader
   { prExpectedType :: Set Types
@@ -280,7 +280,8 @@ typeCheck ast = do
 
 eval :: [A PRunnerCtx] -> PuzzleM [A PRunnerCtx]
 eval as = do
-  (newEnv, as') <- evalProgram as
+  evalE <- gets pstEvalE
+  (newEnv, as') <- evalProgram evalE as
   modify (\s -> s { pstVarDict = newEnv })
   pure as'
 
@@ -293,7 +294,7 @@ interpret input = do
     Just UnsugaredInterpreter -> do
       m <- liftIO $ imap
       let basicExtensions = S.empty
-      modify (\s -> s { pstVarDict = m, pstEnabledExtensions = basicExtensions })
+      modify (\s -> s { pstVarDict = m, pstEnabledExtensions = basicExtensions, pstEvalE = evalEClassic })
       pure $ "ACK: Interpreter mode changed to zilly."
     Just ClassicInterpreter -> do
       m <- liftIO $ imapComplete
@@ -309,7 +310,7 @@ interpret input = do
             , ExtendedPrelude
             ]
 
-      modify (\s -> s { pstVarDict = m, pstEnabledExtensions = completeExtensions })
+      modify (\s -> s { pstVarDict = m, pstEnabledExtensions = completeExtensions, pstEvalE = evalE })
       pure $ "ACK: Interpreter mode changed to zilly+."
     Nothing -> do
        -- tas <- typeCheck =<< checkExtensions =<< parse input
@@ -335,6 +336,7 @@ buildInterpreter = do
         , pstVarDict = m
         , pstQ = 0
         , pstEnabledExtensions = S.empty
+        , pstEvalE = evalEClassic
         }
   mst <- newMVar initialState
   pure $ \s -> catchError (do
@@ -402,6 +404,9 @@ stats = genericEx "./programs/ZillyArrays/stats.sym"
 
 slices :: IO ()
 slices = genericEx "./programs/ZillyArrays/slices.sym"
+
+unsugaredComplete :: IO ()
+unsugaredComplete = genericEx "./programs/unsugared/complete.z"
 
 genericEx :: FilePath -> IO ()
 genericEx fp = do
