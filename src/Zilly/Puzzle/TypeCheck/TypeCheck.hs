@@ -406,20 +406,18 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "dim") [arr]) = do
 
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "_1") [arg]) = do
   (arg', at) <- withExpectedType S.empty $  tcE arg
-  case at of
-    T.NTuple a _ _ -> validateType bk a
-    _ -> withExpectedType
-      (S.singleton $ T.NTuple (T.TVar (T.TV "x1")) (T.TVar (T.TV "x2")) [])
-      $ validateType bk at
-  pure (A_1 arg', at)
+  t' <- case at of
+    T.NTuple a _ _ -> validateType bk a >> pure a
+    _ -> let t = T.NTuple (T.TVar (T.TV "x1")) (T.TVar (T.TV "x2")) []
+         in  withExpectedType (S.singleton t) (validateType bk at) >> pure t
+  pure (A_1 arg', t')
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "_2") [arg]) = do
   (arg', at) <- withExpectedType S.empty $  tcE arg
-  case at of
-    T.NTuple _ b _ -> validateType bk b
-    _ -> withExpectedType
-      (S.singleton $ T.NTuple (T.TVar (T.TV "x1")) (T.TVar (T.TV "x2")) [])
-      $ validateType bk at
-  pure (A_2 arg', at)
+  t' <- case at of
+    T.NTuple _ b _ -> validateType bk b >> pure b
+    _ -> let t = T.NTuple (T.TVar (T.TV "x1")) (T.TVar (T.TV "x2")) []
+         in withExpectedType (S.singleton t ) (validateType bk at) >> pure t
+  pure (A_2 arg', t')
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "fst") arg) =
   tcEPostfixPrec $ PApp bk (OfHigherPostfixPrec $ PVar @ParsingStage bk "_1") arg
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "snd") arg) =
