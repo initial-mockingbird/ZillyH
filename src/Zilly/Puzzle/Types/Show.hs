@@ -41,7 +41,7 @@ instance Show Types where
       . showString  (intercalate ", " (map show (x:xs)))
       . showString ">"
 
-    RTVar (TV n) -> showString $ Text.unpack n
+    RTVar (TV n) -> showString $ "." <> Text.unpack n
     TVar (TV n) -> showString $ Text.unpack n
     TFamApp n x xs
       -> showString (Text.unpack n) . showString "<"

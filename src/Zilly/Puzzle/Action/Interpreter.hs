@@ -26,6 +26,7 @@ import Zilly.Puzzle.Effects.Block (CCActions(..))
 import Data.Traversable
 import Data.Array qualified as A
 import Zilly.Puzzle.Action.Classes (HasTypeEnv(..))
+
 type AEffects m =
   ( Effects m
   , MonadCC m
@@ -38,7 +39,6 @@ type ACtxConstraint ctx m =
   ( CtxConstraint ctx m
   , AEffects m
   , Default (m (TypeRepMap (E ctx)))
-
   )
 
 evalA' :: forall {m} ctx.

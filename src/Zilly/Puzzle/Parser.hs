@@ -30,6 +30,7 @@
 {-# LANGUAGE TypeAbstractions #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-|
 Module      : Zilly.Classic1.Parser
 Description : A Parser for Lilly
@@ -199,11 +200,37 @@ data ParsingStage
 -- Precedence Inf Types
 ------------------------------
 
+type TCtxMonoW ctx = TNX ctx
+
+type TCtxMono ctx =
+  ( TNX ctx ~ TARecordX ctx
+  , TNX ctx ~ TARX ctx
+  )
+
+tPrecMorphism :: forall ctx ctx' n .
+  ( SingI n
+  , TCtxMono ctx
+  , TCtxMono ctx'
+  ) => (TCtxMonoW ctx -> TCtxMonoW ctx') ->  TPrec ctx n -> TPrec ctx' n
+tPrecMorphism f = case () of
+  () | Just Refl <- matches @Atom (sing @n) -> \case
+        TNormal bk name args -> TNormal (f bk) name (tPrecMorphism f <$> args)
+        TARecord bk fields  -> TARecord (f bk) [(k, tPrecMorphism f v) | (k,v) <- fields]
+        OfLowerTPrec a      -> OfLowerTPrec (tPrecMorphism f a)
+     | Just Refl <- matches @0 (sing @n) -> \case
+        TArrow bk a b       -> TArrow (f bk) (tPrecMorphism f a) (tPrecMorphism f b)
+        OfHigherTPrec0 a    -> OfHigherTPrec0 (tPrecMorphism f a)
+     | otherwise -> error "TPrec can only be one of the following: Inf, 0."
+
 
 data instance TPrec ctx Atom where
   -- | Mimics TCon carrying the book-keeping information.
   TNormal   :: forall n ctx. (SingI n, (n < Atom) ~ True)
     => TNX ctx -> String -> [TPrec ctx n] -> TPrec ctx Atom
+  TTypeVar   :: forall n ctx. (SingI n, (n < Atom) ~ True)
+    => TNX ctx -> String -> [TPrec ctx n] -> TPrec ctx Atom
+  TInfer   :: forall ctx.
+    TNX ctx -> TPrec ctx Atom
   TARecord :: forall n ctx. (SingI n, (n < Atom) ~ True)
     => TARecordX ctx -> [(String, TPrec ctx n)] -> TPrec ctx Atom
   OfLowerTPrec :: forall n ctx. (SingI n, (n < Atom) ~ True)
@@ -218,6 +245,14 @@ type instance TARecordX ParsingStage = BookeepInfo
 mkTNormal :: forall n . (SingI n, (n < Atom) ~ True)
     => Parser (String -> [TPrec ParsingStage n] -> TPrec ParsingStage Atom)
 mkTNormal = TNormal @n @ParsingStage <$> mkBookeepInfo
+
+mkTTypeVar :: forall n . (SingI n, (n < Atom) ~ True)
+    => Parser (String -> [TPrec ParsingStage n] -> TPrec ParsingStage Atom)
+mkTTypeVar = TTypeVar @n @ParsingStage <$> mkBookeepInfo
+
+mkTInfer :: Parser (TPrec ParsingStage Atom)
+mkTInfer = TInfer @ParsingStage <$> mkBookeepInfo
+
 
 
 pARecordT :: Parser (TPrec ParsingStage Atom)
@@ -243,11 +278,18 @@ pArrayT
 
 pNormal :: Parser (TPrec ParsingStage Atom)
 pNormal
-  = pArrayT <|>
-  (mkTNormal
-  <*> ident
-  <*> option [] (bracketed $  pTypes `sepBy` "," )
-  )
+  = ("::" *> mkTInfer)
+  <|> pArrayT
+  <|>
+    (mkTTypeVar @0
+      <*> (char '\'' >> fmap (mappend "'") ident)
+      <*> pure []
+    )
+  <|>
+    (mkTNormal
+      <*>  ident
+      <*> option [] (bracketed $  pTypes `sepBy` "," )
+    )
 
 
 
@@ -358,6 +400,8 @@ t2NT f = case sing @n of
     (_,Just Refl) -> case f of
       TNormal _ "lazy" [a] -> T.Lazy (t2NT a)
       TNormal _ a as -> T.TCon (Text.pack a) (t2NT <$> as)
+      TTypeVar _ a _ -> T.TVar (T.TV (Text.pack a))
+      TInfer _  -> T.ZInfer
       TARecord _ fields -> T.ARecord [(Text.pack k, t2NT v) | (k,v) <- fields]
       OfLowerTPrec f' -> t2NT f'
     _             -> error "Type precedence must be one of: Atom, 0."
@@ -369,12 +413,121 @@ t2NT f = case sing @n of
 -- | Expression parse trees are types indexed by its precedence.
 data family EPrec (ctx :: Type) (n :: Natural)
 
-
-
-
 ------------------------------
 -- Precedence Inf Expressions
 ------------------------------
+
+type ECtxMonoW ctx = EIX ctx
+
+type ECtxMono ctx =
+  ( EIX ctx ~ EFX ctx
+  , EIX ctx ~ EBX ctx
+  , EIX ctx ~ ESX ctx
+  , EIX ctx ~ EVX ctx
+  , EIX ctx ~ ETX ctx
+  , EIX ctx ~ EPX ctx
+  , EIX ctx ~ EAX ctx
+  , EIX ctx ~ EDefX ctx
+  , EIX ctx ~ EIfX ctx
+  , EIX ctx ~ EMatchX ctx
+  , EIX ctx ~ EECons ctx
+  , EIX ctx ~ EARecordX ctx
+  , EIX ctx ~ EUMX ctx
+  , EIX ctx ~ ENegateX ctx
+  , EIX ctx ~ EAppX ctx
+  , EIX ctx ~ EAAppX ctx
+  , EIX ctx ~ EDAppX ctx
+  , EIX ctx ~ EPowX ctx
+  , EIX ctx ~ EMulX ctx
+  , EIX ctx ~ EDivX ctx
+  , EIX ctx ~ EModX ctx
+  , EIX ctx ~ EPlusX ctx
+  , EIX ctx ~ EMinusX ctx
+  , EIX ctx ~ EAppendX ctx
+  , EIX ctx ~ EPLTX ctx
+  , EIX ctx ~ EPLTEQX ctx
+  , EIX ctx ~ EPGTX ctx
+  , EIX ctx ~ EPGTEQX ctx
+  , EIX ctx ~ EPEQX ctx
+  , EIX ctx ~ EPNEQX ctx
+  , EIX ctx ~ EAndX ctx
+  , EIX ctx ~ EOrX ctx
+  , EIX ctx ~ ELambdaX ctx
+  )
+
+ePrecMorphism :: forall ctx ctx' n .
+  ( SingI n
+  , ECtxMono ctx
+  , ECtxMono ctx'
+  , PatCtxMono ctx
+  , PatCtxMono ctx'
+  )
+  => (ECtxMonoW ctx -> ECtxMonoW ctx')
+  -> (PatCtxMonoW ctx -> PatCtxMonoW ctx')
+  -> EPrec ctx n
+  -> EPrec ctx' n
+ePrecMorphism f g = case () of
+  () | Just Refl <- matches @Atom (sing @n) -> \case
+        PInt bk i         -> PInt (f bk) i
+        PFloat bk d       -> PFloat (f bk) d
+        PBool bk b        -> PBool (f bk) b
+        PString bk s      -> PString (f bk) s
+        PVar bk s         -> PVar (f bk) s
+        PTuple bk a b bs  -> PTuple (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b) (ePrecMorphism f g <$> bs)
+        PParen bk a       -> PParen (f bk) (ePrecMorphism f g a)
+        PArray bk xs      -> PArray (f bk) (ePrecMorphism f g <$> xs)
+        PDefer bk a       -> PDefer (f bk) (ePrecMorphism f g a)
+        PIf bk (a,b,c)   -> PIf (f bk) (ePrecMorphism f g a, ePrecMorphism f g b, ePrecMorphism f g c)
+        PMatch bk e bs    -> PMatch (f bk) (ePrecMorphism f g e) [(patPrecMorphism g f p, ePrecMorphism f g v) | (p,v) <- bs]
+        PECons bk name xs-> PECons (f bk) name (ePrecMorphism f g <$> xs)
+        PEARecord bk fs   -> PEARecord (f bk) [(k, ePrecMorphism f g v) | (k,v) <- fs]
+      | Just Refl <- matches @PostfixPrec (sing @n) -> \case
+        PApp bk e xs      -> PApp (f bk) (ePrecMorphism f g e) (ePrecMorphism f g <$> xs)
+        PAppArr bk e xs   -> PAppArr (f bk) (ePrecMorphism f g e) (f' <$> xs)
+          where
+          f' (PIndex idx) = PIndex (ePrecMorphism f g idx)
+          f' (PRangeIndexer (idx0,idx1))  = PRangeIndexer (ePrecMorphism f g idx0, ePrecMorphism f g idx1)
+        PDotApp bk e s    -> PDotApp (f bk) (ePrecMorphism f g e) s
+        OfHigherPostfixPrec a -> OfHigherPostfixPrec (ePrecMorphism f g a)
+      | Just Refl <- matches @PrefixPrec (sing @n) -> \case
+        PUMinus bk a      -> PUMinus (f bk) (ePrecMorphism f g a)
+        PNegate bk a      -> PNegate (f bk) (ePrecMorphism f g a)
+        OfHigherPrefixPrec a -> OfHigherPrefixPrec (ePrecMorphism f g a)
+      | Just Refl <- matches @8 (sing @n) -> \case
+        PPower bk a b     -> PPower (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        OfHigher8 a -> OfHigher8 (ePrecMorphism f g a)
+      | Just Refl <- matches @7 (sing @n) -> \case
+        PMul bk a b       -> PMul (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PDiv bk a b       -> PDiv (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PMod bk a b       -> PMod (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        OfHigher7 a -> OfHigher7 (ePrecMorphism f g a)
+      | Just Refl <- matches @6 (sing @n) -> \case
+        PPlus bk a b      -> PPlus (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PMinus bk a b     -> PMinus (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PAppend bk a b    -> PAppend (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        OfHigher6 a-> OfHigher6 (ePrecMorphism f g a)
+      | Just Refl <- matches @4 (sing @n) -> \case
+        PEQ bk a b        -> PEQ (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PLT bk a b        -> PLT (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PLTEQ bk a b      -> PLTEQ (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PGTEQ bk a b      -> PGTEQ (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PGT bk a b        -> PGT (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PNEQ bk a b       -> PNEQ (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        OfHigher4 a -> OfHigher4 (ePrecMorphism f g a)
+      | Just Refl <- matches @3 (sing @n) -> \case
+        POr bk a b        -> POr (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        PAnd bk a b       -> PAnd (f bk) (ePrecMorphism f g a) (ePrecMorphism f g b)
+        OfHigher3 a -> OfHigher3 (ePrecMorphism f g a)
+      | Just Refl <- matches @1 (sing @n) -> \case
+        PLambda bk args mt body -> PLambda (f bk)  (f' <$> args) mt (ePrecMorphism f g body)
+          where
+          f' (a,b) =  (ePrecMorphism f g a, b)
+        OfHigher1 body -> OfHigher1 (ePrecMorphism f g body)
+      | Just Refl <- matches @0 (sing @n) -> \case
+        OfHigher0 body -> OfHigher0 (ePrecMorphism f g body)
+      | otherwise -> error "EPrec can only be one of the following: Inf, PostfixPrec, PrefixPrec,8,7,6,5,4,3,2,1,0."
+
+
 
 -- | Expression trees for attoms
 data instance EPrec ctx Atom where
@@ -833,6 +986,7 @@ mkOr = POr <$> mkBookeepInfo
 -- Precedence 1 Expressions
 ------------------------------
 
+
 data instance EPrec ctx 1 where
 -- | Lambda functions:
   -- @
@@ -864,6 +1018,76 @@ mkLambda
 ----------------------------------
 -- Pattern Matching Expressions
 ----------------------------------
+
+type PatCtxMonoW ctx = PLVarCtx ctx
+
+type PatCtxMono ctx =
+  ( PLVarCtx ctx ~ PLWCCtx ctx
+  , PLVarCtx ctx ~ PLIntCtx ctx
+  , PLVarCtx ctx ~ PLBoolCtx ctx
+  , PLVarCtx ctx ~ PLStringCtx ctx
+  , PLVarCtx ctx ~ PLFloatCtx ctx
+  , PLVarCtx ctx ~ PLTupleCtx ctx
+  , PLVarCtx ctx ~ PLConsCtx ctx
+  , PLVarCtx ctx ~ PLARecordCtx ctx
+  , PLVarCtx ctx ~ ExprGuardCtx ctx
+  , PLVarCtx ctx ~ BindingGuardCtx ctx
+  )
+
+patPrecMorphism :: forall f ctx ctx'.
+  ( PatCtxMono ctx
+  , PatCtxMono ctx'
+  , ECtxMono ctx
+  , ECtxMono ctx'
+  )
+  => (PatCtxMonoW ctx -> PatCtxMonoW ctx')
+  -> (ECtxMonoW ctx -> ECtxMonoW ctx')
+  -> PPattern ctx -> PPattern ctx'
+patPrecMorphism f g (MkPPattern p gs) = MkPPattern
+  (plPatPrecMorphism f g p)
+  (patGuardPrecMorphism f g <$> gs)
+
+plPatPrecMorphism :: forall f ctx ctx'.
+  ( PatCtxMono ctx
+  , PatCtxMono ctx'
+  , ECtxMono ctx
+  , ECtxMono ctx'
+  )
+  => (PatCtxMonoW ctx -> PatCtxMonoW ctx')
+  -> (ECtxMonoW ctx -> ECtxMonoW ctx')
+  -> PLPattern ctx -> PLPattern ctx'
+plPatPrecMorphism f g = \case
+  PLVarPattern bk name -> PLVarPattern (f bk) name
+  PLWildcardPattern bk -> PLWildcardPattern (f bk)
+  PLIntPattern bk i -> PLIntPattern (f bk) i
+  PLBoolPattern bk b -> PLBoolPattern (f bk) b
+  PLStringPattern bk s -> PLStringPattern (f bk) s
+  PLFloatPattern bk d -> PLFloatPattern (f bk) d
+  PLTuplePattern bk p1 p2 ps -> PLTuplePattern
+    (f bk)
+    (plPatPrecMorphism f g p1)
+    (plPatPrecMorphism f g p2)
+    (plPatPrecMorphism f g <$> ps)
+  PLConstructorPattern bk name ps -> PLConstructorPattern
+    (f bk)
+    name
+    (plPatPrecMorphism f g <$> ps)
+  PLARecordPattern bk fields -> PLARecordPattern (f bk) fields
+
+
+
+patGuardPrecMorphism :: forall f ctx ctx'.
+  ( PatCtxMono ctx
+  , PatCtxMono ctx'
+  , ECtxMono ctx
+  , ECtxMono ctx'
+  )
+  => (PatCtxMonoW ctx -> PatCtxMonoW ctx')
+  -> (ECtxMonoW ctx -> ECtxMonoW ctx')
+  -> PPaternGuard ctx -> PPaternGuard ctx'
+patGuardPrecMorphism f g = \case
+  PExprGuard bk expr -> PExprGuard (f bk) (ePrecMorphism g f  expr)
+  PBindingGuard bk pat expr -> PBindingGuard (f bk) (plPatPrecMorphism f g pat) (ePrecMorphism g f expr)
 
 data PPattern ctx
   = MkPPattern (PLPattern ctx) [PPaternGuard ctx]
@@ -940,7 +1164,7 @@ pLTuplePattern
   <$> mkBookeepInfo
   <*> ("(" *>  pLPattern)
   <*> ("," *> pLPattern)
-  <*> option [] ("," *> sepBy pLPattern ",")
+  <*> option [] ("," *> sepBy pLPattern",")
   <* ")"
 
 pLConstructorPattern :: Parser (PLPattern ParsingStage)
@@ -1086,13 +1310,58 @@ instance (SingI n', SingI n, (n' > n) ~ True) => EPrec ctx n' PU.< EPrec ctx n w
 -- Action Grammar
 -----------------------------------------
 
+type ACtxMonoW ctx = ADeclX ctx
+
+type ACtxMono ctx =
+  ( ADeclX ctx ~ AAssignX ctx
+  , ADeclX ctx ~ APrintX ctx
+  , ADeclX ctx ~ ATDeclX ctx
+  , ADeclX ctx ~ SysCommandX ctx
+  , ADeclX ctx ~ ASeqX ctx
+  )
+
+aPrecMorphism :: forall ctx ctx'.
+  ( ACtxMono ctx
+  , ACtxMono ctx'
+  , ECtxMono ctx
+  , ECtxMono ctx'
+  , PatCtxMono ctx
+  , PatCtxMono ctx'
+  )
+  => (ACtxMonoW ctx -> ACtxMonoW ctx')
+  -> (ECtxMonoW ctx -> ECtxMonoW ctx')
+  -> (PatCtxMonoW ctx -> PatCtxMonoW ctx')
+  -> A1 ctx -> A1 ctx'
+aPrecMorphism f g h = \case
+  Seq x y ys -> Seq (f x) (a0PrecMorphism f g h y) (a0PrecMorphism f g h <$> ys)
+  OfA0 y     -> OfA0 (a0PrecMorphism f g h y)
+
+a0PrecMorphism :: forall ctx ctx'.
+  ( ACtxMono ctx
+  , ACtxMono ctx'
+  , ECtxMono ctx
+  , ECtxMono ctx'
+  , PatCtxMono ctx
+  , PatCtxMono ctx'
+  )
+  => (ACtxMonoW ctx -> ACtxMonoW ctx')
+  -> (ECtxMonoW ctx -> ECtxMonoW ctx')
+  -> (PatCtxMonoW ctx -> PatCtxMonoW ctx')
+  -> A0 ctx -> A0 ctx'
+a0PrecMorphism f g h = \case
+  Decl t e1 e2 x      -> Decl t (ePrecMorphism g h e1) (ePrecMorphism g h e2) (f x)
+  Assign e1 e2 x      -> Assign (ePrecMorphism g h e1) (ePrecMorphism g h e2) (f x)
+  Print e x           -> Print (ePrecMorphism g h e) (f x)
+  PTypeDef name cs x  -> PTypeDef name cs (f x)
+  SysCommand name x   -> SysCommand name (f x)
+
 data A1 ctx
   = Seq (ASeqX ctx) (A0 ctx) [A0 ctx]
   | OfA0 (A0 ctx)
 
 type family ASeqX (ctx :: Type) :: Type
 
-type instance ASeqX ParsingStage = Void
+type instance ASeqX ParsingStage = BookeepInfo
 
 pattern MkSeq :: A0 ctx -> [A0 ctx] -> A1 ctx
 pattern MkSeq b bs <-  Seq _ b bs
@@ -1449,6 +1718,9 @@ instance Show (A1 ctx) where
 
 class HasBookeepInfo a where
   getBookeepInfo :: a -> BookeepInfo
+
+instance HasBookeepInfo BookeepInfo where
+  getBookeepInfo = id
 
 instance SingI n => HasBookeepInfo (EPrec ParsingStage n) where
   getBookeepInfo = case () of

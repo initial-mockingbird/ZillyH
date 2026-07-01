@@ -67,6 +67,7 @@ pattern ZDouble   = TCon "R"      []
 pattern ZInfer    = TCon "Infer"  []
 pattern ZArray a  = TCon "array" [a]
 
+
 pattern NDArray :: Int -> Types -> Types
 pattern NDArray n a <- (TCon "array" [NatDataKind n,a])
   where NDArray n a = TCon "array"  [NatDataKind n, a]

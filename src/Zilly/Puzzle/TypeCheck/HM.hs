@@ -15,7 +15,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 
 module Zilly.Puzzle.TypeCheck.HM where
@@ -40,22 +42,28 @@ import Debug.Trace (trace)
 import Control.Concurrent.MVar (MVar, tryTakeMVar, putMVar)
 import Control.Monad.IO.Class
 import Data.Functor (void)
+import Data.Kind (Type)
+import Control.Monad.Error.Class
 
-data TCTag
-type PTInfo = (MVar T.Types, BookeepInfo)
+-- data TCTag
+-- type PTInfo = (MVar T.Types, BookeepInfo)
 
-$(genCtxInstances ''TCTag ''PTInfo)
+-- $(genCtxInstances ''TCTag ''PTInfo)
 
 data Scheme = Forall (S.Set T.TVar) T.Types
 
-setType :: MonadIO m => PTInfo -> T.Types -> m PTInfo
-setType (mvar,bk) t = liftIO $ tryTakeMVar mvar >> putMVar mvar t >> pure (mvar,bk)
+class HasTypeInfo (a :: Type) where
+  getTypeInfo :: MonadIO m => a -> m T.Types
+  setTypeInfo :: MonadIO m => a -> T.Types -> m ()
 
-setType' :: MonadIO m => PTInfo -> m T.Types -> m T.Types
-setType' pt mt = do
-  t <- mt
-  void $ setType pt t
-  pure t
+
+
+-- setType :: MonadIO m => PTInfo -> T.Types -> m PTInfo
+-- setType (mvar,bk) t = liftIO $ tryTakeMVar mvar >> putMVar mvar t >> pure (mvar,bk)
+
+setType' ::  (HasTypeInfo a , MonadIO m)
+  => a -> m T.Types -> m T.Types
+setType' a mt = mt >>= \t -> setTypeInfo a t >> pure t
 
 data Constraint
   = EqConstraint T.Types T.Types
@@ -105,7 +113,7 @@ instance Show Constraint where
   show (TcConstraint name t args) =
     Text.unpack name <> " " <> show t <> " " <> unwords (show <$> args)
 
-data Subst = Subst (Map T.TVar T.Types)
+newtype Subst = Subst (Map T.TVar T.Types)
 
 instance Show Subst where
   show (Subst s)
@@ -131,7 +139,7 @@ composeSubst (Subst a) (Subst b) =
 
 type Gamma = Map T.TVar Scheme
 
-class (MonadIO m, HasTypeEnv m) => InferMonad m where
+class (MonadIO m, MonadError String m, MonadFail m, HasTypeEnv m) => InferMonad m where
   fresh :: m T.Types
   constraint :: Constraint -> m ()
   gamma :: m Gamma
@@ -196,33 +204,38 @@ instantiate (Forall vars t) = do
   let s = Subst $ M.fromList $ zip (S.toList vars) newVars
   return $ apply s t
 
-class Inferable a where
+class Inferable (a :: Type)  where
   infer :: (InferMonad m) => a -> m T.Types
 
 
+-- instance Inferable (A0 TCTag) where
+--   infer (Print e _) = infer e
+--   infer (Decl T.ZInfer (yieldVarName -> Just v) e ctx) = do
+--     tx <- fresh
+--     te <- withVar v (Forall S.empty tx) $ infer e
+--     -- void $ setType ctx te
+--     pure te
+--   infer (Decl t (yieldVarName -> Just v) e ctx) = do
+--     gammaCtx <- gamma
+--     let es = generalize gammaCtx t
+--     te <- withVar v es $ infer e
+--     -- void $ setType ctx te
+--     pure te
+--   infer a = throwIrrecoverableError
+--     $ "Action "
+--     <> show a
+--     <> " should not be inferable."
+--
 
-instance Inferable (A0 TCTag) where
-  infer (Print e _) = infer e
-  infer (Decl T.ZInfer (yieldVarName -> Just v) e ctx) = do
-    tx <- fresh
-    te <- withVar v (Forall S.empty tx) $ infer e
-    void $ setType ctx te
-    pure te
-  infer (Decl t (yieldVarName -> Just v) e ctx) = do
-    gammaCtx <- gamma
-    let es = generalize gammaCtx t
-    te <- withVar v es $ infer e
-    void $ setType ctx te
-    pure te
-  infer a = throwIrrecoverableError
-    $ "Action "
-    <> show a
-    <> " should not be inferable."
-
-
-instance SingI n => Inferable (EPrec TCTag n) where
-  infer e | Just Refl <- matches @Atom (sing @n) = case e of
-    PInt   ctx _  -> setType' ctx $ pure T.Z
+instance
+  ( SingI n
+  , ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  ) => Inferable (EPrec ctx n)  where
+  infer e | Just Refl <- matches @Atom (sing @n) = case e  of
+    PInt ctx _  -> setType' ctx $ pure T.Z
     PFloat ctx _  -> setType' ctx $ pure T.ZDouble
     PBool  ctx _  -> setType' ctx $ pure T.ZBool
     PString ctx _ -> setType' ctx $ pure T.ZString
@@ -233,8 +246,12 @@ instance SingI n => Inferable (EPrec TCTag n) where
         Nothing    -> do
           reportTCError $ "Unbound variable: " <> v
           fresh
-    PTuple ctx a b xs -> setType' ctx
-      $ T.NTuple <$> infer a <*> infer b <*> traverse infer xs
+    PTuple ctx a b xs -> setType' ctx $ do
+      T.TConstraints sta ta <- infer a
+      T.TConstraints stb tb <- infer b
+      tss <- traverse infer xs
+      let cs = S.unions $ sta : stb : fmap (\(T.TConstraints st _) -> st) tss
+      pure $ T.TConstraints cs $ T.NTuple ta tb tss
     PParen ctx a -> setType' ctx $ infer a
     PArray ctx as -> setType' ctx $ traverse infer as >>= \case
       [] -> do
@@ -244,8 +261,12 @@ instance SingI n => Inferable (EPrec TCTag n) where
       (x:xs) -> case foldl (\acc t -> acc >>= T.upperBound t) (Just x) xs of
         Just ub -> do
           traverse_ (\t -> constraint $ UpperBoundConstraint t ub ub) (x:xs)
+          let cs' = S.unions $ (\(T.TConstraints cs' _) -> cs') <$> (x:xs)
+          let cs = S.fromList
+                [ ("UpperBound", t, [ub,ub]) | t <- (x:xs)
+                ] <> cs'
           natKind <- fresh
-          pure $ T.TCon "array" [natKind, ub]
+          pure . T.TConstraints cs $ T.TCon "array" [natKind, ub]
         Nothing -> do
           reportTCError
             $ "Could not find common supertype for array elements: "
@@ -265,26 +286,27 @@ instance SingI n => Inferable (EPrec TCTag n) where
 
         if :: (IsBoolean c, Coerce a ub, Coerce b ub) => c -> a -> b -> ub
       -}
-      tc <- infer c
+      T.TConstraints stc tc <- infer c
       constraint $ IsBooleanTcConstraint tc
-      tL <- infer l
-      tR <- infer r
+      T.TConstraints stL tL <- infer l
+      T.TConstraints stR tR <- infer r
       tub <- upperBoundM tL tR
       let cs = S.fromList
             [ ("IsBoolean", tc, [])
             , ("Coerce", tL, [tub])
             , ("Coerce", tR, [tub])
-            ]
+            ] <> stc <> stL <> stR
       -- constraint $ CoerceTcConstraint tL tub
       -- constraint $ CoerceTcConstraint tR tub
       pure $ T.TConstraints cs tub
 
     PMatch mctx e branches -> setType' mctx $ do
-      tE <- infer e
+      T.TConstraints stE tE <- infer e
       ts <- for branches $ \(p,b) -> do
         (tP,ctx) <- inferAndBind p
         constraint $ UpperBoundConstraint tP tE tE
         withVars (M.toList ctx) $ infer b
+      let cts = S.unions $ (\(T.TConstraints cs' _) -> cs') <$> ts
       case ts of
         [] -> T.Bot <$ reportTCError "Match expression has no branches"
         (t:ts') -> case foldr (\ta mtb -> mtb >>= T.upperBound ta) (Just t) ts' of
@@ -295,7 +317,11 @@ instance SingI n => Inferable (EPrec TCTag n) where
             fresh
           Just ub -> do
             for_ ts' (\t -> constraint $ UpperBoundConstraint t ub ub)
-            pure ub
+            let cts' = S.unions $ (\(T.TConstraints cs' _) -> cs') <$> ts
+            let cs = S.fromList
+                  [ ("UpperBound", t, [ub,ub]) | t <- ts
+                  ] <> stE <> cts <> cts'
+            pure $ T.TConstraints cs ub
 
     PECons ctx name es -> setType' ctx $ lookupCons name >>= \case
       Nothing -> do
@@ -306,14 +332,16 @@ instance SingI n => Inferable (EPrec TCTag n) where
           $ "Constructor " <> name <> " expects "
           <> show (length ts) <> " arguments, but got "
           <> show (length es)
-        for_ (es `zip` ts) $ \(e,t') -> do
-          t'' <- infer e
+        cs <- fmap S.unions $ for (es `zip` ts) $ \(e,t') -> do
+          T.TConstraints st t'' <- infer e
           constraint $ EqConstraint t'' t'
-        pure t
+          pure st
+        pure $ T.TConstraints cs t
     PEARecord _ fields -> do
       let (ks,vs) = unzip fields
       vs' <- traverse infer vs
-      pure . T.ARecord $ (fmap fromString ks `zip` vs')
+      let cs = S.unions $ (\(T.TConstraints cs' _) -> cs') <$> vs'
+      pure . T.TConstraints cs .  T.ARecord $ (fmap fromString ks `zip` vs')
 
   infer e | Just Refl <- matches @PrefixPrec (sing @n) = case e of
     PUMinus ctx a -> setType' ctx $ do
@@ -323,29 +351,31 @@ instance SingI n => Inferable (EPrec TCTag n) where
        -  uminus :: (Num a) => a -> a
        -
       -}
-      ta <- infer a
+      T.TConstraints sta ta <- infer a
       constraint $ NumTcConstraint ta
-      pure $ T.TConstraint "Num" ta [] ta
+      let cs = S.fromList [ ("Num", ta, []) ] <> sta
+      pure $ T.TConstraints cs ta
 
     PNegate ctx a -> setType' ctx $ do
-      tA <- infer a
+      T.TConstraints stA tA <- infer a
       constraint $ EqConstraint tA T.ZBool
-      pure T.ZBool
+      pure $ T.TConstraints stA T.ZBool
     OfHigherPrefixPrec a -> infer a
 
   infer e | Just Refl <- matches @PostfixPrec (sing @n) = case e of
     PAppArr ctx xs ix -> setType' ctx $ do
       let iShape = length ix
-      tF <- infer xs
+      T.TConstraints stF tF <- infer xs
       btXS <- fresh
       let etX = T.NDArray iShape btXS
       constraint $ EqConstraint tF etX
       tixs <- traverse infer ix
+      let cs = S.unions . (stF :) $ (\(T.TConstraints st _) -> st) <$> tixs
       let fShape = length [1 | T.Tuple {} <- tixs]
       let fT = case fShape of
             0 -> btXS
             _ -> T.NDArray fShape btXS
-      pure fT
+      pure $ T.TConstraints cs fT
     PDotApp ctx e field -> setType' ctx $ do
       {-
        - x.field needs typeclasses. If x type is a polytype then
@@ -357,10 +387,13 @@ instance SingI n => Inferable (EPrec TCTag n) where
        - field is a literal, and thus we can reify it at compile time.
        - if it were an arbitrary expression, we would need dependent types.
        -}
-      tE <- infer e
+      T.TConstraints stE tE <- infer e
       a <- fresh
       constraint $ HasFieldConstraint tE (Text.pack field) a
-      pure $ T.TConstraint "HasField" tE [T.StringDataKind (fromString $ show field)] a
+      let cs = S.fromList
+            [ ("HasField", tE, [T.StringDataKind (fromString $ show field), a])
+            ] <> stE
+      pure $ T.TConstraints cs a
 
     PApp ctx (yieldVarName -> Just "formula") [arg] -> setType' ctx $ do
       {-
@@ -390,15 +423,29 @@ instance SingI n => Inferable (EPrec TCTag n) where
       error "TODO"
 
     PApp ctx f [arg] -> setType' ctx $ do
-      tf <- infer f
-      ta <- infer arg
+      T.TConstraints sf tf <- infer f
+      T.TConstraints sa ta <- infer arg
       x  <- fresh
       tb <- fresh
-      constraint $ UpperBoundConstraint ta x x
-      constraint $ EqConstraint tf (x T.:-> tb)
+      -- constraint $ UpperBoundConstraint ta x x
+      constraint $ EqConstraint x ta
+      constraint $ EqConstraint (x T.:-> tb) tf
       let cs = S.fromList
-            [ ("UpperBound", ta, [x,x])
-            ]
+            [
+             ("~", x, [ta])
+             --("UpperBound", ta, [x,x])
+            , ("~", x T.:-> tb, [tf])
+            ] <> sf <> sa
+
+      trace
+        ( "\nFunction type: "
+        <> show (T.TConstraints sf tf)
+        <> "\n, arg type: "
+        <> show (T.TConstraints sa ta)
+        <> "\n, result type: "
+        <> show (T.TConstraints cs tb)
+        <> "\n"
+        ) pure ()
       pure $ T.TConstraints cs  tb
 
     OfHigherPostfixPrec a -> infer a
@@ -409,12 +456,13 @@ instance SingI n => Inferable (EPrec TCTag n) where
 
   infer e | Just Refl <- matches @8 (sing @n) = case e of
     PPower ctx l r -> setType' ctx $ do
-      tl <- infer l
-      tr <- infer r
+      T.TConstraints stl tl <- infer l
+      T.TConstraints str tr <- infer r
       a  <- fresh
       constraint $ ImplementsPowerConstraint tl tr a
+      let cs = S.fromList [ ("ImplementsPower", tl, [tr,a]) ] <> stl <> str
       pure
-        $ T.TConstraint "ImplementsPower" tl [tr,a]
+        $ T.TConstraints cs
         $  tl T.:-> tr T.:-> a
 
     OfHigher8 e -> infer e
@@ -423,22 +471,24 @@ instance SingI n => Inferable (EPrec TCTag n) where
     PMul ctx l r -> setType' ctx $ inferArith l r
     PDiv ctx l r -> setType' ctx $ inferArith l r
     PMod ctx l r -> setType' ctx $  do
-      lt <- infer l
-      rt <- infer r
+      T.TConstraints slt lt <- infer l
+      T.TConstraints srt rt <- infer r
       constraint $ EqConstraint lt T.Z
       constraint $ EqConstraint rt T.Z
-      pure T.Z
+      let cs = slt <> srt
+      pure $ T.TConstraints cs T.Z
     OfHigher7 e -> infer e
 
   infer e | Just Refl <- matches @6 (sing @n) = case e of
     PPlus ctx l r -> setType' ctx $ inferArith l r
     PMinus ctx l r -> setType' ctx $ inferArith l r
     PAppend ctx a b -> setType' ctx $ do
-      ta <- infer a
-      tb <- infer b
+      T.TConstraints sta ta <- infer a
+      T.TConstraints stb tb <- infer b
       constraint $ EqConstraint ta T.ZString
       constraint $ EqConstraint tb T.ZString
-      pure T.ZString
+      let cs = sta <> stb
+      pure $ T.TConstraints cs T.ZString
     OfHigher6 e -> infer e
 
   infer e | Just Refl <- matches @4 (sing @n) = case e of
@@ -459,13 +509,23 @@ instance SingI n => Inferable (EPrec TCTag n) where
     PLambda ctx [(yieldVarName -> Just arg, argT)] mret body -> setType' ctx $ do
       pT <- fresh
       constraint $ EqConstraint pT $ T.rtype argT
+      let cs = S.fromList [ ("~", pT, [T.rtype argT]) ]
       let lambdaCtx =  ftv argT
       -- let lambdaCtx = S.empty
       let ps = Forall lambdaCtx pT
       et <- withVar arg ps $ infer body
+      trace ("Lambda inferred type: " <> show (T.TConstraints cs $ argT T.:-> et)) pure ()
       case mret of
-        Nothing -> pure $ argT T.:-> et
-        Just retT -> constraint (EqConstraint et retT) >> pure (argT T.:-> retT)
+        Nothing -> pure $ T.TConstraints cs $ argT T.:-> et
+        Just retT -> do
+          let cs' = S.unions
+                [ cs
+                , S.fromList
+                    [ ("~", et, [retT])
+                    ]
+                ]
+          constraint (EqConstraint et retT)
+          pure (T.TConstraints cs' $ argT T.:-> retT)
     PLambda {} -> do
       throwIrrecoverableError "Illegal Lambda with multiple arguments in typechecking phase."
     OfHigher1 e -> infer e
@@ -482,7 +542,12 @@ instance SingI n => Inferable (EPrec TCTag n) where
     <> " could not be inferred."
 
 
-instance Inferable (PIndexerExpression TCTag) where
+instance
+  ( ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  ) => Inferable (PIndexerExpression ctx)  where
   infer (PIndex e) = do
     tE <- infer e
     constraint $ EqConstraint tE T.Z
@@ -494,41 +559,47 @@ instance Inferable (PIndexerExpression TCTag) where
     constraint $ EqConstraint t2 T.Z
     pure (T.Tuple T.Z T.Z)
 
-class BindingInferable a where
-  inferAndBind :: InferMonad m => a -> m (T.Types, Map String Scheme)
+class BindingInferable a  where
+  inferAndBind :: (InferMonad m) => a -> m (T.Types, Map String Scheme)
 
-instance BindingInferable (PLPattern TCTag) where
-  inferAndBind (PLVarPattern ctx v) = do
+instance
+  ( ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  )
+  => BindingInferable (PLPattern ctx)  where
+  inferAndBind e@(PLVarPattern ctx v) = do
     t <- fresh
     let s = Forall S.empty t
-    void $ setType ctx t
+    void $ setTypeInfo ctx t
     pure (t, M.singleton v s)
-  inferAndBind (PLWildcardPattern ctx) = do
+  inferAndBind e@(PLWildcardPattern ctx) = do
     t <- fresh
-    void $ setType ctx t
+    void $ setTypeInfo ctx t
     pure (t, M.empty)
-  inferAndBind (PLIntPattern ctx _) = setType ctx T.Z >> pure (T.Z, M.empty)
-  inferAndBind (PLBoolPattern ctx _) = setType ctx T.ZBool >> pure (T.ZBool, M.empty)
-  inferAndBind (PLStringPattern ctx _) = setType ctx T.ZString >> pure (T.ZString, M.empty)
-  inferAndBind (PLFloatPattern ctx _) = setType ctx T.ZDouble >> pure (T.ZDouble, M.empty)
-  inferAndBind (PLTuplePattern mctx p1 p2 ps) = do
+  inferAndBind e@(PLIntPattern ctx _) = setTypeInfo ctx T.Z >> pure (T.Z, M.empty)
+  inferAndBind e@(PLBoolPattern ctx _) = setTypeInfo ctx T.ZBool >> pure (T.ZBool, M.empty)
+  inferAndBind e@(PLStringPattern ctx _) = setTypeInfo ctx T.ZString >> pure (T.ZString, M.empty)
+  inferAndBind e@(PLFloatPattern ctx _) = setTypeInfo ctx T.ZDouble >> pure (T.ZDouble, M.empty)
+  inferAndBind e@(PLTuplePattern mctx p1 p2 ps) = do
     (t1,ctx1) <- inferAndBind p1
     (t2,ctx2) <- inferAndBind p2
     (ts,ctxs) <- unzip <$> traverse inferAndBind ps
     let ctx = M.unions (ctx1:ctx2:ctxs)
     let ft = T.NTuple t1 t2 ts
-    void $ setType mctx ft
+    void $ setTypeInfo mctx ft
     pure (ft,ctx)
-  inferAndBind (PLARecordPattern mctx fields) = do
+  inferAndBind e@(PLARecordPattern mctx fields) = do
     let ctx = M.fromList $ fmap (Forall S.empty) <$> fields
     let ft = T.ARecord $ fmap (\(x,t) -> (fromString x,t)) fields
-    void $ setType mctx ft
+    void $ setTypeInfo mctx ft
     pure (ft, ctx)
-  inferAndBind (PLConstructorPattern mctx name ps) = lookupCons name >>= \case
+  inferAndBind e@(PLConstructorPattern mctx name ps) = lookupCons name >>= \case
     Nothing -> do
       reportTCError $ "Unknown constructor in pattern: " <> name
       t <- fresh
-      void $ setType mctx t
+      void $ setTypeInfo mctx t
       pure (t, M.empty)
     Just (t,ts) -> do
       unless (length ts == length ps) $ reportTCError
@@ -541,29 +612,53 @@ instance BindingInferable (PLPattern TCTag) where
 
         pure ctx
       let ctx = M.unions ctxs
-      void $ setType mctx t
+      void $ setTypeInfo mctx t
       pure (t, ctx)
 
-instance Inferable (PLPattern TCTag) where
+instance
+  ( ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  )
+  => Inferable (PLPattern ctx)  where
   infer = fmap fst . inferAndBind
 
-instance BindingInferable (PPaternGuard TCTag) where
+instance
+  ( ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  )
+  => BindingInferable (PPaternGuard ctx)  where
   inferAndBind (PExprGuard ctx e)
     = infer e
     >>= \t -> constraint (EqConstraint t T.ZBool)
-    >> setType ctx t
+    >> setTypeInfo ctx t
     >> pure (t, M.empty)
   inferAndBind (PBindingGuard mctx lp e) = do
     tE <- infer e
     (tP, ctx) <- inferAndBind lp
     constraint $ EqConstraint tE tP
-    void $ setType mctx tP
+    void $ setTypeInfo mctx tP
     pure (tP, ctx)
 
-instance Inferable (PPaternGuard TCTag) where
+instance
+  ( ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  )
+  => Inferable (PPaternGuard ctx)  where
   infer = fmap fst . inferAndBind
 
-instance BindingInferable (PPattern TCTag) where
+instance
+  ( ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  )
+  => BindingInferable (PPattern ctx)   where
   inferAndBind (MkPPattern lp guards) = do
     (tP, ctx) <- inferAndBind lp
     ctxF <- (\f -> foldlM f ctx guards) $ \ctx' g -> do
@@ -572,22 +667,41 @@ instance BindingInferable (PPattern TCTag) where
       pure (ctx' `M.union` ctxG)
     pure (tP, ctxF)
 
-instance Inferable (PPattern TCTag) where
+instance
+  ( ECtxMono ctx
+  , PatCtxMono ctx
+  , HasTypeInfo (ECtxMonoW ctx)
+  , HasTypeInfo (PatCtxMonoW ctx)
+  )
+  => Inferable (PPattern ctx)  where
   infer = fmap fst . inferAndBind
 
 unify :: InferMonad m => T.Types -> T.Types -> m Subst
+unify T.ZInfer _ = pure emptySubst
+unify _ T.ZInfer = pure emptySubst
 unify a b | a == b = pure emptySubst
-unify (T.TVar v) t = bind v t
-unify t (T.TVar v) = bind v t
+unify (T.TVar v) t = trace "woooo" bind v t
+unify a@(T.RTVar v) b = case b of
+  T.RTVar _ -> do
+    reportTCError
+      $ "Cannot unify two rigid type variables: "
+      <> show a <> " and " <> show b
+    pure emptySubst
+  _ -> trace ("a: " <> show a <> ",b: " <> show b) bind v b
+
+
 unify (T.TConstraints cs1 t1) (T.TConstraints cs2 t2)
   | (not . null) cs1 || (not . null) cs2 = do
     s1 <- unifyConstraints cs1 cs2
+    trace ("t1: " <> show t1 <> ", t2: " <> show t2) pure ()
     s2 <- unify (apply s1 t1) (apply s1 t2)
     pure (s2 `composeSubst` s1)
 unify a@(T.TCon n1 ts1) b@(T.TCon n2 ts2)
   | n1 == n2 && length ts1 == length ts2 = unifyMany ts1 ts2
   | otherwise = throwIrrecoverableError
       $ "Type mismatch: cannot unify " <> show a <> " with " <> show b
+unify t (T.TVar v) = bind v t
+unify a b@(T.RTVar v) = bind v a
 unify (T.RV {}) _ = pure emptySubst
 unify _ (T.RV {}) = pure emptySubst
 unify (T.TFamApp {}) _ = throwIrrecoverableError "User defined type families  are not supported"
@@ -601,7 +715,10 @@ unify a b = do
 unifyMany :: InferMonad m => [T.Types] -> [T.Types] -> m Subst
 unifyMany [] [] = pure emptySubst
 unifyMany (x:xs) (y:ys) = do
+  trace ("x: " <> show x) pure ()
+  trace ("y: " <> show y) pure ()
   s1 <- unify x y
+  trace ("s1: " <> show s1) pure ()
   s2 <- unifyMany (apply s1 xs) (apply s1 ys)
   pure (s2 `composeSubst` s1)
 unifyMany _ _ = throwIrrecoverableError "Unification mismatch: lists have different lengths"
@@ -627,20 +744,24 @@ occurs v t = v `S.member` ftv t
 
 bind :: InferMonad m => T.TVar -> T.Types -> m Subst
 bind v@(T.TV v') t
-  | v `occurs` t = throwIrrecoverableError
+  | trace ("v: " <> show v' <> ", t: " <> show t) v `occurs` t = throwIrrecoverableError
       $ "Occurs check failed: cannot construct infinite type: " <> Text.unpack v' <> " in " <> show t
   | otherwise    = pure $ singletonSubst v t
 
 solve :: InferMonad m => Subst -> [Constraint] -> m Subst
-solve s [] = trace "base case" pure s
+solve s [] =  pure s
 solve s (EqConstraint t1 t2 : cs) = do
+  trace ("solving eq: " <> show (EqConstraint t1 t2)) pure ()
   s1 <- unify t1 t2
+  trace ("substitution: " <> show s1) pure ()
+  trace ("composed substitution: " <> show (s1 `composeSubst` s)) pure ()
   solve (s1 `composeSubst` s) (apply s1 cs)
 -- at this point we only care about substitutions
 -- and constraints DO NOT generate substitutions
 -- rather, we have to CHECK if the constraints are solvable
 -- at a later step
-solve s (TcConstraint {} : css) = do
+solve s (h@TcConstraint {} : css) = do
+  trace ("solving: " <> show h) pure ()
   solve s css
 
 
@@ -707,14 +828,17 @@ upperBoundM a (T.TVar b) = case a of
     c <- fresh
     constraint $ UpperBoundConstraint a (T.TVar b) c
     pure $ T.TConstraint "UpperBound" a [T.TVar b, c] c
-upperBoundM (T.TConstraints cs1 t1) (T.TConstraints cs2 t2) = do
+upperBoundM (T.TConstraints cs1 t1) (T.TConstraints cs2 t2) | all (not . null) [cs1, cs2] = do
+  trace "boo!" pure ()
+  trace ("cs1: " <> show cs1) pure ()
+  trace ("cs2: " <> show cs2) pure ()
   t <- upperBoundM t1 t2
   let cs = S.union cs1 cs2
   pure $ T.TConstraints cs t
-upperBoundM (T.TConstraints cs t1) t2 = do
+upperBoundM (T.TConstraints cs t1) t2 | (not . null) cs = do
   t <- upperBoundM t1 t2
   pure $ T.TConstraints cs t
-upperBoundM t1 (T.TConstraints cs t2) = do
+upperBoundM t1 (T.TConstraints cs t2) | (not . null) cs = do
   t <- upperBoundM t1 t2
   pure $ T.TConstraints cs t
 
@@ -740,6 +864,15 @@ upperBoundM a (T.RV x) = case T.rtype x of
           ]
     pure $ T.TConstraints cs c
   t -> upperBoundM a t
+upperBoundM (T.RTVar x) b = case b of
+  T.RTVar _ -> do
+    reportTCError
+      $ "Cannot compute upper bound of recursive type variables: "
+      <> show (T.RTVar x) <> " and " <> show b
+    >> fresh
+  _ -> do
+    pure $ b
+upperBoundM b (T.RTVar _) = pure b
 upperBoundM a b = do
   reportTCError
     $ "Could not compute upper bound of types: "
@@ -808,14 +941,14 @@ lowerBoundM a (T.TVar b) = case a of
     c <- fresh
     constraint $ LowerBoundConstraint a (T.TVar b) c
     pure $ T.TConstraint "LowerBound" a [T.TVar b, c] c
-lowerBoundM (T.TConstraints cs1 t1) (T.TConstraints cs2 t2) = do
+lowerBoundM (T.TConstraints cs1 t1) (T.TConstraints cs2 t2) | all (not . null) [cs1,cs2] = do
   t <- lowerBoundM t1 t2
   let cs = S.intersection cs1 cs2
   pure $ T.TConstraints cs t
-lowerBoundM (T.TConstraints cs t1) t2 = do
+lowerBoundM (T.TConstraints cs t1) t2 | (not . null) cs = do
   t <- lowerBoundM t1 t2
   pure $ T.TConstraints cs t
-lowerBoundM t1 (T.TConstraints cs t2) = do
+lowerBoundM t1 (T.TConstraints cs t2) | (not . null) cs = do
   t <- lowerBoundM t1 t2
   pure $ T.TConstraints cs t
 lowerBoundM (T.RV x) a = case T.rtype x of
@@ -840,6 +973,15 @@ lowerBoundM a (T.RV x) = case T.rtype x of
           ]
     pure $ T.TConstraints cs c
   t -> lowerBoundM a t
+lowerBoundM (T.RTVar x) b = case b of
+  T.RTVar _ -> do
+    reportTCError
+      $ "Cannot compute lower bound of recursive type variables: "
+      <> show (T.RTVar x) <> " and " <> show b
+    >> fresh
+  _ -> do
+    pure $ b
+lowerBoundM b (T.RTVar _) = pure b
 lowerBoundM a b = do
   reportTCError
     $ "Could not compute lower bound of types: "
@@ -853,15 +995,15 @@ inferArith ::
   )
   => a -> b ->  m T.Types
 inferArith l r = do
-  tl <- infer l
-  tr <- infer r
+  T.TConstraints stl tl <- infer l
+  T.TConstraints str tr <- infer r
   a  <- fresh
   constraint $ NumTcConstraint a
   constraint $ UpperBoundConstraint tl tr a
   let cs = S.fromList
         [ ("Num", a, [])
-        -- , ("UpperBound", tl, [tr,a])
-        ]
+        , ("UpperBound", tl, [tr,a])
+        ] <> stl <> str
   pure $ T.TConstraints cs a
 
 inferCmp ::
@@ -871,8 +1013,8 @@ inferCmp ::
   )
   => a -> b ->  m T.Types
 inferCmp l r = do
-  tl <- infer l
-  tr <- infer r
+  T.TConstraints stl tl <- infer l
+  T.TConstraints str tr <- infer r
   a  <- fresh
   r  <- fresh
   constraint $ TcConstraint "UpperBound" tl [tr,a]
@@ -880,7 +1022,7 @@ inferCmp l r = do
   let cs = S.fromList
         [ ("UpperBound", tl, [tr,a])
         , ("BOrZ", r, [])
-        ]
+        ] <> stl <> str
   pure $ T.TConstraints cs r
 
 inferEq ::
@@ -890,20 +1032,26 @@ inferEq ::
   )
   => a -> b ->  m T.Types
 inferEq l r = do
-  tl <- infer l
-  tr <- infer r
+  tl'@(T.TConstraints stl tl) <- infer l
+  tr'@(T.TConstraints str tr) <- infer r
   a  <- fresh
   ret  <- fresh
-  trace ("tl: " <> show tl <> ", tr: " <> show tr <> ", a: " <> show a) (pure ())
-  constraint $ TcConstraint "UpperBound" tl [tr,a]
-  constraint $ BOrZTcConstraint ret
+  trace ("tl: " <> show tl' <> ", tr: " <> show tr' <> ", a: " <> show a) (pure ())
+  constraint $ EqConstraint tl tr
+  -- constraint $ TcConstraint "UpperBound" tl [tr,a]
+  -- constraint $ BOrZTcConstraint ret
   constraint $ EqTcConstraint a
   let cs = S.fromList
-        [ ("UpperBound", tl, [tr,a])
-        , ("Eq", a, [])
-        , ("BOrZ", ret, [])
-        ]
-  pure $ T.TConstraints cs ret
+        [
+          ("~", tl, [tr])
+        -- ("UpperBound", tl, [tr,a])
+        , ("Eq",tl,[])
+        -- , ("Eq", a, [])
+        -- , ("BOrZ", ret, [])
+        ] <> stl <> str
+  -- pure $ T.TConstraints cs ret
+  pure $ T.TConstraints cs T.ZBool
+
 
 inferBoolOp
   :: ( Inferable a
@@ -912,11 +1060,12 @@ inferBoolOp
      )
   => a -> b ->  m T.Types
 inferBoolOp l r = do
-  tl <- infer l
-  tr <- infer r
+  T.TConstraints stl tl <- infer l
+  T.TConstraints str tr <- infer r
   constraint $ EqConstraint tl T.ZBool
   constraint $ EqConstraint tr T.ZBool
-  pure T.ZBool
+  let cs = stl <> str
+  pure $ T.TConstraints cs T.ZBool
 
 
 data UpperBoundDict ctx = UpperBoundDict

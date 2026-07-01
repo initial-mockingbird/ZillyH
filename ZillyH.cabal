@@ -70,6 +70,7 @@ library
       Zilly.Puzzle.TypeCheck.Exports
       Zilly.Puzzle.TypeCheck.ExtensionCheck
       Zilly.Puzzle.TypeCheck.HM
+      Zilly.Puzzle.TypeCheck.TCHM
       Zilly.Puzzle.TypeCheck.TypeCheck
       Zilly.Puzzle.TypeCheck.Unsugar
       Zilly.Puzzle.Types.Exports

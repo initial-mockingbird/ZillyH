@@ -44,10 +44,10 @@ import Control.Monad
 import Data.Maybe (fromMaybe)
 import Data.Map qualified as M
 
-reportTCError :: MonadError String m
-  => BookeepInfo -> Set T.Types -> T.Types -> m a
+reportTCError :: (MonadError String m, HasBookeepInfo bk)
+  => bk -> Set T.Types -> T.Types -> m a
 reportTCError bk expected actual =
-  throwError $ "Type error at " ++ show (tokenPos bk) ++ ". Any of the types: " ++ showExpected expected ++ " were expected, but instead got " ++ show actual
+  throwError $ "Type error at " ++ show (tokenPos $ getBookeepInfo bk) ++ ". Any of the types: " ++ showExpected expected ++ " were expected, but instead got " ++ show actual
   where
   showExpected :: Set T.Types -> String
   showExpected = intercalate ", "  . fmap show . S.toList
@@ -67,11 +67,16 @@ implementsEQ t = case t of
 class Monad m => TCMonad m where
   withExpectedType :: Set T.Types -> m a -> m a
   getExpectedType :: m (Set T.Types)
-  validateType :: BookeepInfo -> T.Types -> m ()
+  validateType :: HasBookeepInfo a => a -> T.Types -> m ()
 
 type TCEffs ctx m =
   ( TCMonad m
   , ACtxConstraint ctx m
+  , ECtxMono ctx
+  , PatCtxMono ctx
+  , HasBookeepInfo (ECtxMonoW ctx)
+  , HasBookeepInfo (PatCtxMonoW ctx)
+  , ECtxMonoW ctx ~ PatCtxMonoW ctx
   )
 
 tcAs :: forall {m} ctx f.
@@ -79,7 +84,7 @@ tcAs :: forall {m} ctx f.
   , TCEffs ctx m
   )
   => TypeRepMap (E ctx)
-  -> f (A0 ParsingStage)
+  -> f (A0 ctx)
   -> m (TypeRepMap (E ctx), [A ctx])
 tcAs ienv as = foldlM (\(env, acc) a -> do
   (a', env') <- withEnv env $ tcA0 a
@@ -126,7 +131,7 @@ tcType = \case
 tcA0 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => A0 ParsingStage -> m (A ctx, TypeRepMap (E ctx))
+  => A0 ctx -> m (A ctx, TypeRepMap (E ctx))
 tcA0 (PTypeDef tn sop _) = do
   declareType tn []
   sop'  <- forM sop (tcProductConstructor @ctx . snd)
@@ -235,7 +240,7 @@ tcE :: forall {m} n ctx.
   ( TCEffs ctx m
   , SingI n
   )
-  => EPrec ParsingStage n -> m (E ctx, T.Types)
+  => EPrec ctx n -> m (E ctx, T.Types)
 tcE e = case () of
   () | Just Refl <- matches @0 (sing @n) -> tcE0 e
      | Just Refl <- matches @1 (sing @n) -> tcE1 e
@@ -252,8 +257,13 @@ tcE e = case () of
 tcEAtom :: forall {m} ctx.
   ( TCMonad m
   , ACtxConstraint ctx m
+  , ECtxMono ctx
+  , PatCtxMono ctx
+  , HasBookeepInfo (ECtxMonoW ctx)
+  , HasBookeepInfo (PatCtxMonoW ctx)
+  , ECtxMonoW ctx ~ PatCtxMonoW ctx
   )
-  => EPrec ParsingStage Atom -> m (E ctx,T.Types)
+  => EPrec ctx Atom -> m (E ctx,T.Types)
 tcEAtom (PInt bk n) = do
   validateType bk T.Z
   pure (ValZ n, T.Z)
@@ -300,7 +310,7 @@ tcEAtom (PTuple bk a b xs) = do
   (a',at') <- withExpectedType (S.singleton eta) $ tcE @_ @ctx a
   (b',bt') <- withExpectedType (S.singleton etb) $ tcE @_ @ctx b
   let
-      f :: forall targs. SingI targs => [EPrec ParsingStage targs] -> [T.Types] -> m [(E ctx, T.Types)]
+      f :: forall targs. SingI targs => [EPrec ctx targs] -> [T.Types] -> m [(E ctx, T.Types)]
       f xs etxs = case (xs,etxs) of
           (x:xs, etx:etxs) -> (:) <$> withExpectedType (S.singleton etx) (tcE @_ @ctx x) <*> f xs etxs
           ([], []) -> pure []
@@ -384,7 +394,7 @@ tcEAtom (PECons bk cons args) = do
       ++ " and expected types: "
       ++  (intercalate "," . fmap show . S.toList) ets
       ++ " at "
-      ++ show (tokenPos bk)
+      ++ show (tokenPos . getBookeepInfo $ bk)
     _  -> throwError
       $ "Ambiguous constructor "
       ++ cons
@@ -395,7 +405,7 @@ tcEAtom (PECons bk cons args) = do
       ++ ". Possible types are: "
       ++ intercalate ", " (fmap (show . fst) compatibleConsT)
       ++ " at "
-      ++ show (tokenPos bk)
+      ++ show (tokenPos . getBookeepInfo $ bk)
 tcEAtom (PEARecord bk fields) = do
   let filterARecords t = case t of
         T.ARecord ts -> [ts]
@@ -439,7 +449,7 @@ tcEAtom (PMatch bk e branches) = do
 tcLPattern :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => T.Types -> PLPattern ParsingStage -> m (LPattern ctx, TypeRepMap (E ctx))
+  => T.Types -> PLPattern ctx -> m (LPattern ctx, TypeRepMap (E ctx))
 tcLPattern t (PLVarPattern bk v) = do
   env <- getEnv
   env' <- declareFresh t v env
@@ -470,10 +480,10 @@ tcLPattern t (PLConstructorPattern bk con ps) = do
   case mCons of
     [] -> throwError
       $ "Constructor " ++ con ++ " does not build type " ++ show t
-      ++ " at " ++ show (tokenPos bk)
+      ++ " at " ++ show (tokenPos . getBookeepInfo $ bk)
     [( _, consTs)] -> do
       when (length consTs /= length ps) $
-        throwError $ "Constructor " ++ con ++ " expects " ++ show (length consTs) ++ " arguments, but got " ++ show (length ps) ++ " at " ++ show (tokenPos bk)
+        throwError $ "Constructor " ++ con ++ " expects " ++ show (length consTs) ++ " arguments, but got " ++ show (length ps) ++ " at " ++ show (tokenPos . getBookeepInfo $ bk)
       (ps', env') <- foldlM (\(acc, env) (t',p) -> do
           (p', env') <- withEnv env $ tcLPattern t' p
           pure (acc ++ [p'], env')
@@ -483,18 +493,18 @@ tcLPattern t (PLConstructorPattern bk con ps) = do
         True -> pure ()
         False -> throwError $ "A Variable in constructor pattern " ++ show (PLConstructorPattern bk con ps) ++ " is not unique."
       pure (LCons con ps', env')
-    _  -> throwError $ "Ambiguous constructor " ++ con ++ " for type " ++ show t ++ " at " ++ show (tokenPos bk)
+    _  -> throwError $ "Ambiguous constructor " ++ con ++ " for type " ++ show t ++ " at " ++ show (tokenPos . getBookeepInfo $ bk)
 tcLPattern t@(T.ARecord fields) (PLARecordPattern bk fieldPatterns) = do
   let fieldMap = M.fromList fields
   for_ fieldPatterns $ \(k,fpt) -> case M.lookup (Text.pack k) fieldMap of
-    Nothing -> throwError $ "Field " ++ k ++ " not found in record type " ++ show t ++ " at " ++ show (tokenPos bk)
+    Nothing -> throwError $ "Field " ++ k ++ " not found in record type " ++ show t ++ " at " ++ show (tokenPos . getBookeepInfo $ bk)
     Just ft -> do
       unless (fpt `T.isSuperTypeOf` ft) $
         throwError $ "Field " ++ k ++ " in record pattern "
-          ++ show (PLARecordPattern @ParsingStage bk fieldPatterns)
+          ++ show (PLARecordPattern @ctx bk fieldPatterns)
           ++ " has type " ++ show fpt
           ++ ", which is not compatible with expected type "
-          ++ show ft ++ " at " ++ show (tokenPos bk)
+          ++ show ft ++ " at " ++ show (tokenPos . getBookeepInfo $ bk)
       pure ()
 
   env <- getEnv
@@ -508,7 +518,7 @@ tcLPattern t p = throwError
 tcPatternGuard :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => PPaternGuard ParsingStage -> m (PatternGuard (E ctx) ctx, TypeRepMap (E ctx))
+  => PPaternGuard ctx -> m (PatternGuard (E ctx) ctx, TypeRepMap (E ctx))
 tcPatternGuard (PExprGuard bk e) = do
   (e', _) <- withExpectedType (S.singleton T.ZBool) $ tcE @_ @ctx e
   (ExprGuard e', ) <$> getEnv
@@ -520,7 +530,7 @@ tcPatternGuard (PBindingGuard bk p e) = do
 tcPattern :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => T.Types -> PPattern ParsingStage -> m (Pattern (E ctx) ctx, TypeRepMap (E ctx))
+  => T.Types -> PPattern ctx -> m (Pattern (E ctx) ctx, TypeRepMap (E ctx))
 tcPattern t (MkPPattern lp gs) = do
   (lp', env1) <- tcLPattern t lp
   (gs', env2) <- foldlM (\(acc, env) g -> do
@@ -532,7 +542,7 @@ tcPattern t (MkPPattern lp gs) = do
 tcEPrefixPrec :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage PrefixPrec -> m (E ctx, T.Types)
+  => EPrec ctx PrefixPrec -> m (E ctx, T.Types)
 tcEPrefixPrec (PUMinus _ a) = do
   ets' <- getExpectedType
   let ets = if null ets' then S.fromList [T.Z, T.F] else ets'
@@ -548,7 +558,7 @@ tcEPrefixPrec (OfHigherPrefixPrec  a) = tcE a
 tcEPostfixPrec :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage PostfixPrec -> m (E ctx, T.Types)
+  => EPrec ctx PostfixPrec -> m (E ctx, T.Types)
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg])
   | Just (v,indexers) <- yieldArrAssign arg = do
       let var = Zilly.Puzzle.Environment.TypedMap.mkVar @(E ctx) v
@@ -562,7 +572,7 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "formula") [arg])
           (arg', at) <-  withExpectedType (S.singleton retT) $ tcE arg
           pure (Formula $$ arg', retT)
   where
-    arrType :: T.Types -> [[PIndexerExpression ParsingStage]] -> T.Types
+    arrType :: T.Types -> [[PIndexerExpression ctx]] -> T.Types
     arrType (T.NDArray n t) (ixs:ixss) =
       let projectedDim = sum $ foldPIndexerExpression (\_ -> const 1) (const 0) <$> ixs
           dim = length ixs
@@ -646,9 +656,9 @@ tcEPostfixPrec (PApp bk (yieldVarName -> Just "_2") [arg]) = do
       $ validateType bk at
   pure (A_2 arg', at)
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "fst") arg) =
-  tcEPostfixPrec $ PApp bk (OfHigherPostfixPrec $ PVar @ParsingStage bk "_1") arg
+  tcEPostfixPrec $ PApp bk (OfHigherPostfixPrec $ PVar @ctx bk "_1") arg
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "snd") arg) =
-  tcEPostfixPrec $ PApp bk (OfHigherPostfixPrec $ PVar @ParsingStage bk "_2") arg
+  tcEPostfixPrec $ PApp bk (OfHigherPostfixPrec $ PVar @ctx bk "_2") arg
 tcEPostfixPrec (PApp bk (yieldVarName -> Just "head") [arg]) = do
   (arg', at) <- tcE arg
   pure (Head $$ arg', at)
@@ -701,6 +711,7 @@ tcEPostfixPrec (PAppArr bk arr ixs) = do
   let mkProjectedType (T.NDArray n e) = do
         when (n /= expectedDim) $ throwError $ "Array slice error: expected " ++ show expectedDim ++ " dimensions, but got " ++ show n
         if projectedDim == 0 then pure e else pure (T.NDArray projectedDim e)
+      mkProjectedType T.ZInfer = pure T.ZInfer
       mkProjectedType e = throwError $ "Array slice error: expected an array type, but got " ++ show e
   ixsT <- forM ixs $ \case
     PIndex e -> withExpectedType (S.singleton T.Z) $ (,Nothing) . fst <$> tcE @_ @ctx e
@@ -719,16 +730,16 @@ tcEPostfixPrec (PDotApp bk obj field) = do
       Just ft -> do
         validateType bk ft
         pure (DotApp ft obj' field, ft)
-      Nothing -> throwError $ "Field " ++ field ++ " not found in record type " ++ show ot ++ " at " ++ show (tokenPos bk)
+      Nothing -> throwError $ "Field " ++ field ++ " not found in record type " ++ show ot ++ " at " ++ show (tokenPos . getBookeepInfo $ bk)
     t@(T.TCon tname _) -> lookupType (Text.unpack tname) >>= \case
       Just [(consName, [T.ARecord fields])] | Just ft <- lookup (Text.pack field) fields -> do
         validateType bk ft
         pure (DotApp ft obj' field, ft)
       Just (_:_:_) -> throwError
         $ "Type " ++ Text.unpack tname ++ " has multiple constructors, so field access is ambiguous at "
-        ++ show (tokenPos bk)
-      Just _ -> throwError $ "Type " ++ Text.unpack tname ++ " has no fields " ++ field ++ " at " ++ show (tokenPos bk)
-      Nothing -> throwError $ "Type " ++ show t ++ " not found at " ++ show (tokenPos bk)
+        ++ show (tokenPos . getBookeepInfo $ bk)
+      Just _ -> throwError $ "Type " ++ Text.unpack tname ++ " has no fields " ++ field ++ " at " ++ show (tokenPos . getBookeepInfo $ bk)
+      Nothing -> throwError $ "Type " ++ show t ++ " not found at " ++ show (tokenPos . getBookeepInfo $ bk)
 
     _ -> reportTCError bk (S.singleton $ T.ARecord [(Text.pack "x1", T.TVar (T.TV "x2"))]) ot
 
@@ -739,7 +750,7 @@ tcEPostfixPrec (OfHigherPostfixPrec a) = tcE a
 tcE8 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage 8 -> m (E ctx, T.Types)
+  => EPrec ctx 8 -> m (E ctx, T.Types)
 tcE8 (PPower bk l r) = do
   (l', lt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx l
   (r', rt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx r
@@ -751,7 +762,7 @@ tcE8 (OfHigher8 a) = tcE a
 tcE7 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage 7 -> m (E ctx, T.Types)
+  => EPrec ctx 7 -> m (E ctx, T.Types)
 tcE7 (PMul bk l r) = do
   (l', lt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx l
   (r', rt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx r
@@ -777,7 +788,7 @@ tcE7 (OfHigher7 a) = tcE a
 tcE6 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage 6 -> m (E ctx, T.Types)
+  => EPrec ctx 6 -> m (E ctx, T.Types)
 tcE6 (PPlus bk l r) = do
   (l', lt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx l
   (r', rt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx r
@@ -801,7 +812,7 @@ tcE6 (OfHigher6 a) = tcE a
 tcE4 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage 4 -> m (E ctx, T.Types)
+  => EPrec ctx 4 -> m (E ctx, T.Types)
 tcE4 (PLT bk l r) = do
   (l', lt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx l
   (r', rt) <- withExpectedType (S.fromList [T.F,T.Z]) $ tcE @_ @ctx r
@@ -843,7 +854,7 @@ tcE4 (OfHigher4 a) = tcE a
 tcE3 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage 3 -> m (E ctx, T.Types)
+  => EPrec ctx 3 -> m (E ctx, T.Types)
 tcE3 (PAnd bk l r) = do
   (l', lt) <- withExpectedType (S.singleton T.ZBool) $ tcE @_ @ctx l
   (r', rt) <- withExpectedType (S.singleton T.ZBool) $ tcE @_ @ctx r
@@ -859,7 +870,7 @@ tcE3 (OfHigher3 a) = tcE a
 tcE1 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage 1 -> m (E ctx, T.Types)
+  => EPrec ctx 1 -> m (E ctx, T.Types)
 tcE1 (PLambda bk [(yieldVarName -> Just arg, gltype)] mgbody body) = do
   env <- getEnv
   env' <- declareFresh @(E ctx) gltype arg env
@@ -877,5 +888,5 @@ tcE1 (OfHigher1 a) = tcE a
 tcE0 :: forall {m} ctx.
   ( TCEffs ctx m
   )
-  => EPrec ParsingStage 0 -> m (E ctx, T.Types)
+  => EPrec ctx 0 -> m (E ctx, T.Types)
 tcE0 (OfHigher0 a) = tcE a

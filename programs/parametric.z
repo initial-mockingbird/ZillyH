@@ -1,0 +1,4 @@
+::zilly+
+
+
+'a => 'b => B f := fn ('a x) -> fn ('b y) -> x = y;

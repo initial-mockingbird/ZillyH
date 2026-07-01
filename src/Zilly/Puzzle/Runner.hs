@@ -52,7 +52,8 @@ import System.Random (randomIO)
 import Data.Map qualified as Map
 import Data.Map (Map)
 import Data.Maybe (fromMaybe)
-
+import Zilly.Puzzle.TypeCheck.HM
+import Zilly.Puzzle.TypeCheck.TCHM
 
 data InterpretMode = ClassicInterpreter |  UnsugaredInterpreter deriving Eq
 
@@ -87,6 +88,9 @@ data PuzzleState = PuzzleState
   , pstEnabledExtensions :: Set Extensions
   , pstTypeDict   :: Map String [(String,[Types])]
   , pstConsDict   :: Map String [(Types,[Types])]
+  , pstTypeVarCounter :: Int
+  , pstConstraints :: [Constraint]
+  , pstGamma       :: Gamma
   }
 
 data PuzzleReader = PuzzleReader
@@ -113,7 +117,7 @@ instance Exception PuzzleError where
 
 
 newtype PuzzleM a = PuzzleM
-  { runPuzzle :: (RWST PuzzleReader PuzzleWriter PuzzleState  (ExceptT String IO)) a }
+  { runPuzzle :: (RWST PuzzleReader PuzzleWriter (PuzzleState) (ExceptT String IO)) a }
   deriving newtype
     ( Functor
     , Applicative
@@ -122,7 +126,7 @@ newtype PuzzleM a = PuzzleM
     , Alternative
     , MonadReader PuzzleReader
     , MonadWriter PuzzleWriter
-    , MonadState PuzzleState
+    , MonadState (PuzzleState)
     )
 
 runPuzzleM :: PuzzleState -> PuzzleM a -> IO (Either String (a, PuzzleState))
@@ -130,7 +134,40 @@ runPuzzleM initialState (PuzzleM ma) = do
   let initialReader = PuzzleReader S.empty
   fmap (\(a,b,_) -> (a,b)) <$> runExceptT (runRWST ma initialReader initialState)
 
-instance HasTypeEnv PuzzleM where
+resetTCHM :: PuzzleM ()
+resetTCHM = modify (\s -> s
+  { pstTypeVarCounter = 0, pstConstraints = [], pstGamma = Map.empty
+  })
+
+
+
+instance MonadFail (PuzzleM) where
+  fail = throwError
+
+instance InferMonad (PuzzleM) where
+  fresh = do
+    s <- get
+    let n = pstTypeVarCounter s
+    modify (\st -> st { pstTypeVarCounter = n + 1 })
+    pure $ fromString ("'~a" <>  show n)
+  constraint c =
+    modify (\s -> s { pstConstraints = c : pstConstraints s })
+  gamma = gets pstGamma
+  getConstraints = gets pstConstraints
+  reportTCError = throwError
+  throwIrrecoverableError = throwError
+  withVar v scheme ma = do
+    env <- gets pstGamma
+    let env' = Map.insert (fromString v) scheme env
+    modify (\s -> s { pstGamma = env' })
+    a <- ma
+    modify (\s -> s { pstGamma = env })  -- Restore original environment
+    pure a
+
+
+
+
+instance HasTypeEnv (PuzzleM) where
   declareType name defs = do
     tDict <- gets pstTypeDict
     when (Map.member name tDict) $
@@ -156,19 +193,19 @@ instance HasTypeEnv PuzzleM where
 
 
 
-instance TCMonad PuzzleM where
+instance TCMonad (PuzzleM) where
   getExpectedType = asks prExpectedType
   withExpectedType tempEnv ma = local (\s -> s { prExpectedType = tempEnv }) ma
   validateType bk t = do
     expected <- getExpectedType
     let b = any (`isSuperTypeOf` t)  expected || null expected
     unless b $ throwError
-      $ "At: " <> show (P.tokenPos bk)
+      $ "At: " <> show (P.tokenPos . P.getBookeepInfo $ bk)
       <>  ". Type " <> show t
       <> " is not expected in the current context: "
       <> intercalate ", " (map show $ S.toList expected)
 
-instance ExtensionCheckEff PuzzleM where
+instance ExtensionCheckEff (PuzzleM) where
   validateExtension ext (bk) = do
     enabled <- gets pstEnabledExtensions
     unless (ext `S.member` enabled) $
@@ -176,11 +213,11 @@ instance ExtensionCheckEff PuzzleM where
 
   getEnabledExtensions = S.toList <$> gets pstEnabledExtensions
 
-instance MonadError String PuzzleM where
+instance MonadError String (PuzzleM) where
   throwError  = PuzzleM . lift . throwError @String @(ExceptT String IO)
   catchError (PuzzleM f) h = PuzzleM $ f `catchError` (runPuzzle . h)
 
-instance MonadRandom PuzzleM where
+instance MonadRandom (PuzzleM) where
   randInt ub = floor <$> randFloat (fromIntegral ub)
   randFloat ub = do
     seed <- gets pstDoubleSeed
@@ -189,7 +226,7 @@ instance MonadRandom PuzzleM where
     pure . max 0 $  ub * n'
 
 
-instance MonadCC PuzzleM where
+instance MonadCC (PuzzleM) where
   getCC = gets pstCC
   cycleCC = modify (\s -> s { pstCC = pstCC s + 1 })
 
@@ -221,7 +258,7 @@ instance HasRetType PRunnerCtx LambdaCTag where
   type RetType PRunnerCtx LambdaCTag = LambdaCCtx PRunnerCtx
   retType = snd
 
-instance CCActions PuzzleM where
+instance CCActions (PuzzleM) where
   getQ = gets pstQ
   putQ n = modify (\s -> s { pstQ = n })
 
@@ -291,16 +328,16 @@ imapComplete = do
     , ("e", eV, F)
     ]
 
-parse :: String -> PuzzleM (P.A1 P.ParsingStage)
+parse :: forall ctx. String -> PuzzleM (P.A1 P.ParsingStage)
 parse input = case P.parseAction' input of
-  Left err -> throwError @String @PuzzleM $ "Parse error: " ++ show err
+  Left err -> throwError @String @(PuzzleM) $ "Parse error: " ++ show err
   Right ast -> pure ast
 
 checkExtensions :: P.A1 P.ParsingStage -> PuzzleM (P.A1 P.ParsingStage)
 checkExtensions = extensionCheckA1
 
 typeCheck
-  :: P.A1 P.ParsingStage
+  :: P.A1 PRunnerCtx
   -> PuzzleM [A PRunnerCtx]
 typeCheck ast = do
   env <- getEnv
@@ -347,17 +384,53 @@ interpret input = do
       pure $ "ACK: Interpreter mode changed to zilly+."
     Nothing -> do
        -- tas <- typeCheck =<< checkExtensions =<< parse input
-       parsed <- parse input
-       -- liftIO $ putStrLn $ "Parsed: " <> show parsed
+       parsed  <- parse input
+       liftIO $ putStrLn $ "Parsed: " <> show parsed
        eChecked <- checkExtensions parsed
-       -- liftIO $ putStrLn $ "Checked: " <> show eChecked
-       tas <- typeCheck eChecked
-       -- liftIO $ putStrLn $ "TypeChecked: " <> show tas
-       as  <- eval tas
-       let f x y = case (x,y) of
-            (Print {},_) -> "OK: " <> show x <> " ==> " <> show y
-            _            -> "ACK: " <> show x
-       pure $ intercalate "\n" $ zipWith f tas as
+       liftIO $ putStrLn $ "Checked: " <> show eChecked
+
+       tas0  <- case eChecked of
+         P.Seq ctx a as  -> do
+          a' <- tcA a <* resetTCHM
+          as' <- mapM (tcA >=> \r -> resetTCHM >> pure r) as
+          mctx <- liftIO newEmptyMVar
+          let ctx' = MkTCCtx ctx mctx
+          pure $ P.Seq ctx' a' as'
+         P.OfA0 a -> P.OfA0 <$> tcA a <* resetTCHM
+
+
+       liftIO $ putStrLn $ "TypeChecked AST: " <> show tas0
+       let tas1 = P.aPrecMorphism id id id tas0
+       let tas' = tas1
+       let f tas' = do
+             tas <- typeCheck tas'
+             liftIO $ putStrLn $ "TypeChecked: " <> show tas
+             as  <- eval tas
+             let f x y = case (x,y) of
+                  (Print {},_) -> "OK: " <> show x <> " ==> " <> show y
+                  _            -> "ACK: " <> show x
+             pure $ intercalate "\n" $ zipWith f tas as
+       exitEarly f tas'
+
+exitEarly :: (P.A1 PRunnerCtx -> PuzzleM String)
+          -> P.A1 PRunnerCtx
+          -> PuzzleM String
+exitEarly f = \case
+  a@(P.OfA0 (P.Print e ctx))  -> do
+    te <- getTypeInfo ctx
+    case (null . ftv . mkFlexible) te || te == ZInfer of
+      True -> trace "true!" pure $ "OK: " <> show e <> " ==> " <> show e
+
+      False -> trace ("false!" <> show te)  f a
+  P.Seq sctx (P.Print e ctx) [] -> exitEarly f (P.OfA0 (P.Print e sctx))
+  P.Seq sctx e0 (e1:e2) -> do
+    e' <- exitEarly f (P.OfA0 e0)
+    rest <- exitEarly f (P.Seq sctx e1 e2)
+    pure $ e' <> "\n" <> rest
+  a@(P.OfA0 _) -> f a
+  P.Seq _ e [] -> f $ P.OfA0 e
+
+
 
 buildInterpreter :: IO (String -> IO String)
 buildInterpreter = do
@@ -371,6 +444,9 @@ buildInterpreter = do
         , pstEnabledExtensions = S.empty
         , pstTypeDict = Map.empty
         , pstConsDict = Map.empty
+        , pstTypeVarCounter = 0
+        , pstConstraints = []
+        , pstGamma = Map.empty
         }
   mst <- newMVar initialState
   pure $ \s -> catchError (do
@@ -442,6 +518,10 @@ slices = genericEx "./programs/ZillyArrays/slices.sym"
 userDefinedTypes :: IO ()
 userDefinedTypes = genericEx "./programs/Types/defs.z"
 
+ex15 :: IO ()
+ex15 = genericEx "./programs/parametric.z"
+
+
 
 idol :: IO ()
 idol = genericEx "./programs/Types/idol.z"
@@ -454,3 +534,56 @@ genericEx fp = do
 
 rio :: IO ()
 rio = randomIO @Int >>= print
+
+
+type instance P.EIX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EFX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EBX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ESX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EVX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ETX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EAX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EDefX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EIfX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EMatchX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EECons PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EARecordX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EUMX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ENegateX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EAppX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EAAppX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EDAppX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPowX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EMulX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EDivX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EModX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPlusX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EMinusX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EAppendX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPLTX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPLTEQX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPGTX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPGTEQX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPEQX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EPNEQX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EAndX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.EOrX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ELambdaX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLVarCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLWCCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLIntCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLBoolCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLStringCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLFloatCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLTupleCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLConsCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.PLARecordCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ExprGuardCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.BindingGuardCtx PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ASeqX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ADeclX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.AAssignX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.APrintX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.ATDeclX PRunnerCtx = TCCtx P.ParsingStage
+type instance P.SysCommandX PRunnerCtx = TCCtx P.ParsingStage
