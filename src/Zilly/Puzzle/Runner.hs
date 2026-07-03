@@ -295,7 +295,7 @@ interpret input = do
       m <- liftIO $ imap
       let basicExtensions = S.empty
       modify (\s -> s { pstVarDict = m, pstEnabledExtensions = basicExtensions, pstEvalE = evalEClassic })
-      pure $ "ACK: Interpreter mode changed to zilly."
+      pure $ "ACK: mode changed to zilly."
     Just ClassicInterpreter -> do
       m <- liftIO $ imapComplete
       let completeExtensions = S.fromList
@@ -311,7 +311,7 @@ interpret input = do
             ]
 
       modify (\s -> s { pstVarDict = m, pstEnabledExtensions = completeExtensions, pstEvalE = evalE })
-      pure $ "ACK: Interpreter mode changed to zilly+."
+      pure $ "ACK: mode changed to zilly+."
     Nothing -> do
        -- tas <- typeCheck =<< checkExtensions =<< parse input
        parsed <- parse input
@@ -390,6 +390,9 @@ ex13 = genericEx "./programs/show.z"
 ex14 :: IO ()
 ex14 = genericEx "./programs/commands.z"
 
+ex15 :: IO ()
+ex15 = genericEx "./programs/bad.z"
+
 _1dSym :: IO ()
 _1dSym = genericEx "./programs/ZillyArrays/1D.sym"
 
@@ -404,6 +407,7 @@ stats = genericEx "./programs/ZillyArrays/stats.sym"
 
 slices :: IO ()
 slices = genericEx "./programs/ZillyArrays/slices.sym"
+
 
 unsugaredComplete :: IO ()
 unsugaredComplete = genericEx "./programs/unsugared/complete.z"
