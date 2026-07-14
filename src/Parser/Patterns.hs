@@ -120,6 +120,8 @@ class sub < sup where
   upcast :: sub -> sup
   downcast :: sup -> Maybe sub
 
+
+
 transUpcast :: forall b a c. (a < b, b < c) => a -> c
 transUpcast = upcast . upcast @a @b
 

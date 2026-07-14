@@ -41,6 +41,9 @@ when:
         - orthotope
         - time >= 1.14
         - random
+        - free
+        - data-fix
+
     else:
       dependencies:
         - base >= 4.7 && < 5
@@ -60,6 +63,9 @@ when:
         - orthotope
         - time >= 1.14
         - random
+        - free        
+        - data-fix
+
 
 
 flags:
@@ -79,6 +85,7 @@ ghc-options:
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
+- -ddump-splices -ddump-to-file
 
 library:
   source-dirs:
@@ -87,7 +94,26 @@ library:
   when:
     - condition: flag(WASM)
       cpp-options: -DWASM
-
+  default-extensions:
+    - GADTs
+    - DataKinds
+    - PolyKinds
+    - TypeFamilies
+    - TypeOperators
+    - FlexibleContexts
+    - TypeAbstractions
+    - ImportQualifiedPost
+    - LambdaCase
+    - RankNTypes
+    - ScopedTypeVariables
+    - AllowAmbiguousTypes
+    - ViewPatterns
+    - LiberalTypeSynonyms
+    - PatternSynonyms
+    - OverloadedStrings
+    - FlexibleInstances
+    - MultiParamTypeClasses
+    - TypeApplications
 
 executables:
   Haskell-exe:

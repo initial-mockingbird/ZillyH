@@ -37,6 +37,23 @@ library
       Data.Ord.Singletons
       Data.Proof
       Data.Theorems.Equality
+      Lilly.Parser.IR.Exports
+      Lilly.Parser.IR.IR
+      Lilly.Parser.IR.IRPatterns
+      Lilly.Parser.IR.TH
+      Lilly.Parser.IR.Utilities
+      Lilly.Parser.New.Definitions.Definitions
+      Lilly.Parser.New.Definitions.Exports
+      Lilly.Parser.New.Definitions.Orphans
+      Lilly.Parser.New.Definitions.Utilities
+      Lilly.Parser.New.Parser.Action
+      Lilly.Parser.New.Parser.Expression
+      Lilly.Parser.New.Parser.Types
+      Lilly.Parser.New.Parser.Utilities
+      Lilly.Parser.New.Patterns
+      Lilly.Parser.New.Show
+      Lilly.Parser.New.TH
+      Lilly.Parser.New.Utilities
       Parser.Numbers
       Parser.Patterns
       Parser.Utilities
@@ -77,13 +94,35 @@ library
       Paths_ZillyH
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  default-extensions:
+      GADTs
+      DataKinds
+      PolyKinds
+      TypeFamilies
+      TypeOperators
+      FlexibleContexts
+      TypeAbstractions
+      ImportQualifiedPost
+      LambdaCase
+      RankNTypes
+      ScopedTypeVariables
+      AllowAmbiguousTypes
+      ViewPatterns
+      LiberalTypeSynonyms
+      PatternSynonyms
+      OverloadedStrings
+      FlexibleInstances
+      MultiParamTypeClasses
+      TypeApplications
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -ddump-splices -ddump-to-file
   default-language: Haskell2010
   if flag(WASM)
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , jsaddle-wasm
@@ -103,7 +142,9 @@ library
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , mtl
@@ -129,7 +170,7 @@ executable Haskell-exe
       Paths_ZillyH
   hs-source-dirs:
       app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -ddump-splices -ddump-to-file
   build-depends:
       ZillyH
   default-language: Haskell2010
@@ -137,7 +178,9 @@ executable Haskell-exe
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , jsaddle-wasm
@@ -157,7 +200,9 @@ executable Haskell-exe
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , mtl
@@ -186,7 +231,7 @@ executable WASM
       Paths_ZillyH
   hs-source-dirs:
       wasm
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -ddump-splices -ddump-to-file
   build-depends:
       ZillyH
   default-language: Haskell2010
@@ -194,7 +239,9 @@ executable WASM
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , jsaddle-wasm
@@ -214,7 +261,9 @@ executable WASM
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , mtl
@@ -246,7 +295,7 @@ test-suite Haskell-test
       Paths_ZillyH
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -ddump-splices -ddump-to-file -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       HTF
     , ZillyH
@@ -255,7 +304,9 @@ test-suite Haskell-test
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , jsaddle-wasm
@@ -275,7 +326,9 @@ test-suite Haskell-test
     build-depends:
         base >=4.7 && <5
       , containers
+      , data-fix
       , fgl
+      , free
       , ghc-experimental
       , jsaddle
       , mtl
